@@ -1,34 +1,32 @@
 --- a/ImNodesEz.cpp
 +++ b/ImNodesEz.cpp
-@@ -179,6 +179,7 @@
+@@ -179,6 +179,8 @@
      ImGui::TextUnformatted(title);
 
      ImGui::SetCursorScreenPos(input_pos);
 +    ImGui::Dummy(ImVec2(0, 0));
++    ImGui::SetCursorScreenPos(input_pos);
 
      return result;
  }
-@@ -243,6 +244,7 @@
-     if (!ImNodes::IsOutputSlotKind(kind))
-         item_offset_x = -item_offset_x;
-     ImGui::SetCursorScreenPos(pos + ImVec2{item_offset_x, 0 });
-+    ImGui::Dummy(ImVec2(0, 0));
-
-     pos.y += ImMax(title_size.y, 2*CIRCLE_RADIUS) + g.Style.ItemSpacing.y;
-
-@@ -326,6 +328,7 @@
+@@ -326,7 +328,10 @@
+     storage->SetFloat(ImGui::GetID("input-width"), ImGui::GetItemRectSize().x);
 
      // Move cursor to the next column
-     ImGui::SetCursorScreenPos(ImVec2{storage->GetFloat(ImGui::GetID("content-x")), storage->GetFloat(ImGui::GetID("body-y"))});
+-    ImGui::SetCursorScreenPos(ImVec2{storage->GetFloat(ImGui::GetID("content-x")), storage->GetFloat(ImGui::GetID("body-y"))});
++    ImVec2 contentPos = ImVec2{storage->GetFloat(ImGui::GetID("content-x")), storage->GetFloat(ImGui::GetID("body-y"))};
++    ImGui::SetCursorScreenPos(contentPos);
 +    ImGui::Dummy(ImVec2(0, 0));
++    ImGui::SetCursorScreenPos(contentPos);
 
      PopStyleVar(2);
 
-@@ -352,6 +355,7 @@
+@@ -352,6 +357,8 @@
 
      // Set cursor screen position as it is recorded as the starting point in BeginGroup() for the item rect size.
      ImGui::SetCursorScreenPos(pos);
 +    ImGui::Dummy(ImVec2(0, 0));
++    ImGui::SetCursorScreenPos(pos);
 
      // Render output slots in the next column
      if (snum) {

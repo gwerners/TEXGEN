@@ -85,7 +85,7 @@ void GraphNode::draw(NodeGraph* graph) {
     auto inSlots = tn->inputSlotInfos();
     ImNodes::Ez::InputSlots(inSlots.data(), (int)inSlots.size());
 
-    // Render parameters
+    // Render parameters (content column between input/output slots)
     tn->renderParams();
 
     // Reset button
