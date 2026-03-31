@@ -145,6 +145,17 @@ CheckNeeded ninja || exit 1
 CheckNeeded git  || exit 1
 getAll
 
+# Apply patches
+if [ -d "ImNodes" ] && [ -d "patches" ]; then
+  pushd ImNodes
+    for p in ../patches/imnodes-*.patch; do
+      if [ -f "$p" ]; then
+        git apply --check "$p" 2>/dev/null && git apply "$p" && echo "Applied $(basename $p)" || echo "Patch $(basename $p) already applied or N/A"
+      fi
+    done
+  popd
+fi
+
 build
 run
 
