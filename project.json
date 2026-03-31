@@ -1,0 +1,130 @@
+{
+  "connections": [
+    {
+      "fromId": 0,
+      "fromSlot": "Image",
+      "toId": 2,
+      "toSlot": "Image"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Image",
+      "toId": 3,
+      "toSlot": "Image"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Image",
+      "toId": 4,
+      "toSlot": "Image"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Image",
+      "toId": 1,
+      "toSlot": "Image"
+    }
+  ],
+  "nodes": [
+    {
+      "id": 0,
+      "params": {
+        "a": 1.0,
+        "b": 0.18544034659862518,
+        "g": 0.7088607549667358,
+        "heightIdx": 3,
+        "r": 0.2251938432455063,
+        "widthIdx": 3
+      },
+      "posX": -58.0,
+      "posY": 152.0,
+      "typeName": "Input"
+    },
+    {
+      "id": 1,
+      "params": {
+        "filename": "output.tga"
+      },
+      "posX": 345.0,
+      "posY": 20.0,
+      "typeName": "Output"
+    },
+    {
+      "id": 2,
+      "params": {
+        "blendMode": 3,
+        "colorFar": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "colorNear": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "count": 38,
+        "heightIdx": 3,
+        "seed": 0,
+        "widthIdx": 3
+      },
+      "posX": -165.0,
+      "posY": 114.0,
+      "typeName": "Crystal"
+    },
+    {
+      "id": 3,
+      "params": {
+        "blendMode": 1,
+        "c1a": 1.0,
+        "c1b": 0.0,
+        "c1g": 0.0,
+        "c1r": 0.0,
+        "c2a": 1.0,
+        "c2b": 1.0,
+        "c2g": 1.0,
+        "c2r": 1.0,
+        "fadeoff": 0.10599999874830246,
+        "freqX": 1,
+        "freqY": 3,
+        "mode": 1,
+        "oct": 2,
+        "seed": 610,
+        "sizeIdx": 3
+      },
+      "posX": 85.0,
+      "posY": 125.0,
+      "typeName": "Noise"
+    },
+    {
+      "id": 4,
+      "params": {
+        "bgCol": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "blendMode": 1,
+        "cx": 0.5,
+        "cy": 0.5,
+        "exponent": 2.0,
+        "glowCol": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "heightIdx": 3,
+        "intensity": 1.0,
+        "scale": 1.0,
+        "widthIdx": 3
+      },
+      "posX": 487.0,
+      "posY": 90.0,
+      "typeName": "GlowEffect"
+    }
+  ]
+}
