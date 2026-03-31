@@ -66,6 +66,10 @@ class GraphNode {
   ImVec2 lastRectMin = {0, 0};
   ImVec2 lastRectMax = {0, 0};
 
+  // Collapsible section state
+  bool paramsOpen = false;
+  bool previewOpen = false;
+
  private:
   std::unique_ptr<TextureNode> m_node;
   std::vector<NodeConnection> m_connections;

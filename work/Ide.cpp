@@ -14,15 +14,44 @@
 #include <map>
 #include <vector>
 
+// Helper: render a maximize/restore button right-aligned in the title bar area.
+// Returns true if fullscreen state changed. Toggles fullscreen on first click,
+// resets layout if already fullscreen.
+static bool TitleBarMaxButton(const char* id,
+                              bool& isFullscreen,
+                              bool& resetLayout) {
+  // Right-align a small button on the same line as the tab/title
+  float btnW = ImGui::CalcTextSize(isFullscreen ? "[=]" : "[+]").x +
+               ImGui::GetStyle().FramePadding.x * 2;
+  ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - btnW);
+
+  bool changed = false;
+  if (isFullscreen) {
+    if (ImGui::SmallButton((std::string("[=]##restore_") + id).c_str())) {
+      isFullscreen = false;
+      resetLayout = true;
+      changed = true;
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Reset Layout");
+  } else {
+    if (ImGui::SmallButton((std::string("[+]##max_") + id).c_str())) {
+      isFullscreen = true;
+      changed = true;
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Maximize");
+  }
+  return changed;
+}
+
 //************************************************************
 //************************************************************
 //************************************************************
-Ide::Ide(const int screenWidth,
-         const int screenHeight,
+Ide::Ide(const int /*screenWidth*/,
+         const int /*screenHeight*/,
          const std::string& fontPath)
-    : m_width(screenWidth),
-      m_height(screenHeight),
-      m_firstTime(true),
+    : m_firstTime(true),
       m_isLeftFullscreen(false),
       m_isBottomFullscreen(false),
       m_isRightFullscreen(false),
@@ -77,7 +106,7 @@ void Ide::unLoadTextures() {
 }
 
 void Ide::draw() {
-  ImGui::PushFont(m_firaCodeRegular);  // Push the custom font for ImNodes
+  ImGui::PushFont(m_firaCodeRegular);
 
   // Create a full-screen docking space
   ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
@@ -98,8 +127,7 @@ void Ide::draw() {
   if (m_resetLayout || m_firstTime) {
     ImGui::DockBuilderRemoveNode(dockspace_id);
     ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
-    ImGui::DockBuilderSetNodeSize(dockspace_id,
-                                  ImVec2((float)m_width, (float)m_height));
+    ImGui::DockBuilderSetNodeSize(dockspace_id, displaySize);
 
     ImGuiID left_id, right_id;
     ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.25f, &left_id,
@@ -127,13 +155,12 @@ void Ide::draw() {
   // ------------------------------------------------------------------
   if (m_isLeftFullscreen) {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2((float)m_width, (float)m_height));
+    ImGui::SetNextWindowSize(displaySize);
   }
   ImGui::Begin("Left Panel", nullptr,
                m_isLeftFullscreen ? ImGuiWindowFlags_NoDocking : 0);
 
-  ImGui::Text("Texture Node Graph");
-  ImGui::Separator();
+  TitleBarMaxButton("left", m_isLeftFullscreen, m_resetLayout);
 
   // Generate button
   if (ImGui::Button("Generate")) {
@@ -151,21 +178,14 @@ void Ide::draw() {
   }
 
   ImGui::Separator();
-  ImGui::Text("Project I/O:");
 
-  ImGui::PushItemWidth(160);
-  ImGui::InputText("##savefile", m_saveFilename, sizeof(m_saveFilename));
+  ImGui::PushItemWidth(120);
+  ImGui::InputText("##projectfile", m_saveFilename, sizeof(m_saveFilename));
   ImGui::PopItemWidth();
-
   ImGui::SameLine();
   if (ImGui::Button("Save")) {
     saveProject(m_saveFilename);
   }
-
-  ImGui::PushItemWidth(160);
-  ImGui::InputText("##loadfile", m_saveFilename, sizeof(m_saveFilename));
-  ImGui::PopItemWidth();
-
   ImGui::SameLine();
   if (ImGui::Button("Load")) {
     if (loadProject(m_saveFilename) && g_nodeGraph) {
@@ -181,15 +201,6 @@ void Ide::draw() {
     }
   }
 
-  ImGui::Separator();
-
-  if (ImGui::Button("Toggle Fullscreen##left")) {
-    m_isLeftFullscreen = !m_isLeftFullscreen;
-  }
-  if (ImGui::Button("Reset Layout##left")) {
-    m_resetLayout = true;
-  }
-
   ImGui::End();
 
   // ------------------------------------------------------------------
@@ -197,36 +208,31 @@ void Ide::draw() {
   // ------------------------------------------------------------------
   if (m_isBottomFullscreen) {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2((float)m_width, (float)m_height));
+    ImGui::SetNextWindowSize(displaySize);
   }
   ImGui::Begin("Bottom Panel", nullptr,
                m_isBottomFullscreen ? ImGuiWindowFlags_NoDocking : 0);
 
-  ImGui::Text("Output Preview");
-  if (ImGui::Button("Toggle Fullscreen##bottom")) {
-    m_isBottomFullscreen = !m_isBottomFullscreen;
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Reset Layout##bottom")) {
-    m_resetLayout = true;
-  }
+  TitleBarMaxButton("bottom", m_isBottomFullscreen, m_resetLayout);
 
   // Zoom controls
-  if (ImGui::Button("Zoom In")) {
+  if (ImGui::Button("+##zin")) {
     m_zoom += 0.1f;
     if (m_zoom > m_maxZoom)
       m_zoom = m_maxZoom;
   }
   ImGui::SameLine();
-  if (ImGui::Button("Zoom Out")) {
+  if (ImGui::Button("-##zout")) {
     m_zoom -= 0.1f;
     if (m_zoom < m_minZoom)
       m_zoom = m_minZoom;
   }
   ImGui::SameLine();
-  if (ImGui::Button("Reset Zoom")) {
+  if (ImGui::Button("1:1##zreset")) {
     m_zoom = 1.0f;
   }
+  ImGui::SameLine();
+  ImGui::Text("%.0f%%", m_zoom * 100.0f);
 
   if (m_hasOutputTexture && m_outputTexture.id != 0) {
     ImVec2 imageSize = ImVec2(float(m_outputTexture.width * m_zoom),
@@ -243,18 +249,12 @@ void Ide::draw() {
   // ------------------------------------------------------------------
   if (m_isRightFullscreen) {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2((float)m_width, (float)m_height));
+    ImGui::SetNextWindowSize(displaySize);
   }
   ImGui::Begin("Right Panel", nullptr,
                m_isRightFullscreen ? ImGuiWindowFlags_NoDocking : 0);
 
-  if (ImGui::Button("Toggle Fullscreen##right")) {
-    m_isRightFullscreen = !m_isRightFullscreen;
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Reset Layout##right")) {
-    m_resetLayout = true;
-  }
+  TitleBarMaxButton("right", m_isRightFullscreen, m_resetLayout);
 
   // Node canvas
   createNodeCanvas();

@@ -20,8 +20,6 @@ class Ide {
 
  private:
   ImFont* LoadCustomFonts(const std::string& fontPath);
-  int m_width;
-  int m_height;
   bool m_firstTime;
   bool m_isLeftFullscreen;
   bool m_isBottomFullscreen;

@@ -41,6 +41,7 @@ void Core::run() {
 
   const int screenWidth = _priv._width;
   const int screenHeight = _priv._height;
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(screenWidth, screenHeight, "Raylib + ImGui Docking Example");
 
   // Set up ImGui with rlImGui

@@ -85,15 +85,21 @@ void GraphNode::draw(NodeGraph* graph) {
     auto inSlots = tn->inputSlotInfos();
     ImNodes::Ez::InputSlots(inSlots.data(), (int)inSlots.size());
 
-    // Render parameters (content column between input/output slots)
-    tn->renderParams();
-
-    // Reset button
+    // Collapsible parameters
     {
-      std::string resetId = "Reset##" + std::to_string(tn->id);
-      if (ImGui::SmallButton(resetId.c_str())) {
-        graph->resetNodeParams(this);
-        m_lastParamsHash = tn->saveParams().dump();
+      ImGui::SetNextItemOpen(paramsOpen);
+      std::string paramHeader = "Params##" + std::to_string(tn->id);
+      paramsOpen = ImGui::TreeNode(paramHeader.c_str());
+      if (paramsOpen) {
+        tn->renderParams();
+
+        // Reset button
+        std::string resetId = "Reset##" + std::to_string(tn->id);
+        if (ImGui::SmallButton(resetId.c_str())) {
+          graph->resetNodeParams(this);
+          m_lastParamsHash = tn->saveParams().dump();
+        }
+        ImGui::TreePop();
       }
     }
 
@@ -104,17 +110,24 @@ void GraphNode::draw(NodeGraph* graph) {
       graph->refreshNode(this);
     }
 
-    // Show preview image
+    // Collapsible preview
     if (hasPreview && previewTex.id != 0) {
-      float maxSide = 128.0f;
-      float bigger =
-          (float)((previewTex.width > previewTex.height) ? previewTex.width
-                                                         : previewTex.height);
-      float scale = (bigger > 0) ? maxSide / bigger : 1.0f;
-      if (scale > 1.0f)
-        scale = 1.0f;
-      ImGui::Image(ImTextureID(previewTex.id),
-                   ImVec2(previewTex.width * scale, previewTex.height * scale));
+      ImGui::SetNextItemOpen(previewOpen);
+      std::string prevHeader = "Preview##" + std::to_string(tn->id);
+      previewOpen = ImGui::TreeNode(prevHeader.c_str());
+      if (previewOpen) {
+        float maxSide = 128.0f;
+        float bigger =
+            (float)((previewTex.width > previewTex.height) ? previewTex.width
+                                                           : previewTex.height);
+        float scale = (bigger > 0) ? maxSide / bigger : 1.0f;
+        if (scale > 1.0f)
+          scale = 1.0f;
+        ImGui::Image(
+            ImTextureID(previewTex.id),
+            ImVec2(previewTex.width * scale, previewTex.height * scale));
+        ImGui::TreePop();
+      }
     }
 
     auto outSlots = tn->outputSlotInfos();
@@ -451,6 +464,8 @@ nlohmann::json NodeGraph::save() const {
     nj["posX"] = tn->pos.x;
     nj["posY"] = tn->pos.y;
     nj["params"] = tn->saveParams();
+    nj["paramsOpen"] = gn->paramsOpen;
+    nj["previewOpen"] = gn->previewOpen;
     nodesArr.push_back(nj);
   }
   j["nodes"] = nodesArr;
@@ -501,6 +516,8 @@ void NodeGraph::load(const nlohmann::json& j) {
     texNode->id = id;
 
     GraphNode* gn = new GraphNode(std::move(texNode), id);
+    gn->paramsOpen = nj.value("paramsOpen", false);
+    gn->previewOpen = nj.value("previewOpen", false);
     m_nodes.push_back(gn);
   }
 

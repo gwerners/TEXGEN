@@ -2,27 +2,27 @@
   "connections": [
     {
       "fromId": 0,
-      "fromSlot": "Output",
+      "fromSlot": "Out",
       "toId": 2,
-      "toSlot": "Input"
+      "toSlot": "In"
     },
     {
       "fromId": 2,
-      "fromSlot": "Output",
+      "fromSlot": "Out",
       "toId": 3,
-      "toSlot": "Input"
+      "toSlot": "In"
     },
     {
       "fromId": 3,
-      "fromSlot": "Output",
+      "fromSlot": "Out",
       "toId": 4,
-      "toSlot": "Input"
+      "toSlot": "In"
     },
     {
       "fromId": 4,
-      "fromSlot": "Output",
+      "fromSlot": "Out",
       "toId": 1,
-      "toSlot": "Input"
+      "toSlot": "In"
     }
   ],
   "nodes": [
@@ -36,18 +36,11 @@
         "r": 0.2251938432455063,
         "widthIdx": 3
       },
-      "posX": -1069.9423828125,
-      "posY": -120.9948959350586,
+      "paramsOpen": false,
+      "posX": -1159.824462890625,
+      "posY": -109.12197875976563,
+      "previewOpen": false,
       "typeName": "Input"
-    },
-    {
-      "id": 1,
-      "params": {
-        "filename": "output.tga"
-      },
-      "posX": 357.7283935546875,
-      "posY": -303.3578186035156,
-      "typeName": "Output"
     },
     {
       "id": 2,
@@ -70,8 +63,10 @@
         "seed": 0,
         "widthIdx": 3
       },
-      "posX": -733.190673828125,
-      "posY": 570.4520263671875,
+      "paramsOpen": false,
+      "posX": -955.1879272460938,
+      "posY": -109.35134887695313,
+      "previewOpen": false,
       "typeName": "Crystal"
     },
     {
@@ -94,9 +89,22 @@
         "seed": 610,
         "sizeIdx": 3
       },
-      "posX": -386.24310302734375,
-      "posY": -274.58782958984375,
+      "paramsOpen": false,
+      "posX": -727.71484375,
+      "posY": -109.25619506835938,
+      "previewOpen": false,
       "typeName": "Noise"
+    },
+    {
+      "id": 1,
+      "params": {
+        "filename": "output.tga"
+      },
+      "paramsOpen": false,
+      "posX": -254.261474609375,
+      "posY": -139.78762817382813,
+      "previewOpen": true,
+      "typeName": "Output"
     },
     {
       "id": 4,
@@ -122,8 +130,10 @@
         "scale": 1.0,
         "widthIdx": 3
       },
-      "posX": 198.6235809326172,
-      "posY": 51.972373962402344,
+      "paramsOpen": false,
+      "posX": -479.24658203125,
+      "posY": -111.31318664550781,
+      "previewOpen": false,
       "typeName": "GlowEffect"
     }
   ]

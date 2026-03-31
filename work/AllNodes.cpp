@@ -95,13 +95,13 @@ std::vector<ImNodes::Ez::SlotInfo> InputNode::inputSlotInfos() const {
   return {};
 }
 std::vector<ImNodes::Ez::SlotInfo> InputNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> InputNode::inputSlotNames() const {
   return {};
 }
 std::vector<std::string> InputNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void InputNode::execute(const std::vector<GenTexture*>& /*inputs*/,
@@ -153,13 +153,13 @@ OutputNode::OutputNode() {
 }
 
 std::vector<ImNodes::Ez::SlotInfo> OutputNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> OutputNode::outputSlotInfos() const {
   return {};
 }
 std::vector<std::string> OutputNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> OutputNode::outputSlotNames() const {
   return {};
@@ -215,16 +215,16 @@ NoiseNode::NoiseNode()
 }
 
 std::vector<ImNodes::Ez::SlotInfo> NoiseNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> NoiseNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> NoiseNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> NoiseNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void NoiseNode::execute(const std::vector<GenTexture*>& inputs,
@@ -326,16 +326,16 @@ CellsNode::CellsNode()
 }
 
 std::vector<ImNodes::Ez::SlotInfo> CellsNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> CellsNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> CellsNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> CellsNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void CellsNode::execute(const std::vector<GenTexture*>& inputs,
@@ -437,13 +437,13 @@ std::vector<ImNodes::Ez::SlotInfo> GlowRectNode::inputSlotInfos() const {
   return {{"Background", 1}, {"Gradient", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> GlowRectNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> GlowRectNode::inputSlotNames() const {
   return {"Background", "Gradient"};
 }
 std::vector<std::string> GlowRectNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void GlowRectNode::execute(const std::vector<GenTexture*>& inputs,
@@ -506,16 +506,16 @@ ColorMatrixNode::ColorMatrixNode() : m_clampPremult(false) {
 }
 
 std::vector<ImNodes::Ez::SlotInfo> ColorMatrixNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> ColorMatrixNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> ColorMatrixNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> ColorMatrixNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void ColorMatrixNode::execute(const std::vector<GenTexture*>& inputs,
@@ -575,16 +575,16 @@ CoordMatrixNode::CoordMatrixNode() : m_filterMode(0) {
 }
 
 std::vector<ImNodes::Ez::SlotInfo> CoordMatrixNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> CoordMatrixNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> CoordMatrixNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> CoordMatrixNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void CoordMatrixNode::execute(const std::vector<GenTexture*>& inputs,
@@ -643,16 +643,16 @@ void CoordMatrixNode::loadParams(const nlohmann::json& j) {
 ColorRemapNode::ColorRemapNode() {}
 
 std::vector<ImNodes::Ez::SlotInfo> ColorRemapNode::inputSlotInfos() const {
-  return {{"Input", 1}, {"MapR", 1}, {"MapG", 1}, {"MapB", 1}};
+  return {{"In", 1}, {"MapR", 1}, {"MapG", 1}, {"MapB", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> ColorRemapNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> ColorRemapNode::inputSlotNames() const {
   return {"Input", "MapR", "MapG", "MapB"};
 }
 std::vector<std::string> ColorRemapNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void ColorRemapNode::execute(const std::vector<GenTexture*>& inputs,
@@ -674,16 +674,16 @@ CoordRemapNode::CoordRemapNode()
     : m_strengthU(1.0f), m_strengthV(1.0f), m_filterMode(0) {}
 
 std::vector<ImNodes::Ez::SlotInfo> CoordRemapNode::inputSlotInfos() const {
-  return {{"Input", 1}, {"Remap", 1}};
+  return {{"In", 1}, {"Remap", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> CoordRemapNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> CoordRemapNode::inputSlotNames() const {
   return {"Input", "Remap"};
 }
 std::vector<std::string> CoordRemapNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void CoordRemapNode::execute(const std::vector<GenTexture*>& inputs,
@@ -727,16 +727,16 @@ void CoordRemapNode::loadParams(const nlohmann::json& j) {
 DeriveNode::DeriveNode() : m_op(0), m_strength(4.0f) {}
 
 std::vector<ImNodes::Ez::SlotInfo> DeriveNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> DeriveNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> DeriveNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> DeriveNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void DeriveNode::execute(const std::vector<GenTexture*>& inputs,
@@ -773,16 +773,16 @@ void DeriveNode::loadParams(const nlohmann::json& j) {
 BlurNode::BlurNode() : m_sizex(0.05f), m_sizey(0.05f), m_order(1), m_mode(0) {}
 
 std::vector<ImNodes::Ez::SlotInfo> BlurNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> BlurNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> BlurNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> BlurNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void BlurNode::execute(const std::vector<GenTexture*>& inputs,
@@ -830,13 +830,13 @@ std::vector<ImNodes::Ez::SlotInfo> TernaryNode::inputSlotInfos() const {
   return {{"Image1", 1}, {"Image2", 1}, {"Mask", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> TernaryNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> TernaryNode::inputSlotNames() const {
   return {"Image1", "Image2", "Mask"};
 }
 std::vector<std::string> TernaryNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void TernaryNode::execute(const std::vector<GenTexture*>& inputs,
@@ -883,13 +883,13 @@ std::vector<ImNodes::Ez::SlotInfo> PasteNode::inputSlotInfos() const {
   return {{"Background", 1}, {"Snippet", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> PasteNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> PasteNode::inputSlotNames() const {
   return {"Background", "Snippet"};
 }
 std::vector<std::string> PasteNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void PasteNode::execute(const std::vector<GenTexture*>& inputs,
@@ -968,13 +968,13 @@ std::vector<ImNodes::Ez::SlotInfo> BumpNode::inputSlotInfos() const {
   return {{"Surface", 1}, {"Normals", 1}, {"Specular", 1}, {"Falloff", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> BumpNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> BumpNode::inputSlotNames() const {
   return {"Surface", "Normals", "Specular", "Falloff"};
 }
 std::vector<std::string> BumpNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void BumpNode::execute(const std::vector<GenTexture*>& inputs,
@@ -1067,13 +1067,13 @@ std::vector<ImNodes::Ez::SlotInfo> LinearCombineNode::inputSlotInfos() const {
   return {{"Image1", 1}, {"Image2", 1}, {"Image3", 1}, {"Image4", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> LinearCombineNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> LinearCombineNode::inputSlotNames() const {
   return {"Image1", "Image2", "Image3", "Image4"};
 }
 std::vector<std::string> LinearCombineNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void LinearCombineNode::execute(const std::vector<GenTexture*>& inputs,
@@ -1180,16 +1180,16 @@ CrystalNode::CrystalNode()
 }
 
 std::vector<ImNodes::Ez::SlotInfo> CrystalNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> CrystalNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> CrystalNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> CrystalNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void CrystalNode::execute(const std::vector<GenTexture*>& inputs,
@@ -1273,17 +1273,17 @@ DirectionalGradientNode::DirectionalGradientNode()
 
 std::vector<ImNodes::Ez::SlotInfo> DirectionalGradientNode::inputSlotInfos()
     const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> DirectionalGradientNode::outputSlotInfos()
     const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> DirectionalGradientNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> DirectionalGradientNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void DirectionalGradientNode::execute(const std::vector<GenTexture*>& inputs,
@@ -1373,16 +1373,16 @@ GlowEffectNode::GlowEffectNode()
 }
 
 std::vector<ImNodes::Ez::SlotInfo> GlowEffectNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> GlowEffectNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> GlowEffectNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> GlowEffectNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void GlowEffectNode::execute(const std::vector<GenTexture*>& inputs,
@@ -1477,16 +1477,16 @@ PerlinNoiseRG2Node::PerlinNoiseRG2Node()
 }
 
 std::vector<ImNodes::Ez::SlotInfo> PerlinNoiseRG2Node::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> PerlinNoiseRG2Node::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> PerlinNoiseRG2Node::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> PerlinNoiseRG2Node::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void PerlinNoiseRG2Node::execute(const std::vector<GenTexture*>& inputs,
@@ -1569,16 +1569,16 @@ BlurKernelNode::BlurKernelNode()
     : m_radiusX(0.05f), m_radiusY(0.05f), m_kernelType(0), m_wrapMode(0) {}
 
 std::vector<ImNodes::Ez::SlotInfo> BlurKernelNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> BlurKernelNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> BlurKernelNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> BlurKernelNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void BlurKernelNode::execute(const std::vector<GenTexture*>& inputs,
@@ -1626,16 +1626,16 @@ HSCBNode::HSCBNode()
     : m_hue(0.0f), m_sat(1.0f), m_contrast(1.0f), m_brightness(1.0f) {}
 
 std::vector<ImNodes::Ez::SlotInfo> HSCBNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> HSCBNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> HSCBNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> HSCBNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void HSCBNode::execute(const std::vector<GenTexture*>& inputs,
@@ -1680,16 +1680,16 @@ void HSCBNode::loadParams(const nlohmann::json& j) {
 WaveletNode::WaveletNode() : m_mode(0), m_count(1) {}
 
 std::vector<ImNodes::Ez::SlotInfo> WaveletNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> WaveletNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> WaveletNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> WaveletNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void WaveletNode::execute(const std::vector<GenTexture*>& inputs,
@@ -1732,16 +1732,16 @@ ColorBalanceNode::ColorBalanceNode() {
 }
 
 std::vector<ImNodes::Ez::SlotInfo> ColorBalanceNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> ColorBalanceNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> ColorBalanceNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> ColorBalanceNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void ColorBalanceNode::execute(const std::vector<GenTexture*>& inputs,
@@ -1819,16 +1819,16 @@ BricksNode::BricksNode()
 }
 
 std::vector<ImNodes::Ez::SlotInfo> BricksNode::inputSlotInfos() const {
-  return {{"Input", 1}};
+  return {{"In", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> BricksNode::outputSlotInfos() const {
-  return {{"Output", 1}};
+  return {{"Out", 1}};
 }
 std::vector<std::string> BricksNode::inputSlotNames() const {
-  return {"Input"};
+  return {"In"};
 }
 std::vector<std::string> BricksNode::outputSlotNames() const {
-  return {"Output"};
+  return {"Out"};
 }
 
 void BricksNode::execute(const std::vector<GenTexture*>& inputs,

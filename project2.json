@@ -1,0 +1,53 @@
+{
+  "connections": [
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 1,
+      "toSlot": "In"
+    }
+  ],
+  "nodes": [
+    {
+      "id": 1,
+      "params": {
+        "filename": "output.tga"
+      },
+      "posX": 500.0,
+      "posY": 200.0,
+      "typeName": "Output"
+    },
+    {
+      "id": 0,
+      "params": {
+        "a": 1.0,
+        "b": 0.11180545389652252,
+        "g": 0.11180545389652252,
+        "heightIdx": 3,
+        "r": 0.6624472141265869,
+        "widthIdx": 3
+      },
+      "posX": 37.0,
+      "posY": 155.0,
+      "typeName": "Input"
+    },
+    {
+      "id": 2,
+      "params": {
+        "mode": 0,
+        "order": 3,
+        "sizex": 0.05000000074505806,
+        "sizey": 0.27900001406669617
+      },
+      "posX": 192.0,
+      "posY": 262.0,
+      "typeName": "Blur"
+    }
+  ]
+}
