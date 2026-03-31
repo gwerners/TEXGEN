@@ -227,11 +227,8 @@ GraphNode* NodeGraph::findNodeById(int id) {
 
 // Kahn's topological sort
 std::vector<GraphNode*> NodeGraph::topologicalSort() {
-  // Build adjacency: for each connection, outputNode -> inputNode (data flows
-  // from output to input)
   std::unordered_map<GraphNode*, int> inDegree;
-  std::unordered_map<GraphNode*, std::vector<GraphNode*>>
-      adj;  // adj[out] -> [in]
+  std::unordered_map<GraphNode*, std::vector<GraphNode*>> adj;
 
   for (auto* n : m_nodes) {
     inDegree[n] = 0;
@@ -240,13 +237,9 @@ std::vector<GraphNode*> NodeGraph::topologicalSort() {
 
   for (auto* n : m_nodes) {
     for (const auto& conn : n->connections()) {
-      // connection goes from outputNodePtr -> inputNodePtr (data flow)
       GraphNode* outNode = (GraphNode*)conn.outputNodePtr;
       GraphNode* inNode = (GraphNode*)conn.inputNodePtr;
-      // outNode produces data consumed by inNode
-      // inNode depends on outNode, so outNode must come first
       if (outNode == n) {
-        // Only count each edge once (from the output side)
         adj[outNode].push_back(inNode);
         inDegree[inNode]++;
       }
@@ -269,7 +262,6 @@ std::vector<GraphNode*> NodeGraph::topologicalSort() {
     }
   }
 
-  // If cycle detected, append remaining nodes
   if ((int)sorted.size() < (int)m_nodes.size()) {
     for (auto* n : m_nodes) {
       bool found = false;
@@ -300,12 +292,10 @@ GenTexture* NodeGraph::getInputImageForSlot(GraphNode* node, int slotIdx) {
     if (strcmp(conn.inputSlot, wantedSlot.c_str()) != 0)
       continue;
 
-    // Found the connection - get output from the providing node
     GraphNode* outNode = (GraphNode*)conn.outputNodePtr;
     if (!outNode)
       continue;
 
-    // Find which output slot index this corresponds to
     auto outNames = outNode->texNode()->outputSlotNames();
     for (int i = 0; i < (int)outNames.size(); i++) {
       if (conn.outputSlot &&
@@ -324,25 +314,21 @@ static void refreshSingleNode(NodeGraph* graph, GraphNode* node) {
   auto inNames = tn->inputSlotNames();
   auto outNames = tn->outputSlotNames();
 
-  // Gather inputs from upstream cached outputs
   std::vector<GenTexture*> inputs(inNames.size(), nullptr);
   for (int i = 0; i < (int)inNames.size(); i++)
     inputs[i] = graph->getInputImageForSlot(node, i);
 
-  // Execute
   node->cachedOutputs.clear();
   node->cachedOutputs.resize(outNames.size());
   tn->execute(inputs, node->cachedOutputs);
   node->executed = true;
 
-  // Find best image for preview: first output, or first input for sink nodes
   GenTexture* previewSrc = nullptr;
   if (!node->cachedOutputs.empty() && node->cachedOutputs[0].Data)
     previewSrc = &node->cachedOutputs[0];
   else if (!inputs.empty() && inputs[0] && inputs[0]->Data)
     previewSrc = inputs[0];
 
-  // Update GPU preview texture
   if (previewSrc) {
     if (node->hasPreview && node->previewTex.id != 0)
       UnloadTexture(node->previewTex);
@@ -352,11 +338,9 @@ static void refreshSingleNode(NodeGraph* graph, GraphNode* node) {
 }
 
 std::vector<GraphNode*> NodeGraph::getDownstreamNodes(GraphNode* start) {
-  // BFS to find all nodes reachable downstream from 'start'
   std::unordered_set<GraphNode*> visited;
   std::queue<GraphNode*> bfs;
 
-  // Seed with direct consumers of 'start'
   for (const auto& conn : start->connections()) {
     if (conn.outputNodePtr == start) {
       GraphNode* downstream = (GraphNode*)conn.inputNodePtr;
@@ -383,7 +367,6 @@ std::vector<GraphNode*> NodeGraph::getDownstreamNodes(GraphNode* start) {
     }
   }
 
-  // Return them in topological order
   auto sorted = topologicalSort();
   std::vector<GraphNode*> result;
   for (auto* n : sorted) {
@@ -394,10 +377,7 @@ std::vector<GraphNode*> NodeGraph::getDownstreamNodes(GraphNode* start) {
 }
 
 void NodeGraph::refreshNode(GraphNode* node) {
-  // Refresh the node itself
   refreshSingleNode(this, node);
-
-  // Cascade: refresh all downstream nodes in topological order
   auto downstream = getDownstreamNodes(node);
   for (auto* dn : downstream) {
     refreshSingleNode(this, dn);
@@ -411,17 +391,13 @@ void NodeGraph::resetNodeParams(GraphNode* node) {
   if (it == m_registry.end())
     return;
 
-  // Create a temporary node with default params
   auto defaultNode = it->second();
   nlohmann::json defaultParams = defaultNode->saveParams();
   tn->loadParams(defaultParams);
-
-  // Trigger a cascade refresh
   refreshNode(node);
 }
 
 void NodeGraph::generate() {
-  // Reset executed flag
   for (auto* n : m_nodes) {
     n->executed = false;
     n->cachedOutputs.clear();
@@ -434,25 +410,21 @@ void NodeGraph::generate() {
     auto inNames = tn->inputSlotNames();
     auto outNames = tn->outputSlotNames();
 
-    // Build inputs vector
     std::vector<GenTexture*> inputs(inNames.size(), nullptr);
     for (int i = 0; i < (int)inNames.size(); i++) {
       inputs[i] = getInputImageForSlot(gn, i);
     }
 
-    // Execute
     gn->cachedOutputs.resize(outNames.size());
     tn->execute(inputs, gn->cachedOutputs);
     gn->executed = true;
 
-    // If this is an Output node, store the last output for preview
     if (tn->typeName() == "Output" && !inputs.empty() && inputs[0] &&
         inputs[0]->Data) {
       m_lastOutput = *inputs[0];
       m_hasOutput = true;
     }
 
-    // Update GPU texture for preview
     if (!gn->cachedOutputs.empty() && gn->cachedOutputs[0].Data) {
       if (gn->hasPreview && gn->previewTex.id != 0) {
         UnloadTexture(gn->previewTex);
@@ -470,7 +442,6 @@ GenTexture* NodeGraph::getLastOutput() {
 nlohmann::json NodeGraph::save() const {
   nlohmann::json j;
 
-  // Nodes
   nlohmann::json nodesArr = nlohmann::json::array();
   for (auto* gn : m_nodes) {
     TextureNode* tn = gn->texNode();
@@ -484,12 +455,11 @@ nlohmann::json NodeGraph::save() const {
   }
   j["nodes"] = nodesArr;
 
-  // Connections (collect unique ones from all nodes)
   nlohmann::json connsArr = nlohmann::json::array();
   for (auto* gn : m_nodes) {
     for (const auto& conn : gn->connections()) {
       if (conn.outputNodePtr != gn)
-        continue;  // only once per connection
+        continue;
       GraphNode* outNode = (GraphNode*)conn.outputNodePtr;
       GraphNode* inNode = (GraphNode*)conn.inputNodePtr;
       if (!outNode || !inNode)
@@ -534,7 +504,6 @@ void NodeGraph::load(const nlohmann::json& j) {
     m_nodes.push_back(gn);
   }
 
-  // Rebuild connections
   if (!j.contains("connections"))
     return;
 
@@ -549,11 +518,9 @@ void NodeGraph::load(const nlohmann::json& j) {
     if (!fromNode || !toNode)
       continue;
 
-    // Find stable slot name pointers
     const char* fromSlotPtr = nullptr;
     const char* toSlotPtr = nullptr;
 
-    auto outNames = fromNode->texNode()->outputSlotNames();
     auto outSlots = fromNode->texNode()->outputSlotInfos();
     for (int i = 0; i < (int)outSlots.size(); i++) {
       if (outSlots[i].title && fromSlotStr == outSlots[i].title) {
@@ -562,7 +529,6 @@ void NodeGraph::load(const nlohmann::json& j) {
       }
     }
 
-    auto inNames = toNode->texNode()->inputSlotNames();
     auto inSlots = toNode->texNode()->inputSlotInfos();
     for (int i = 0; i < (int)inSlots.size(); i++) {
       if (inSlots[i].title && toSlotStr == inSlots[i].title) {
@@ -585,6 +551,15 @@ void NodeGraph::load(const nlohmann::json& j) {
   }
 }
 
+// ============================================================
+// draw - ImNodes canvas with z-order overlap fix
+// ============================================================
+
+// Check if a point is inside a rect
+static bool rectContains(ImVec2 rmin, ImVec2 rmax, ImVec2 p) {
+  return p.x >= rmin.x && p.x <= rmax.x && p.y >= rmin.y && p.y <= rmax.y;
+}
+
 void NodeGraph::draw() {
   static ImNodes::Ez::Context* context = nullptr;
   if (!context)
@@ -593,11 +568,48 @@ void NodeGraph::draw() {
   ImGui::BeginGroup();
   ImNodes::Ez::BeginCanvas();
 
-  for (auto it = m_nodes.begin(); it != m_nodes.end();) {
-    GraphNode* gn = *it;
+  ImVec2 mousePos = ImGui::GetMousePos();
+  GraphNode* bringToFront = nullptr;
+
+  for (int idx = 0; idx < (int)m_nodes.size(); idx++) {
+    GraphNode* gn = m_nodes[idx];
+
+    // Check if any node drawn AFTER this one (higher z-order) covers the
+    // mouse position AND this node also covers it. If so, this node's
+    // widgets should be disabled since a higher-z node is on top.
+    bool blocked = false;
+    bool thisCovers = rectContains(gn->lastRectMin, gn->lastRectMax, mousePos);
+    if (thisCovers) {
+      for (int j = idx + 1; j < (int)m_nodes.size(); j++) {
+        if (rectContains(m_nodes[j]->lastRectMin, m_nodes[j]->lastRectMax,
+                         mousePos)) {
+          blocked = true;
+          break;
+        }
+      }
+    }
+
+    if (blocked)
+      ImGui::BeginDisabled();
+
     gn->draw(this);
     ImNodes::Ez::EndNode();
 
+    // Save node rect for next frame overlap detection
+    gn->lastRectMin = ImGui::GetItemRectMin();
+    gn->lastRectMax = ImGui::GetItemRectMax();
+
+    // Bring clicked node to front
+    if (!blocked && ImGui::IsItemHovered() && ImGui::IsMouseClicked(0))
+      bringToFront = gn;
+
+    if (blocked)
+      ImGui::EndDisabled();
+  }
+
+  // Delete selected nodes
+  for (auto it = m_nodes.begin(); it != m_nodes.end();) {
+    GraphNode* gn = *it;
     if (gn->isSelected() && ImGui::IsKeyPressed(ImGuiKey_Delete) &&
         ImGui::IsWindowFocused()) {
       gn->deleteAllConnections(m_nodes);
@@ -605,6 +617,15 @@ void NodeGraph::draw() {
       it = m_nodes.erase(it);
     } else {
       ++it;
+    }
+  }
+
+  // Move clicked node to end of draw order (top of z-order)
+  if (bringToFront) {
+    auto it = std::find(m_nodes.begin(), m_nodes.end(), bringToFront);
+    if (it != m_nodes.end()) {
+      m_nodes.erase(it);
+      m_nodes.push_back(bringToFront);
     }
   }
 

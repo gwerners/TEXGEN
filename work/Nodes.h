@@ -62,6 +62,10 @@ class GraphNode {
   Texture2D previewTex;
   bool hasPreview = false;
 
+  // Node rect from previous frame (for z-order overlap detection)
+  ImVec2 lastRectMin = {0, 0};
+  ImVec2 lastRectMax = {0, 0};
+
  private:
   std::unique_ptr<TextureNode> m_node;
   std::vector<NodeConnection> m_connections;
@@ -106,8 +110,6 @@ class NodeGraph {
   GraphNode* findNodeByPtr(void* ptr);
   GraphNode* findNodeById(int id);
   std::vector<GraphNode*> topologicalSort();
-
-  // Returns all downstream nodes from 'start' in topological order
   std::vector<GraphNode*> getDownstreamNodes(GraphNode* start);
 };
 

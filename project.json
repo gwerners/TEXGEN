@@ -2,27 +2,27 @@
   "connections": [
     {
       "fromId": 0,
-      "fromSlot": "Image",
+      "fromSlot": "Output",
       "toId": 2,
-      "toSlot": "Image"
+      "toSlot": "Input"
     },
     {
       "fromId": 2,
-      "fromSlot": "Image",
+      "fromSlot": "Output",
       "toId": 3,
-      "toSlot": "Image"
+      "toSlot": "Input"
     },
     {
       "fromId": 3,
-      "fromSlot": "Image",
+      "fromSlot": "Output",
       "toId": 4,
-      "toSlot": "Image"
+      "toSlot": "Input"
     },
     {
       "fromId": 4,
-      "fromSlot": "Image",
+      "fromSlot": "Output",
       "toId": 1,
-      "toSlot": "Image"
+      "toSlot": "Input"
     }
   ],
   "nodes": [
@@ -36,8 +36,8 @@
         "r": 0.2251938432455063,
         "widthIdx": 3
       },
-      "posX": -58.0,
-      "posY": 152.0,
+      "posX": -1069.9423828125,
+      "posY": -120.9948959350586,
       "typeName": "Input"
     },
     {
@@ -45,8 +45,8 @@
       "params": {
         "filename": "output.tga"
       },
-      "posX": 345.0,
-      "posY": 20.0,
+      "posX": 357.7283935546875,
+      "posY": -303.3578186035156,
       "typeName": "Output"
     },
     {
@@ -70,8 +70,8 @@
         "seed": 0,
         "widthIdx": 3
       },
-      "posX": -165.0,
-      "posY": 114.0,
+      "posX": -733.190673828125,
+      "posY": 570.4520263671875,
       "typeName": "Crystal"
     },
     {
@@ -94,8 +94,8 @@
         "seed": 610,
         "sizeIdx": 3
       },
-      "posX": 85.0,
-      "posY": 125.0,
+      "posX": -386.24310302734375,
+      "posY": -274.58782958984375,
       "typeName": "Noise"
     },
     {
@@ -122,8 +122,8 @@
         "scale": 1.0,
         "widthIdx": 3
       },
-      "posX": 487.0,
-      "posY": 90.0,
+      "posX": 198.6235809326172,
+      "posY": 51.972373962402344,
       "typeName": "GlowEffect"
     }
   ]
