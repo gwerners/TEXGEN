@@ -9,7 +9,7 @@ Texture generation core based on [gentexture](https://github.com/farbrausch/fr_p
 ## Screenshot
 
 <p align="center">
-  <img src="images/screen.png" alt="TEXGEN node editor" width="100%"/>
+  <img src="images/demo_pipeline.png" alt="TEXGEN node editor" width="100%"/>
 </p>
 
 ## Requirements
