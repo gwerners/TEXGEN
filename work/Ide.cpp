@@ -265,6 +265,18 @@ void Ide::draw() {
   ImGui::SameLine();
   ImGui::Text("%.0f%%", m_zoom * 100.0f);
 
+  // Auto-update output when graph changes
+  if (g_nodeGraph && g_nodeGraph->changeCount() != m_lastChangeCount) {
+    m_lastChangeCount = g_nodeGraph->changeCount();
+    GenTexture* lastOut = g_nodeGraph->getLastOutput();
+    if (lastOut && lastOut->Data) {
+      if (m_hasOutputTexture && m_outputTexture.id != 0)
+        UnloadTexture(m_outputTexture);
+      m_outputTexture = LoadTextureFromGenTexture(*lastOut);
+      m_hasOutputTexture = (m_outputTexture.id != 0);
+    }
+  }
+
   if (m_hasOutputTexture && m_outputTexture.id != 0) {
     ImVec2 imageSize = ImVec2(float(m_outputTexture.width * m_zoom),
                               float(m_outputTexture.height * m_zoom));

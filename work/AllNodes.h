@@ -601,3 +601,26 @@ class ImageNode : public TextureNode {
   GenTexture m_cache;
   std::string m_loadedPath;
 };
+
+// ============================================================
+// CommentNode - visual note for organizing pipelines
+// ============================================================
+class CommentNode : public TextureNode {
+ public:
+  CommentNode();
+  std::string typeName() const override { return "Comment"; }
+  std::string displayTitle() const override;
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  void renderParams() override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+ private:
+  char m_text[512];
+  float m_color[3];
+};

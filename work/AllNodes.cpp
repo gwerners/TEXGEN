@@ -2155,3 +2155,67 @@ void ImageNode::loadParams(const nlohmann::json& j) {
     m_loaded = false;
   }
 }
+
+// ============================================================
+// CommentNode
+// ============================================================
+
+CommentNode::CommentNode() {
+  strncpy(m_text, "Note", sizeof(m_text));
+  m_color[0] = 0.3f;
+  m_color[1] = 0.3f;
+  m_color[2] = 0.3f;
+}
+
+std::string CommentNode::displayTitle() const {
+  // Show first line of text as title
+  std::string t(m_text);
+  auto nl = t.find('\n');
+  if (nl != std::string::npos)
+    t = t.substr(0, nl);
+  if (t.size() > 30)
+    t = t.substr(0, 30) + "...";
+  return t;
+}
+
+std::vector<ImNodes::Ez::SlotInfo> CommentNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> CommentNode::outputSlotInfos() const {
+  return {};
+}
+std::vector<std::string> CommentNode::inputSlotNames() const {
+  return {};
+}
+std::vector<std::string> CommentNode::outputSlotNames() const {
+  return {};
+}
+
+void CommentNode::execute(const std::vector<GenTexture*>& /*inputs*/,
+                          std::vector<GenTexture>& /*outputs*/) {
+  // No-op: comment nodes don't process anything
+}
+
+void CommentNode::renderParams() {
+  ImGui::PushItemWidth(200);
+  ImGui::InputTextMultiline("##comment", m_text, sizeof(m_text),
+                            ImVec2(200, 80));
+  ImGui::PopItemWidth();
+  ImGui::ColorEdit3("Color##comment", m_color, ImGuiColorEditFlags_NoInputs);
+}
+
+nlohmann::json CommentNode::saveParams() const {
+  return {{"text", std::string(m_text)},
+          {"color", {m_color[0], m_color[1], m_color[2]}}};
+}
+
+void CommentNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("text")) {
+    std::string t = j["text"];
+    strncpy(m_text, t.c_str(), sizeof(m_text) - 1);
+    m_text[sizeof(m_text) - 1] = '\0';
+  }
+  if (j.contains("color"))
+    for (int i = 0; i < 3; i++)
+      m_color[i] = j["color"][i];
+}

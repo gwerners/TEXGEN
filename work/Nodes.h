@@ -100,6 +100,9 @@ class NodeGraph {
   // Returns output image from last OutputNode executed, or nullptr
   GenTexture* getLastOutput();
 
+  // Change counter — increments whenever the graph output changes
+  int changeCount() const { return m_changeCount; }
+
   nlohmann::json save() const;
   void load(const nlohmann::json& j);
   void clear();
@@ -113,12 +116,17 @@ class NodeGraph {
   bool canUndo() const;
   bool canRedo() const;
 
+  // Copy/Paste
+  void copySelected();
+  void pasteClipboard();
+
  private:
   std::vector<GraphNode*> m_nodes;
   std::map<std::string, NodeFactory> m_registry;
   int m_nextId = 0;
   GenTexture m_lastOutput;
   bool m_hasOutput = false;
+  int m_changeCount = 0;
 
   void syncParamHashes();
   GraphNode* findNodeByPtr(void* ptr);
@@ -130,6 +138,9 @@ class NodeGraph {
   std::vector<nlohmann::json> m_undoStack;
   std::vector<nlohmann::json> m_redoStack;
   static const int MAX_UNDO = 50;
+
+  // Copy/Paste clipboard
+  nlohmann::json m_clipboard;
 };
 
 extern NodeGraph* g_nodeGraph;

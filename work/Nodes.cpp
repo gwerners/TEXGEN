@@ -8,7 +8,9 @@
 
 #include <algorithm>
 #include <cstring>
+#include <map>
 #include <queue>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -280,6 +282,146 @@ bool NodeGraph::canRedo() const {
   return !m_redoStack.empty();
 }
 
+void NodeGraph::copySelected() {
+  m_clipboard = nlohmann::json();
+
+  // Collect selected nodes
+  std::set<int> selectedIds;
+  nlohmann::json nodesArr = nlohmann::json::array();
+  for (auto* gn : m_nodes) {
+    if (!gn->isSelected())
+      continue;
+    TextureNode* tn = gn->texNode();
+    selectedIds.insert(tn->id);
+    nlohmann::json nj;
+    nj["id"] = tn->id;
+    nj["typeName"] = tn->typeName();
+    nj["posX"] = tn->pos.x;
+    nj["posY"] = tn->pos.y;
+    nj["params"] = tn->saveParams();
+    nj["paramsOpen"] = gn->paramsOpen;
+    nj["previewOpen"] = gn->previewOpen;
+    nodesArr.push_back(nj);
+  }
+
+  // Collect connections between selected nodes only
+  nlohmann::json connsArr = nlohmann::json::array();
+  for (auto* gn : m_nodes) {
+    for (const auto& conn : gn->connections()) {
+      if (conn.outputNodePtr != gn)
+        continue;
+      GraphNode* outNode = (GraphNode*)conn.outputNodePtr;
+      GraphNode* inNode = (GraphNode*)conn.inputNodePtr;
+      if (!outNode || !inNode)
+        continue;
+      int fromId = outNode->texNode()->id;
+      int toId = inNode->texNode()->id;
+      if (selectedIds.count(fromId) && selectedIds.count(toId)) {
+        nlohmann::json cj;
+        cj["fromId"] = fromId;
+        cj["fromSlot"] = conn.outputSlot ? conn.outputSlot : "";
+        cj["toId"] = toId;
+        cj["toSlot"] = conn.inputSlot ? conn.inputSlot : "";
+        connsArr.push_back(cj);
+      }
+    }
+  }
+
+  m_clipboard["nodes"] = nodesArr;
+  m_clipboard["connections"] = connsArr;
+}
+
+void NodeGraph::pasteClipboard() {
+  if (!m_clipboard.contains("nodes") || m_clipboard["nodes"].empty())
+    return;
+
+  pushUndo();
+
+  // Deselect all current nodes
+  for (auto* gn : m_nodes)
+    gn->texNode()->selected = false;
+
+  // Map old IDs to new IDs
+  std::map<int, int> idMap;
+  float offsetX = 50.0f, offsetY = 50.0f;
+
+  for (const auto& nj : m_clipboard["nodes"]) {
+    std::string typeName = nj["typeName"];
+    auto it = m_registry.find(typeName);
+    if (it == m_registry.end())
+      continue;
+
+    int oldId = nj["id"];
+    int newId = m_nextId++;
+    idMap[oldId] = newId;
+
+    auto texNode = it->second();
+    texNode->id = newId;
+    texNode->pos.x = nj.value("posX", 100.0f) + offsetX;
+    texNode->pos.y = nj.value("posY", 100.0f) + offsetY;
+    texNode->selected = true;
+    if (nj.contains("params"))
+      texNode->loadParams(nj["params"]);
+
+    GraphNode* gn = new GraphNode(std::move(texNode), newId);
+    gn->paramsOpen = nj.value("paramsOpen", false);
+    gn->previewOpen = nj.value("previewOpen", false);
+    m_nodes.push_back(gn);
+  }
+
+  // Recreate connections with new IDs
+  if (m_clipboard.contains("connections")) {
+    for (const auto& cj : m_clipboard["connections"]) {
+      int oldFrom = cj["fromId"];
+      int oldTo = cj["toId"];
+      if (!idMap.count(oldFrom) || !idMap.count(oldTo))
+        continue;
+
+      GraphNode* fromNode = findNodeById(idMap[oldFrom]);
+      GraphNode* toNode = findNodeById(idMap[oldTo]);
+      if (!fromNode || !toNode)
+        continue;
+
+      std::string fromSlot = cj.value("fromSlot", "");
+      std::string toSlot = cj.value("toSlot", "");
+
+      NodeConnection conn;
+      conn.outputNodePtr = fromNode;
+      conn.outputSlot = fromSlot.empty()
+                            ? nullptr
+                            : fromNode->texNode()->outputSlotNames()[0].c_str();
+      conn.inputNodePtr = toNode;
+      conn.inputSlot = toSlot.empty()
+                           ? nullptr
+                           : toNode->texNode()->inputSlotNames()[0].c_str();
+
+      // Find correct slot pointers by matching names
+      auto outNames = fromNode->texNode()->outputSlotNames();
+      for (const auto& name : outNames) {
+        if (name == fromSlot) {
+          conn.outputSlot = name.c_str();
+          break;
+        }
+      }
+      auto inNames = toNode->texNode()->inputSlotNames();
+      for (const auto& name : inNames) {
+        if (name == toSlot) {
+          conn.inputSlot = name.c_str();
+          break;
+        }
+      }
+
+      fromNode->connections().push_back(conn);
+      if (toNode != fromNode)
+        toNode->connections().push_back(conn);
+    }
+  }
+
+  // Generate the pasted nodes
+  generate();
+  syncParamHashes();
+}
+
 GraphNode* NodeGraph::findNodeByPtr(void* ptr) {
   for (auto* n : m_nodes)
     if (n == (GraphNode*)ptr)
@@ -451,6 +593,24 @@ void NodeGraph::refreshNode(GraphNode* node) {
   for (auto* dn : downstream) {
     refreshSingleNode(this, dn);
   }
+
+  // Update last output if any refreshed node is an OutputNode
+  auto updateOutput = [&](GraphNode* gn) {
+    if (gn->texNode()->typeName() == "Output") {
+      auto inNames = gn->texNode()->inputSlotNames();
+      if (!inNames.empty()) {
+        GenTexture* in0 = getInputImageForSlot(gn, 0);
+        if (in0 && in0->Data) {
+          m_lastOutput = *in0;
+          m_hasOutput = true;
+          m_changeCount++;
+        }
+      }
+    }
+  };
+  updateOutput(node);
+  for (auto* dn : downstream)
+    updateOutput(dn);
 }
 
 void NodeGraph::resetNodeParams(GraphNode* node) {
@@ -687,6 +847,10 @@ void NodeGraph::draw() {
       undo();
     if (ctrl && ImGui::IsKeyPressed(ImGuiKey_Y))
       redo();
+    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_C))
+      copySelected();
+    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_V))
+      pasteClipboard();
   }
 
   // Delete selected nodes
