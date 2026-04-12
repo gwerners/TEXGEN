@@ -905,6 +905,96 @@ void NodeGraph::draw() {
     ImGui::EndPopup();
   }
 
+  // Minimap overlay
+  {
+    auto* canvas = ImNodes::GetCurrentCanvas();
+    ImVec2 winPos = ImGui::GetWindowPos();
+    ImVec2 winSize = ImGui::GetWindowSize();
+    float mapW = 180.0f, mapH = 130.0f;
+    float margin = 8.0f;
+    ImVec2 mapPos(winPos.x + winSize.x - mapW - margin,
+                  winPos.y + winSize.y - mapH - margin);
+
+    // Compute bounding box of all nodes in canvas space
+    if (!m_nodes.empty()) {
+      float minX = 1e9f, minY = 1e9f, maxX = -1e9f, maxY = -1e9f;
+      for (auto* gn : m_nodes) {
+        ImVec2 p = gn->texNode()->pos;
+        if (p.x < minX)
+          minX = p.x;
+        if (p.y < minY)
+          minY = p.y;
+        if (p.x > maxX)
+          maxX = p.x;
+        if (p.y > maxY)
+          maxY = p.y;
+      }
+      // Add padding
+      float padX = (maxX - minX) * 0.1f + 100.0f;
+      float padY = (maxY - minY) * 0.1f + 100.0f;
+      minX -= padX;
+      minY -= padY;
+      maxX += padX;
+      maxY += padY;
+      float rangeX = maxX - minX;
+      float rangeY = maxY - minY;
+      if (rangeX < 1.0f)
+        rangeX = 1.0f;
+      if (rangeY < 1.0f)
+        rangeY = 1.0f;
+
+      // Fit aspect ratio
+      float scaleX = mapW / rangeX;
+      float scaleY = mapH / rangeY;
+      float scale = (scaleX < scaleY) ? scaleX : scaleY;
+
+      float cx = mapPos.x + mapW * 0.5f;
+      float cy = mapPos.y + mapH * 0.5f;
+      float midX = (minX + maxX) * 0.5f;
+      float midY = (minY + maxY) * 0.5f;
+
+      ImDrawList* dl = ImGui::GetWindowDrawList();
+
+      // Background
+      dl->AddRectFilled(mapPos, ImVec2(mapPos.x + mapW, mapPos.y + mapH),
+                        IM_COL32(20, 20, 20, 180), 4.0f);
+      dl->AddRect(mapPos, ImVec2(mapPos.x + mapW, mapPos.y + mapH),
+                  IM_COL32(80, 80, 80, 200), 4.0f);
+
+      // Draw nodes as small rectangles
+      for (auto* gn : m_nodes) {
+        ImVec2 p = gn->texNode()->pos;
+        float nx = cx + (p.x - midX) * scale;
+        float ny = cy + (p.y - midY) * scale;
+        float nw = 8.0f, nh = 6.0f;
+        ImU32 col = gn->isSelected() ? IM_COL32(255, 200, 50, 220)
+                                     : IM_COL32(100, 150, 200, 180);
+        dl->AddRectFilled(ImVec2(nx - nw * 0.5f, ny - nh * 0.5f),
+                          ImVec2(nx + nw * 0.5f, ny + nh * 0.5f), col, 2.0f);
+      }
+
+      // Draw viewport rectangle
+      if (canvas) {
+        float zoom = canvas->Zoom;
+        ImVec2 off = canvas->Offset;
+        // Viewport in canvas coords: top-left = (-off/zoom), size =
+        // winSize/zoom
+        float vpX = -off.x / zoom;
+        float vpY = -off.y / zoom;
+        float vpW = winSize.x / zoom;
+        float vpH = winSize.y / zoom;
+
+        float vx1 = cx + (vpX - midX) * scale;
+        float vy1 = cy + (vpY - midY) * scale;
+        float vx2 = cx + (vpX + vpW - midX) * scale;
+        float vy2 = cy + (vpY + vpH - midY) * scale;
+
+        dl->AddRect(ImVec2(vx1, vy1), ImVec2(vx2, vy2),
+                    IM_COL32(255, 255, 255, 120), 2.0f);
+      }
+    }
+  }
+
   ImNodes::Ez::EndCanvas();
   ImGui::EndGroup();
 }
