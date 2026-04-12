@@ -96,21 +96,13 @@ function get {
   fi
 }
 function getAll {
-  get fmt https://github.com/fmtlib/fmt.git
-  get stb https://github.com/nothings/stb.git
-  #custom get to get docking branch for imgui:
-  get imgui https://github.com/ocornut/imgui.git docking
-  get json https://github.com/nlohmann/json.git
-  get raylib https://github.com/raysan5/raylib.git
-  get rlImGui https://github.com/raylib-extras/rlImGui.git
-  #get Imogen https://github.com/CedricGuillemet/Imogen.git
-  
-  #get ImNodes https://github.com/rokups/ImNodes.git
-  
-  #changed some stuff inside...
-  get ImNodes "git@github.com:gwerners/ImNodes.git"
-  
-  #get enkiTS https://github.com/dougbinks/enkiTS.git
+  get fmt https://github.com/gwerners/fmt.git
+  get stb https://github.com/gwerners/stb.git
+  get imgui https://github.com/gwerners/imgui.git docking
+  get json https://github.com/gwerners/json.git
+  get raylib https://github.com/gwerners/raylib.git
+  get rlImGui https://github.com/gwerners/rlImGui.git
+  get ImNodes https://github.com/gwerners/ImNodes.git
 }
 
 function cleanOldBuild {
@@ -145,16 +137,6 @@ CheckNeeded ninja || exit 1
 CheckNeeded git  || exit 1
 getAll
 
-# Apply patches
-if [ -d "ImNodes" ] && [ -d "patches" ]; then
-  pushd ImNodes
-    for p in ../patches/imnodes-*.patch; do
-      if [ -f "$p" ]; then
-        git apply --check "$p" 2>/dev/null && git apply "$p" && echo "Applied $(basename $p)" || echo "Patch $(basename $p) already applied or N/A"
-      fi
-    done
-  popd
-fi
 
 build
 run

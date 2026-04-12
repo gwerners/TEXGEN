@@ -1,12 +1,14 @@
-ImNodes
-build
-fmt
+build/
+fmt/
+imgui/
+json/
+raylib/
+rlImGui/
+ImNodes/
+stb/
+.cache/
+
 imgui.ini
-MyImage01.jpg
-output.tga voro.tga
-imgui
-json
-raylib
-rlImGui
-stb
-output.tga voro.tga
+*.tga
+*.jpg
+*.user

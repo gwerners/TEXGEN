@@ -42,6 +42,7 @@ function clean_base {
   safeRM *.user
   safeRM *.ini
   safeRM Simple.json
+  safeRM output.tga
   cd ${ROOT}
 }
 function clean {
