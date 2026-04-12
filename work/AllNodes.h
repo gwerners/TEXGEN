@@ -75,7 +75,6 @@ class NoiseNode : public TextureNode {
   float m_fadeoff;
   int m_sizeIdx;
   float m_col1[4], m_col2[4];
-  int m_blendMode;
 };
 
 // ============================================================
@@ -100,7 +99,7 @@ class CellsNode : public TextureNode {
   float m_amp;
   int m_sizeIdx;
   float m_col1[4], m_col2[4];
-  int m_blendMode;
+  int m_colorMode;  // 0=Gradient, 1=Random
 };
 
 // ============================================================
@@ -364,7 +363,6 @@ class CrystalNode : public TextureNode {
   int m_seed, m_count;
   float m_colorNear[4];
   float m_colorFar[4];
-  int m_blendMode;
 };
 
 // ============================================================
@@ -389,7 +387,6 @@ class DirectionalGradientNode : public TextureNode {
   float m_x1, m_y1, m_x2, m_y2;
   float m_col1[4];
   float m_col2[4];
-  int m_blendMode;
 };
 
 // ============================================================
@@ -414,7 +411,6 @@ class GlowEffectNode : public TextureNode {
   float m_cx, m_cy, m_scale, m_exponent, m_intensity;
   float m_bgCol[4];
   float m_glowCol[4];
-  int m_blendMode;
 };
 
 // ============================================================
@@ -440,7 +436,6 @@ class PerlinNoiseRG2Node : public TextureNode {
   float m_persistence, m_contrast;
   float m_col1[4];
   float m_col2[4];
-  int m_blendMode;
 };
 
 // ============================================================
@@ -557,5 +552,52 @@ class BricksNode : public TextureNode {
   int m_tileX, m_tileY;
   int m_seed, m_heads;
   float m_colorBalance;
-  int m_blendMode;
+};
+
+// ============================================================
+// GradientNode - outputs a 2x1 gradient texture from two colors
+// ============================================================
+class GradientNode : public TextureNode {
+ public:
+  GradientNode();
+  std::string typeName() const override { return "Gradient"; }
+  std::string displayTitle() const override { return "Gradient"; }
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  void renderParams() override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+ private:
+  float m_col1[4];
+  float m_col2[4];
+};
+
+// ============================================================
+// ImageNode - loads an image file as texture source
+// ============================================================
+class ImageNode : public TextureNode {
+ public:
+  ImageNode();
+  std::string typeName() const override { return "Image"; }
+  std::string displayTitle() const override { return "Image"; }
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  void renderParams() override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+ private:
+  char m_filename[256];
+  bool m_loaded;
+  GenTexture m_cache;
+  std::string m_loadedPath;
 };

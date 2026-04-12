@@ -187,6 +187,10 @@ void Ide::draw() {
     saveProject(m_saveFilename);
   }
   ImGui::SameLine();
+  if (ImGui::Button("Save As..")) {
+    m_saveDialog.open(m_saveFilename);
+  }
+  ImGui::SameLine();
   if (ImGui::Button("Load")) {
     if (loadProject(m_saveFilename) && g_nodeGraph) {
       g_nodeGraph->generate();
@@ -200,8 +204,35 @@ void Ide::draw() {
       }
     }
   }
+  ImGui::SameLine();
+  if (ImGui::Button("Load..")) {
+    m_loadDialog.open(m_saveFilename);
+  }
 
   ImGui::End();
+
+  // File dialogs (rendered as separate windows)
+  if (m_saveDialog.show("Save Project As", FileDialog::Save, ".json")) {
+    std::string path = m_saveDialog.getResultPath();
+    strncpy(m_saveFilename, path.c_str(), sizeof(m_saveFilename) - 1);
+    saveProject(m_saveFilename);
+  }
+
+  if (m_loadDialog.show("Load Project", FileDialog::Load, ".json")) {
+    std::string path = m_loadDialog.getResultPath();
+    strncpy(m_saveFilename, path.c_str(), sizeof(m_saveFilename) - 1);
+    if (loadProject(m_saveFilename) && g_nodeGraph) {
+      g_nodeGraph->generate();
+      GenTexture* lastOut = g_nodeGraph->getLastOutput();
+      if (lastOut && lastOut->Data) {
+        if (m_hasOutputTexture && m_outputTexture.id != 0) {
+          UnloadTexture(m_outputTexture);
+        }
+        m_outputTexture = LoadTextureFromGenTexture(*lastOut);
+        m_hasOutputTexture = (m_outputTexture.id != 0);
+      }
+    }
+  }
 
   // ------------------------------------------------------------------
   // Bottom Panel - output image preview

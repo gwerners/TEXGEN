@@ -6,6 +6,7 @@
 #endif
 #include <imgui.h>
 #include <raylib.h>
+#include "FileDialog.h"
 #include "ProjectIO.h"
 
 class Ide {
@@ -35,6 +36,8 @@ class Ide {
   char m_outputFilename[256];
   Texture2D m_outputTexture;
   bool m_hasOutputTexture;
+  FileDialog m_saveDialog;
+  FileDialog m_loadDialog;
 };
 
 #endif  // IDE_H

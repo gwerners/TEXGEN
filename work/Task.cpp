@@ -1,6 +1,7 @@
 #include "Task.h"
 #include <sys/wait.h>
 #include "Core.h"
+#include "gentexture.hpp"
 
 #ifdef USING_QT
 Task::Task(QObject* parent) : QObject(parent) {}
@@ -14,6 +15,7 @@ static void func(int) {
 
 int Task::run() {
   signal(SIGCHLD, func);
+  InitTexgen();
   Core core;
   core.run();
 #ifdef USING_QT

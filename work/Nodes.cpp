@@ -59,6 +59,8 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
     return std::make_unique<ColorBalanceNode>();
   };
   registry["Bricks"] = []() { return std::make_unique<BricksNode>(); };
+  registry["Gradient"] = []() { return std::make_unique<GradientNode>(); };
+  registry["Image"] = []() { return std::make_unique<ImageNode>(); };
 }
 
 // ============================================================

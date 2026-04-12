@@ -1,0 +1,249 @@
+{
+  "connections": [
+    { "fromId": 0, "fromSlot": "Out", "toId": 4, "toSlot": "Image1" },
+    { "fromId": 1, "fromSlot": "Out", "toId": 4, "toSlot": "Image2" },
+    { "fromId": 2, "fromSlot": "Out", "toId": 4, "toSlot": "Image3" },
+    { "fromId": 3, "fromSlot": "Out", "toId": 4, "toSlot": "Image4" },
+    { "fromId": 4, "fromSlot": "Out", "toId": 5, "toSlot": "In" },
+    { "fromId": 5, "fromSlot": "Out", "toId": 7, "toSlot": "Background" },
+    { "fromId": 6, "fromSlot": "Out", "toId": 7, "toSlot": "Snippet" },
+    { "fromId": 7, "fromSlot": "Out", "toId": 8, "toSlot": "In" },
+    { "fromId": 8, "fromSlot": "Out", "toId": 13, "toSlot": "Surface" },
+    { "fromId": 9, "fromSlot": "Out", "toId": 10, "toSlot": "Background" },
+    { "fromId": 19, "fromSlot": "Out", "toId": 10, "toSlot": "Gradient" },
+    { "fromId": 10, "fromSlot": "Out", "toId": 11, "toSlot": "In" },
+    { "fromId": 11, "fromSlot": "Out", "toId": 12, "toSlot": "In" },
+    { "fromId": 12, "fromSlot": "Out", "toId": 13, "toSlot": "Normals" },
+    { "fromId": 13, "fromSlot": "Out", "toId": 17, "toSlot": "Background" },
+    { "fromId": 14, "fromSlot": "Out", "toId": 15, "toSlot": "Background" },
+    { "fromId": 20, "fromSlot": "Out", "toId": 15, "toSlot": "Gradient" },
+    { "fromId": 15, "fromSlot": "Out", "toId": 16, "toSlot": "In" },
+    { "fromId": 16, "fromSlot": "Out", "toId": 17, "toSlot": "Snippet" },
+    { "fromId": 17, "fromSlot": "Out", "toId": 18, "toSlot": "In" },
+
+    { "fromId": 100, "fromSlot": "Out", "toId": 50, "toSlot": "In" },
+    { "fromId": 0, "fromSlot": "Out", "toId": 51, "toSlot": "In" },
+    { "fromId": 1, "fromSlot": "Out", "toId": 52, "toSlot": "In" },
+    { "fromId": 2, "fromSlot": "Out", "toId": 53, "toSlot": "In" },
+    { "fromId": 3, "fromSlot": "Out", "toId": 54, "toSlot": "In" },
+    { "fromId": 6, "fromSlot": "Out", "toId": 55, "toSlot": "In" },
+    { "fromId": 8, "fromSlot": "Out", "toId": 56, "toSlot": "In" },
+    { "fromId": 10, "fromSlot": "Out", "toId": 57, "toSlot": "In" },
+    { "fromId": 11, "fromSlot": "Out", "toId": 58, "toSlot": "In" },
+    { "fromId": 12, "fromSlot": "Out", "toId": 59, "toSlot": "In" },
+    { "fromId": 15, "fromSlot": "Out", "toId": 60, "toSlot": "In" },
+    { "fromId": 16, "fromSlot": "Out", "toId": 61, "toSlot": "In" },
+    { "fromId": 19, "fromSlot": "Out", "toId": 62, "toSlot": "In" },
+    { "fromId": 20, "fromSlot": "Out", "toId": 63, "toSlot": "In" }
+  ],
+  "nodes": [
+    {
+      "id": 0, "typeName": "Cells",
+      "posX": -1600.0, "posY": -100.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": {
+        "sizeIdx": 3, "nCenters": 90, "seed": 100, "amp": 0.0, "mode": 0,
+        "c1r": 0.0, "c1g": 0.0, "c1b": 0.0, "c1a": 1.0,
+        "c2r": 1.0, "c2g": 1.0, "c2b": 1.0, "c2a": 1.0,
+        "blendMode": 0, "colorMode": 1
+      }
+    },
+    {
+      "id": 1, "typeName": "Cells",
+      "posX": -1600.0, "posY": 100.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": {
+        "sizeIdx": 3, "nCenters": 132, "seed": 200, "amp": 0.0, "mode": 0,
+        "c1r": 0.0, "c1g": 0.0, "c1b": 0.0, "c1a": 1.0,
+        "c2r": 1.0, "c2g": 1.0, "c2b": 1.0, "c2a": 1.0,
+        "blendMode": 0, "colorMode": 1
+      }
+    },
+    {
+      "id": 2, "typeName": "Cells",
+      "posX": -1600.0, "posY": 300.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": {
+        "sizeIdx": 3, "nCenters": 240, "seed": 300, "amp": 0.0, "mode": 0,
+        "c1r": 0.0, "c1g": 0.0, "c1b": 0.0, "c1a": 1.0,
+        "c2r": 1.0, "c2g": 1.0, "c2b": 1.0, "c2a": 1.0,
+        "blendMode": 0, "colorMode": 1
+      }
+    },
+    {
+      "id": 3, "typeName": "Cells",
+      "posX": -1600.0, "posY": 500.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": {
+        "sizeIdx": 3, "nCenters": 255, "seed": 400, "amp": 0.0, "mode": 0,
+        "c1r": 0.0, "c1g": 0.0, "c1b": 0.0, "c1a": 1.0,
+        "c2r": 1.0, "c2g": 1.0, "c2b": 1.0, "c2a": 1.0,
+        "blendMode": 0, "colorMode": 1
+      }
+    },
+    {
+      "id": 4, "typeName": "LinearCombine",
+      "posX": -1200.0, "posY": 150.0,
+      "paramsOpen": false, "previewOpen": false,
+      "params": {
+        "constColor": [1.0, 1.0, 1.0, 1.0],
+        "constWeight": 0.0,
+        "weights": [1.5, 1.5, 1.5, 1.5],
+        "uShift": [0.0, 0.0, 0.0, 0.0],
+        "vShift": [0.0, 0.0, 0.0, 0.0],
+        "filterMode": [0, 0, 0, 0]
+      }
+    },
+    {
+      "id": 5, "typeName": "Blur",
+      "posX": -900.0, "posY": 150.0,
+      "paramsOpen": false, "previewOpen": false,
+      "params": { "sizex": 0.0074, "sizey": 0.0074, "order": 1, "mode": 0 }
+    },
+    {
+      "id": 6, "typeName": "Noise",
+      "posX": -900.0, "posY": -50.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": {
+        "sizeIdx": 3, "freqX": 4, "freqY": 4, "oct": 5,
+        "fadeoff": 0.995, "seed": 3, "mode": 6,
+        "c1r": 0.0, "c1g": 0.0, "c1b": 0.0, "c1a": 1.0,
+        "c2r": 0.392, "c2g": 0.392, "c2b": 0.392, "c2a": 1.0,
+        "blendMode": 0
+      }
+    },
+    {
+      "id": 7, "typeName": "Paste",
+      "posX": -600.0, "posY": 200.0,
+      "paramsOpen": false, "previewOpen": false,
+      "params": { "orgx": 0.0, "orgy": 0.0, "ux": 1.0, "uy": 0.0, "vx": 0.0, "vy": 1.0, "op": 0, "mode": 0 }
+    },
+    {
+      "id": 8, "typeName": "ColorMatrix",
+      "posX": -300.0, "posY": 200.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": {
+        "matrix": [0.4902, 0.0, 0.0, 0.4549, 0.0, 0.5059, 0.0, 0.4902, 0.0, 0.0, 0.4431, 0.5569, 0.0, 0.0, 0.0, 1.0],
+        "clampPremult": true
+      }
+    },
+    {
+      "id": 9, "typeName": "Input",
+      "posX": -1600.0, "posY": 800.0,
+      "paramsOpen": false, "previewOpen": false,
+      "params": { "widthIdx": 3, "heightIdx": 3, "r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0 }
+    },
+    {
+      "id": 19, "typeName": "Gradient",
+      "posX": -1600.0, "posY": 950.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": {
+        "c1r": 1.0, "c1g": 1.0, "c1b": 1.0, "c1a": 1.0,
+        "c2r": 0.0, "c2g": 0.0, "c2b": 0.0, "c2a": 1.0
+      }
+    },
+    {
+      "id": 10, "typeName": "GlowRect",
+      "posX": -1200.0, "posY": 800.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": { "orgx": 0.5, "orgy": 0.5, "ux": 0.41, "uy": 0.0, "vx": 0.0, "vy": 0.25, "rectu": 0.7805, "rectv": 0.64 }
+    },
+    {
+      "id": 11, "typeName": "CoordMatrix",
+      "posX": -900.0, "posY": 800.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": {
+        "matrix": [3.0, 3.0, 0.0, 0.0, -3.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -0.5, 2.5, 0.0, 1.0],
+        "filterMode": 2
+      }
+    },
+    {
+      "id": 12, "typeName": "Derive",
+      "posX": -600.0, "posY": 800.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": { "op": 1, "strength": 2.5 }
+    },
+    {
+      "id": 13, "typeName": "Bump",
+      "posX": 0.0, "posY": 400.0,
+      "paramsOpen": false, "previewOpen": false,
+      "params": {
+        "px": 0.0, "py": 0.0, "pz": 0.0,
+        "dx": -2.518, "dy": 0.719, "dz": -3.1,
+        "ambient": [0.063, 0.063, 0.063, 1.0],
+        "diffuse": [1.0, 1.0, 1.0, 1.0],
+        "directional": true
+      }
+    },
+    {
+      "id": 14, "typeName": "Input",
+      "posX": -1600.0, "posY": 1100.0,
+      "paramsOpen": false, "previewOpen": false,
+      "params": { "widthIdx": 3, "heightIdx": 3, "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 }
+    },
+    {
+      "id": 20, "typeName": "Gradient",
+      "posX": -1600.0, "posY": 1250.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": {
+        "c1r": 0.0, "c1g": 0.0, "c1b": 0.0, "c1a": 1.0,
+        "c2r": 1.0, "c2g": 1.0, "c2b": 1.0, "c2a": 1.0
+      }
+    },
+    {
+      "id": 15, "typeName": "GlowRect",
+      "posX": -1200.0, "posY": 1100.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": { "orgx": 0.5, "orgy": 0.5, "ux": 0.36, "uy": 0.0, "vx": 0.0, "vy": 0.20, "rectu": 0.8805, "rectv": 0.74 }
+    },
+    {
+      "id": 16, "typeName": "CoordMatrix",
+      "posX": -900.0, "posY": 1100.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": {
+        "matrix": [3.0, 3.0, 0.0, 0.0, -3.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -0.5, 2.5, 0.0, 1.0],
+        "filterMode": 2
+      }
+    },
+    {
+      "id": 17, "typeName": "Paste",
+      "posX": 300.0, "posY": 500.0,
+      "paramsOpen": false, "previewOpen": false,
+      "params": { "orgx": 0.0, "orgy": 0.0, "ux": 1.0, "uy": 0.0, "vx": 0.0, "vy": 1.0, "op": 8, "mode": 0 }
+    },
+    {
+      "id": 18, "typeName": "Output",
+      "posX": 600.0, "posY": 500.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": { "filename": "final.tga" }
+    },
+
+    {
+      "id": 100, "typeName": "Noise",
+      "posX": -1600.0, "posY": -400.0,
+      "paramsOpen": false, "previewOpen": true,
+      "params": {
+        "sizeIdx": 3, "freqX": 2, "freqY": 2, "oct": 6,
+        "fadeoff": 0.5, "seed": 123, "mode": 6,
+        "c1r": 0.0, "c1g": 0.0, "c1b": 0.0, "c1a": 1.0,
+        "c2r": 1.0, "c2g": 1.0, "c2b": 1.0, "c2a": 1.0,
+        "blendMode": 0
+      }
+    },
+
+    { "id": 50, "typeName": "Output", "posX": -1300.0, "posY": -400.0, "paramsOpen": false, "previewOpen": true, "params": { "filename": "noise.tga" } },
+    { "id": 51, "typeName": "Output", "posX": -1400.0, "posY": -100.0, "paramsOpen": false, "previewOpen": true, "params": { "filename": "voro-00.tga" } },
+    { "id": 52, "typeName": "Output", "posX": -1400.0, "posY": 100.0,  "paramsOpen": false, "previewOpen": true, "params": { "filename": "voro-01.tga" } },
+    { "id": 53, "typeName": "Output", "posX": -1400.0, "posY": 300.0,  "paramsOpen": false, "previewOpen": true, "params": { "filename": "voro-02.tga" } },
+    { "id": 54, "typeName": "Output", "posX": -1400.0, "posY": 500.0,  "paramsOpen": false, "previewOpen": true, "params": { "filename": "voro-03.tga" } },
+    { "id": 55, "typeName": "Output", "posX": -700.0,  "posY": -50.0,  "paramsOpen": false, "previewOpen": true, "params": { "filename": "noiseLayer.tga" } },
+    { "id": 56, "typeName": "Output", "posX": -100.0,  "posY": 200.0,  "paramsOpen": false, "previewOpen": true, "params": { "filename": "baseTex.tga" } },
+    { "id": 57, "typeName": "Output", "posX": -1000.0, "posY": 800.0,  "paramsOpen": false, "previewOpen": true, "params": { "filename": "rect1.tga" } },
+    { "id": 58, "typeName": "Output", "posX": -700.0,  "posY": 800.0,  "paramsOpen": false, "previewOpen": true, "params": { "filename": "rect1x.tga" } },
+    { "id": 59, "typeName": "Output", "posX": -400.0,  "posY": 800.0,  "paramsOpen": false, "previewOpen": true, "params": { "filename": "rect1n.tga" } },
+    { "id": 60, "typeName": "Output", "posX": -1000.0, "posY": 1100.0, "paramsOpen": false, "previewOpen": true, "params": { "filename": "rect2.tga" } },
+    { "id": 61, "typeName": "Output", "posX": -700.0,  "posY": 1100.0, "paramsOpen": false, "previewOpen": true, "params": { "filename": "rect2x.tga" } },
+    { "id": 62, "typeName": "Output", "posX": -1400.0, "posY": 950.0,  "paramsOpen": false, "previewOpen": true, "params": { "filename": "gradWB.tga" } },
+    { "id": 63, "typeName": "Output", "posX": -1400.0, "posY": 1250.0, "paramsOpen": false, "previewOpen": true, "params": { "filename": "gradBW.tga" } }
+  ]
+}
