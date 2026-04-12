@@ -108,8 +108,17 @@ void GraphNode::draw(NodeGraph* graph) {
     // Detect parameter changes via JSON snapshot
     std::string curParams = tn->saveParams().dump();
     if (curParams != m_lastParamsHash) {
+      if (!m_paramsDirty) {
+        // First change — save undo before modifying
+        graph->pushUndo();
+        m_paramsDirty = true;
+      }
       m_lastParamsHash = curParams;
       graph->refreshNode(this);
+    }
+    // Reset dirty flag when mouse is released (end of drag)
+    if (m_paramsDirty && !ImGui::IsMouseDown(0)) {
+      m_paramsDirty = false;
     }
 
     // Collapsible preview
@@ -140,6 +149,7 @@ void GraphNode::draw(NodeGraph* graph) {
     if (ImNodes::GetNewConnection(&newConn.inputNodePtr, &newConn.inputSlot,
                                   &newConn.outputNodePtr,
                                   &newConn.outputSlot)) {
+      graph->pushUndo();
       GraphNode* inputNode = (GraphNode*)newConn.inputNodePtr;
       GraphNode* outputNode = (GraphNode*)newConn.outputNodePtr;
       inputNode->m_connections.push_back(newConn);
@@ -155,6 +165,7 @@ void GraphNode::draw(NodeGraph* graph) {
         continue;
       if (!ImNodes::Connection(conn.inputNodePtr, conn.inputSlot,
                                conn.outputNodePtr, conn.outputSlot)) {
+        graph->pushUndo();
         GraphNode* inNode = (GraphNode*)conn.inputNodePtr;
         GraphNode* outNode = (GraphNode*)conn.outputNodePtr;
         inNode->deleteConnection(conn);
@@ -224,6 +235,49 @@ void NodeGraph::clear() {
   m_nodes.clear();
   m_nextId = 0;
   m_hasOutput = false;
+}
+
+void NodeGraph::pushUndo() {
+  m_undoStack.push_back(save());
+  if ((int)m_undoStack.size() > MAX_UNDO)
+    m_undoStack.erase(m_undoStack.begin());
+  m_redoStack.clear();
+}
+
+// After load, sync all nodes' param hashes so draw() doesn't see false changes
+void NodeGraph::syncParamHashes() {
+  for (auto* gn : m_nodes)
+    gn->syncParamsHash();
+}
+
+void NodeGraph::undo() {
+  if (m_undoStack.empty())
+    return;
+  m_redoStack.push_back(save());
+  nlohmann::json state = m_undoStack.back();
+  m_undoStack.pop_back();
+  load(state);
+  generate();
+  syncParamHashes();
+}
+
+void NodeGraph::redo() {
+  if (m_redoStack.empty())
+    return;
+  m_undoStack.push_back(save());
+  nlohmann::json state = m_redoStack.back();
+  m_redoStack.pop_back();
+  load(state);
+  generate();
+  syncParamHashes();
+}
+
+bool NodeGraph::canUndo() const {
+  return !m_undoStack.empty();
+}
+
+bool NodeGraph::canRedo() const {
+  return !m_redoStack.empty();
 }
 
 GraphNode* NodeGraph::findNodeByPtr(void* ptr) {
@@ -626,11 +680,21 @@ void NodeGraph::draw() {
       ImGui::EndDisabled();
   }
 
+  // Undo/Redo shortcuts
+  if (ImGui::IsWindowFocused()) {
+    bool ctrl = ImGui::GetIO().KeyCtrl;
+    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_Z))
+      undo();
+    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_Y))
+      redo();
+  }
+
   // Delete selected nodes
   for (auto it = m_nodes.begin(); it != m_nodes.end();) {
     GraphNode* gn = *it;
     if (gn->isSelected() && ImGui::IsKeyPressed(ImGuiKey_Delete) &&
         ImGui::IsWindowFocused()) {
+      pushUndo();
       gn->deleteAllConnections(m_nodes);
       delete gn;
       it = m_nodes.erase(it);
@@ -658,6 +722,7 @@ void NodeGraph::draw() {
   if (ImGui::BeginPopup("NodeGraphContextMenu")) {
     for (auto& kv : m_registry) {
       if (ImGui::MenuItem(kv.first.c_str())) {
+        pushUndo();
         auto texNode = kv.second();
         int newId = m_nextId++;
         GraphNode* gn = new GraphNode(std::move(texNode), newId);

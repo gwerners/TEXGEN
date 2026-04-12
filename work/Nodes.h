@@ -48,6 +48,7 @@ class GraphNode {
 
   void deleteAllConnections(std::vector<GraphNode*>& allNodes);
   void deleteConnection(const NodeConnection& conn);
+  void syncParamsHash() { m_lastParamsHash = m_node->saveParams().dump(); }
 
   std::vector<NodeConnection>& connections() { return m_connections; }
   const std::vector<NodeConnection>& connections() const {
@@ -74,6 +75,7 @@ class GraphNode {
   std::unique_ptr<TextureNode> m_node;
   std::vector<NodeConnection> m_connections;
   std::string m_lastParamsHash;
+  bool m_paramsDirty = false;
 };
 
 // Factory registry for creating nodes by type name
@@ -104,6 +106,13 @@ class NodeGraph {
 
   GenTexture* getInputImageForSlot(GraphNode* node, int slotIdx);
 
+  // Undo/Redo
+  void pushUndo();  // save current state to undo stack
+  void undo();
+  void redo();
+  bool canUndo() const;
+  bool canRedo() const;
+
  private:
   std::vector<GraphNode*> m_nodes;
   std::map<std::string, NodeFactory> m_registry;
@@ -111,10 +120,16 @@ class NodeGraph {
   GenTexture m_lastOutput;
   bool m_hasOutput = false;
 
+  void syncParamHashes();
   GraphNode* findNodeByPtr(void* ptr);
   GraphNode* findNodeById(int id);
   std::vector<GraphNode*> topologicalSort();
   std::vector<GraphNode*> getDownstreamNodes(GraphNode* start);
+
+  // Undo/Redo state
+  std::vector<nlohmann::json> m_undoStack;
+  std::vector<nlohmann::json> m_redoStack;
+  static const int MAX_UNDO = 50;
 };
 
 extern NodeGraph* g_nodeGraph;
