@@ -18,6 +18,11 @@ add_subdirectory(agg/agg_lib)
 add_subdirectory(lib)
 
 ################################
+# tests (CLI export tool, no UI)
+################################
+add_subdirectory(tests)
+
+################################
 # work (editor application)
 ################################
 add_subdirectory(work)

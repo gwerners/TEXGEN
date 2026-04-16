@@ -1,0 +1,17 @@
+// Auto-generated test for TEXGEN export: @NAME@
+#include "@NAME@.h"
+#include <cstdio>
+
+int main() {
+  GenTexture out;
+  @NAME@_generate(&out);
+
+  if (!out.Data || out.NPixels == 0) {
+    fprintf(stderr, "FAIL: @NAME@ — empty output\n");
+    return 1;
+  }
+
+  SaveImage(out, "@NAME@.tga");
+  printf("PASS: @NAME@ (%dx%d) -> @NAME@.tga\n", out.XRes, out.YRes);
+  return 0;
+}

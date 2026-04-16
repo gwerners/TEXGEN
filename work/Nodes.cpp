@@ -980,12 +980,10 @@ void NodeGraph::draw() {
                           ImVec2(nx + nw * 0.5f, ny + nh * 0.5f), col, 2.0f);
       }
 
-      // Draw viewport rectangle
+      // Draw viewport rectangle and handle click-drag navigation
       if (canvas) {
         float zoom = canvas->Zoom;
         ImVec2 off = canvas->Offset;
-        // Viewport in canvas coords: top-left = (-off/zoom), size =
-        // winSize/zoom
         float vpX = -off.x / zoom;
         float vpY = -off.y / zoom;
         float vpW = winSize.x / zoom;
@@ -998,6 +996,19 @@ void NodeGraph::draw() {
 
         dl->AddRect(ImVec2(vx1, vy1), ImVec2(vx2, vy2),
                     IM_COL32(255, 255, 255, 120), 2.0f);
+
+        // Click or drag on minimap to pan the canvas
+        ImVec2 mouse = ImGui::GetIO().MousePos;
+        bool inMap = mouse.x >= mapPos.x && mouse.x <= mapPos.x + mapW &&
+                     mouse.y >= mapPos.y && mouse.y <= mapPos.y + mapH;
+        if (inMap && (ImGui::IsMouseClicked(0) || ImGui::IsMouseDragging(0))) {
+          // Convert minimap screen position to canvas coords
+          float canvasX = midX + (mouse.x - cx) / scale;
+          float canvasY = midY + (mouse.y - cy) / scale;
+          // Center the viewport on that canvas position
+          canvas->Offset.x = -(canvasX - vpW * 0.5f) * zoom;
+          canvas->Offset.y = -(canvasY - vpH * 0.5f) * zoom;
+        }
       }
     }
   }

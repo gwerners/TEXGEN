@@ -1,5 +1,7 @@
 #include "CExport.h"
+#ifndef TEXGEN_NO_UI
 #include "Nodes.h"
+#endif
 
 #include <cstdio>
 #include <cstring>
@@ -7,6 +9,30 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+// Format a float as a C literal (always has decimal point + 'f' suffix).
+static std::string fmtf(float v) {
+  char buf[32];
+  snprintf(buf, sizeof(buf), "%.6gf", (double)v);
+  std::string s(buf);
+  size_t fpos = s.rfind('f');
+  if (fpos != std::string::npos && fpos > 0) {
+    bool hasDot = false;
+    for (size_t i = 0; i < fpos; i++)
+      if (s[i] == '.' || s[i] == 'e' || s[i] == 'E') {
+        hasDot = true;
+        break;
+      }
+    if (!hasDot)
+      s.insert(fpos, ".0");
+  }
+  return s;
+}
+
+// Get a float from JSON params and format as C literal.
+static std::string pf(const nlohmann::json& p, const char* key, float def) {
+  return fmtf(p.value(key, def));
+}
 
 // Convert a float[4] color (from JSON) to a hex 0xAARRGGBB literal.
 static std::string colorHex(float r, float g, float b, float a) {
@@ -93,7 +119,7 @@ static void emitNode(std::ostringstream& ss,
     ss << "    { GenTexture g = LinearGradient(" << c1 << ", " << c2 << ");\n";
     ss << "      " << v << ".Noise(g, " << p.value("freqX", 2) << ", "
        << p.value("freqY", 2) << ", " << p.value("oct", 4) << ", "
-       << p.value("fadeoff", 0.5f) << "f, " << p.value("seed", 0) << ", "
+       << pf(p, "fadeoff", 0.5f) << ", " << p.value("seed", 0) << ", "
        << p.value("mode", 0) << "); }\n";
   }
 
@@ -111,8 +137,7 @@ static void emitNode(std::ostringstream& ss,
           "centers[i].y=rand()/(float)RAND_MAX; "
           "centers[i].color.Init(rand()%256,rand()%256,rand()%256,255); }\n";
     ss << "      " << v << ".Cells(g, centers, " << p.value("nCenters", 16)
-       << ", " << p.value("amp", 0.0f) << "f, " << p.value("mode", 0)
-       << "); }\n";
+       << ", " << pf(p, "amp", 0.0f) << ", " << p.value("mode", 0) << "); }\n";
   }
 
   else if (type == "Crystal") {
@@ -143,10 +168,10 @@ static void emitNode(std::ostringstream& ss,
     ss << "    GenTexture " << v << ";\n";
     ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
     ss << "    Bricks(" << v << ", " << c0 << ", " << c1 << ", " << cf << ", "
-       << p.value("fugeX", 0.03f) << "f, " << p.value("fugeY", 0.06f) << "f, "
+       << pf(p, "fugeX", 0.03f) << ", " << pf(p, "fugeY", 0.06f) << ", "
        << p.value("tileX", 4) << ", " << p.value("tileY", 8) << ", "
        << p.value("seed", 0) << ", " << p.value("heads", 2) << ", "
-       << p.value("colorBalance", 0.5f) << "f);\n";
+       << pf(p, "colorBalance", 0.5f) << ");\n";
   }
 
   else if (type == "DirectionalGradient") {
@@ -156,9 +181,9 @@ static void emitNode(std::ostringstream& ss,
     std::string c2 = colorHex(p, "c2r", "c2g", "c2b", "c2a");
     ss << "    GenTexture " << v << ";\n";
     ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
-    ss << "    DirectionalGradient(" << v << ", " << p.value("x1", 0.0f)
-       << "f, " << p.value("y1", 0.0f) << "f, " << p.value("x2", 1.0f) << "f, "
-       << p.value("y2", 1.0f) << "f, " << c1 << ", " << c2 << ");\n";
+    ss << "    DirectionalGradient(" << v << ", " << pf(p, "x1", 0.0f) << ", "
+       << pf(p, "y1", 0.0f) << ", " << pf(p, "x2", 1.0f) << ", "
+       << pf(p, "y2", 1.0f) << ", " << c1 << ", " << c2 << ");\n";
   }
 
   else if (type == "GlowEffect") {
@@ -170,10 +195,10 @@ static void emitNode(std::ostringstream& ss,
         colorHexArr(p.value("glowCol", nlohmann::json::array({1, 1, 1, 1})));
     ss << "    GenTexture " << v << ";\n";
     ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
-    ss << "    GlowEffect(" << v << ", " << p.value("cx", 0.5f) << "f, "
-       << p.value("cy", 0.5f) << "f, " << p.value("scale", 1.0f) << "f, "
-       << p.value("exponent", 2.0f) << "f, " << p.value("intensity", 1.0f)
-       << "f, " << bg << ", " << gl << ");\n";
+    ss << "    GlowEffect(" << v << ", " << pf(p, "cx", 0.5f) << ", "
+       << pf(p, "cy", 0.5f) << ", " << pf(p, "scale", 1.0f) << ", "
+       << pf(p, "exponent", 2.0f) << ", " << pf(p, "intensity", 1.0f) << ", "
+       << bg << ", " << gl << ");\n";
   }
 
   else if (type == "PerlinNoiseRG2") {
@@ -184,10 +209,9 @@ static void emitNode(std::ostringstream& ss,
     ss << "    GenTexture " << v << ";\n";
     ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
     ss << "    PerlinNoiseRG2(" << v << ", " << p.value("octaves", 4) << ", "
-       << p.value("persistence", 0.5f) << "f, " << p.value("freqScale", 2)
-       << ", " << p.value("seed", 0) << ", " << p.value("contrast", 1.0f)
-       << "f, " << c1 << ", " << c2 << ", " << p.value("startOctave", 0)
-       << ");\n";
+       << pf(p, "persistence", 0.5f) << ", " << p.value("freqScale", 2) << ", "
+       << p.value("seed", 0) << ", " << pf(p, "contrast", 1.0f) << ", " << c1
+       << ", " << c2 << ", " << p.value("startOctave", 0) << ");\n";
   }
 
   else if (type == "Gradient") {
@@ -204,9 +228,9 @@ static void emitNode(std::ostringstream& ss,
       ss << "    GenTexture " << v << ";\n";
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
     }
-    ss << "    " << v << ".Blur(" << in << ", " << p.value("sizex", 0.01f)
-       << "f, " << p.value("sizey", 0.01f) << "f, " << p.value("order", 2)
-       << ", " << p.value("mode", 0) << ");\n";
+    ss << "    " << v << ".Blur(" << in << ", " << pf(p, "sizex", 0.01f) << ", "
+       << pf(p, "sizey", 0.01f) << ", " << p.value("order", 2) << ", "
+       << p.value("mode", 0) << ");\n";
   }
 
   else if (type == "BlurKernel") {
@@ -216,9 +240,8 @@ static void emitNode(std::ostringstream& ss,
     if (src >= 0)
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
     ss << "    BlurKernel(" << v << ", " << in << ", "
-       << p.value("radiusX", 0.01f) << "f, " << p.value("radiusY", 0.01f)
-       << "f, " << p.value("kernelType", 2) << ", " << p.value("wrapMode", 0)
-       << ");\n";
+       << pf(p, "radiusX", 0.01f) << ", " << pf(p, "radiusY", 0.01f) << ", "
+       << p.value("kernelType", 2) << ", " << p.value("wrapMode", 0) << ");\n";
   }
 
   else if (type == "HSCB") {
@@ -227,9 +250,9 @@ static void emitNode(std::ostringstream& ss,
     ss << "    GenTexture " << v << ";\n";
     if (src >= 0)
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
-    ss << "    HSCB(" << v << ", " << in << ", " << p.value("hue", 0.0f)
-       << "f, " << p.value("sat", 1.0f) << "f, " << p.value("contrast", 1.0f)
-       << "f, " << p.value("brightness", 1.0f) << "f);\n";
+    ss << "    HSCB(" << v << ", " << in << ", " << pf(p, "hue", 0.0f) << ", "
+       << pf(p, "sat", 1.0f) << ", " << pf(p, "contrast", 1.0f) << ", "
+       << pf(p, "brightness", 1.0f) << ");\n";
   }
 
   else if (type == "Derive") {
@@ -239,7 +262,7 @@ static void emitNode(std::ostringstream& ss,
     if (src >= 0)
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
     ss << "    " << v << ".Derive(" << in << ", " << p.value("op", 0) << ", "
-       << p.value("strength", 1.0f) << "f);\n";
+       << pf(p, "strength", 1.0f) << ");\n";
   }
 
   else if (type == "ColorMatrix") {
@@ -258,7 +281,7 @@ static void emitNode(std::ostringstream& ss,
       else if (p.contains("matrix") && p["matrix"].is_array() &&
                i < (int)p["matrix"].size())
         val = p["matrix"][i].get<float>();
-      ss << val << "f";
+      ss << fmtf(val) << "";
       if (i < 15)
         ss << ", ";
     }
@@ -293,15 +316,15 @@ static void emitNode(std::ostringstream& ss,
       int s = findInputSource(conns, id, slotNames[i]);
       if (s >= 0) {
         ss << "      li[" << i << "].Tex = &" << var(s) << "; li[" << i
-           << "].Weight = " << weights[i].get<float>() << "f; li[" << i
-           << "].UShift = " << uShift[i].get<float>() << "f; li[" << i
-           << "].VShift = " << vShift[i].get<float>() << "f; li[" << i
+           << "].Weight = " << fmtf(weights[i].get<float>()) << "; li[" << i
+           << "].UShift = " << fmtf(uShift[i].get<float>()) << "; li[" << i
+           << "].VShift = " << fmtf(vShift[i].get<float>()) << "; li[" << i
            << "].FilterMode = " << fMode[i].get<int>() << ";\n";
         count = i + 1;
       }
     }
-    ss << "      " << v << ".LinearCombine(cp, " << p.value("constWeight", 0.0f)
-       << "f, li, " << count << "); }\n";
+    ss << "      " << v << ".LinearCombine(cp, " << pf(p, "constWeight", 0.0f)
+       << ", li, " << count << "); }\n";
   }
 
   else if (type == "Paste") {
@@ -316,9 +339,9 @@ static void emitNode(std::ostringstream& ss,
     std::string bg = (bgSrc >= 0) ? var(bgSrc) : v;
     std::string sn = (snSrc >= 0) ? var(snSrc) : v;
     ss << "    " << v << ".Paste(" << bg << ", " << sn << ", "
-       << p.value("orgx", 0.0f) << "f, " << p.value("orgy", 0.0f) << "f, "
-       << p.value("ux", 1.0f) << "f, " << p.value("uy", 0.0f) << "f, "
-       << p.value("vx", 0.0f) << "f, " << p.value("vy", 1.0f) << "f, "
+       << pf(p, "orgx", 0.0f) << ", " << pf(p, "orgy", 0.0f) << ", "
+       << pf(p, "ux", 1.0f) << ", " << pf(p, "uy", 0.0f) << ", "
+       << pf(p, "vx", 0.0f) << ", " << pf(p, "vy", 1.0f) << ", "
        << p.value("op", 0) << ", " << p.value("mode", 0) << ");\n";
   }
 
@@ -355,11 +378,12 @@ static void emitNode(std::ostringstream& ss,
     ss << "    GenTexture " << v << ";\n";
     if (src >= 0)
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
-    ss << "    ColorBalance(" << v << ", " << in << ", " << sh[0].get<float>()
-       << "f, " << sh[1].get<float>() << "f, " << sh[2].get<float>() << "f, "
-       << md[0].get<float>() << "f, " << md[1].get<float>() << "f, "
-       << md[2].get<float>() << "f, " << hl[0].get<float>() << "f, "
-       << hl[1].get<float>() << "f, " << hl[2].get<float>() << "f);\n";
+    ss << "    ColorBalance(" << v << ", " << in << ", "
+       << fmtf(sh[0].get<float>()) << ", " << fmtf(sh[1].get<float>()) << ", "
+       << fmtf(sh[2].get<float>()) << ", " << fmtf(md[0].get<float>()) << ", "
+       << fmtf(md[1].get<float>()) << ", " << fmtf(md[2].get<float>()) << ", "
+       << fmtf(hl[0].get<float>()) << ", " << fmtf(hl[1].get<float>()) << ", "
+       << fmtf(hl[2].get<float>()) << ");\n";
   }
 
   else if (type == "Output") {
@@ -393,36 +417,33 @@ static void emitNode(std::ostringstream& ss,
 
     if (type == "AggLine") {
       ss << "      agg::path_storage path;\n";
-      ss << "      path.move_to(" << p.value("x1", 0.2f) << "f*" << w << ", "
-         << p.value("y1", 0.2f) << "f*" << h << ");\n";
-      ss << "      path.line_to(" << p.value("x2", 0.8f) << "f*" << w << ", "
-         << p.value("y2", 0.8f) << "f*" << h << ");\n";
+      ss << "      path.move_to(" << pf(p, "x1", 0.2f) << "*" << w << ", "
+         << pf(p, "y1", 0.2f) << "*" << h << ");\n";
+      ss << "      path.line_to(" << pf(p, "x2", 0.8f) << "*" << w << ", "
+         << pf(p, "y2", 0.8f) << "*" << h << ");\n";
       ss << "      agg::conv_stroke<agg::path_storage> stroke(path);\n";
       ss << "      stroke.width(" << p.value("thickness", 3.0f) << ");\n";
       ss << "      stroke.line_cap(agg::round_cap); "
             "stroke.line_join(agg::round_join);\n";
       ss << "      agg::rasterizer_scanline_aa<> ras; agg::scanline_u8 sl;\n";
       ss << "      AggRendererSolid solid(ren); ras.add_path(stroke);\n";
-      std::string col = "{" + std::to_string(p.value("cr", 1.0f)) + "f," +
-                        std::to_string(p.value("cg", 1.0f)) + "f," +
-                        std::to_string(p.value("cb", 1.0f)) + "f," +
-                        std::to_string(p.value("ca", 1.0f)) + "f}";
+      std::string col = "{" + pf(p, "cr", 1.0f) + "," + pf(p, "cg", 1.0f) +
+                        "," + pf(p, "cb", 1.0f) + "," + pf(p, "ca", 1.0f) + "}";
       ss << "      float col[] = " << col << ";\n";
       ss << "      solid.color(agg_color(col)); agg::render_scanlines(ras, sl, "
             "solid);\n";
     }
 
     else if (type == "AggCircle") {
-      ss << "      agg::ellipse ell(" << p.value("cx", 0.5f) << "f*" << w
-         << ", " << p.value("cy", 0.5f) << "f*" << h << ", "
-         << p.value("rx", 0.3f) << "f*" << w << ", " << p.value("ry", 0.3f)
-         << "f*" << h << ", 100);\n";
+      ss << "      agg::ellipse ell(" << pf(p, "cx", 0.5f) << "*" << w << ", "
+         << pf(p, "cy", 0.5f) << "*" << h << ", " << pf(p, "rx", 0.3f) << "*"
+         << w << ", " << pf(p, "ry", 0.3f) << "*" << h << ", 100);\n";
       ss << "      agg::rasterizer_scanline_aa<> ras; agg::scanline_u8 sl; "
             "AggRendererSolid solid(ren);\n";
       if (p.value("filled", true)) {
-        ss << "      ras.add_path(ell); float fc[] = {" << p.value("fr", 1.0f)
-           << "f," << p.value("fg", 1.0f) << "f," << p.value("fb", 1.0f) << "f,"
-           << p.value("fa", 1.0f) << "f};\n";
+        ss << "      ras.add_path(ell); float fc[] = {" << pf(p, "fr", 1.0f)
+           << "," << pf(p, "fg", 1.0f) << "," << pf(p, "fb", 1.0f) << ","
+           << pf(p, "fa", 1.0f) << "};\n";
         ss << "      solid.color(agg_color(fc)); agg::render_scanlines(ras, "
               "sl, solid);\n";
       }
@@ -430,27 +451,26 @@ static void emitNode(std::ostringstream& ss,
         ss << "      ras.reset(); agg::conv_stroke<agg::ellipse> "
               "stroke(ell);\n";
         ss << "      stroke.width(" << p.value("thickness", 3.0f) << ");\n";
-        ss << "      ras.add_path(stroke); float sc[] = {"
-           << p.value("sr", 1.0f) << "f," << p.value("sg", 1.0f) << "f,"
-           << p.value("sb", 1.0f) << "f," << p.value("sa", 1.0f) << "f};\n";
+        ss << "      ras.add_path(stroke); float sc[] = {" << pf(p, "sr", 1.0f)
+           << "," << pf(p, "sg", 1.0f) << "," << pf(p, "sb", 1.0f) << ","
+           << pf(p, "sa", 1.0f) << "};\n";
         ss << "      solid.color(agg_color(sc)); agg::render_scanlines(ras, "
               "sl, solid);\n";
       }
     }
 
     else if (type == "AggRect") {
-      ss << "      agg::rounded_rect rect(" << p.value("x1", 0.1f) << "f*" << w
-         << ", " << p.value("y1", 0.1f) << "f*" << h << ", "
-         << p.value("x2", 0.9f) << "f*" << w << ", " << p.value("y2", 0.9f)
-         << "f*" << h << ", " << p.value("cornerRadius", 0.0f) << "f*"
-         << std::min(w, h) << "*0.5f);\n";
+      ss << "      agg::rounded_rect rect(" << pf(p, "x1", 0.1f) << "*" << w
+         << ", " << pf(p, "y1", 0.1f) << "*" << h << ", " << pf(p, "x2", 0.9f)
+         << "*" << w << ", " << pf(p, "y2", 0.9f) << "*" << h << ", "
+         << pf(p, "cornerRadius", 0.0f) << "*" << std::min(w, h) << "*0.5f);\n";
       ss << "      rect.normalize_radius();\n";
       ss << "      agg::rasterizer_scanline_aa<> ras; agg::scanline_u8 sl; "
             "AggRendererSolid solid(ren);\n";
       if (p.value("filled", true)) {
-        ss << "      ras.add_path(rect); float fc[] = {" << p.value("fr", 1.0f)
-           << "f," << p.value("fg", 1.0f) << "f," << p.value("fb", 1.0f) << "f,"
-           << p.value("fa", 1.0f) << "f};\n";
+        ss << "      ras.add_path(rect); float fc[] = {" << pf(p, "fr", 1.0f)
+           << "," << pf(p, "fg", 1.0f) << "," << pf(p, "fb", 1.0f) << ","
+           << pf(p, "fa", 1.0f) << "};\n";
         ss << "      solid.color(agg_color(fc)); agg::render_scanlines(ras, "
               "sl, solid);\n";
       }
@@ -458,9 +478,9 @@ static void emitNode(std::ostringstream& ss,
         ss << "      ras.reset(); agg::conv_stroke<agg::rounded_rect> "
               "stroke(rect);\n";
         ss << "      stroke.width(" << p.value("thickness", 3.0f) << ");\n";
-        ss << "      ras.add_path(stroke); float sc[] = {"
-           << p.value("sr", 1.0f) << "f," << p.value("sg", 1.0f) << "f,"
-           << p.value("sb", 1.0f) << "f," << p.value("sa", 1.0f) << "f};\n";
+        ss << "      ras.add_path(stroke); float sc[] = {" << pf(p, "sr", 1.0f)
+           << "," << pf(p, "sg", 1.0f) << "," << pf(p, "sb", 1.0f) << ","
+           << pf(p, "sa", 1.0f) << "};\n";
         ss << "      solid.color(agg_color(sc)); agg::render_scanlines(ras, "
               "sl, solid);\n";
       }
@@ -490,9 +510,9 @@ static void emitNode(std::ostringstream& ss,
       ss << "      agg::rasterizer_scanline_aa<> ras; agg::scanline_u8 sl; "
             "AggRendererSolid solid(ren);\n";
       if (p.value("filled", true)) {
-        ss << "      ras.add_path(poly); float fc[] = {" << p.value("fr", 1.0f)
-           << "f," << p.value("fg", 1.0f) << "f," << p.value("fb", 1.0f) << "f,"
-           << p.value("fa", 1.0f) << "f};\n";
+        ss << "      ras.add_path(poly); float fc[] = {" << pf(p, "fr", 1.0f)
+           << "," << pf(p, "fg", 1.0f) << "," << pf(p, "fb", 1.0f) << ","
+           << pf(p, "fa", 1.0f) << "};\n";
         ss << "      solid.color(agg_color(fc)); agg::render_scanlines(ras, "
               "sl, solid);\n";
       }
@@ -501,9 +521,9 @@ static void emitNode(std::ostringstream& ss,
               "stroke(poly);\n";
         ss << "      stroke.width(" << p.value("thickness", 3.0f)
            << "); stroke.line_cap(agg::round_cap);\n";
-        ss << "      ras.add_path(stroke); float sc[] = {"
-           << p.value("sr", 1.0f) << "f," << p.value("sg", 1.0f) << "f,"
-           << p.value("sb", 1.0f) << "f," << p.value("sa", 1.0f) << "f};\n";
+        ss << "      ras.add_path(stroke); float sc[] = {" << pf(p, "sr", 1.0f)
+           << "," << pf(p, "sg", 1.0f) << "," << pf(p, "sb", 1.0f) << ","
+           << pf(p, "sa", 1.0f) << "};\n";
         ss << "      solid.color(agg_color(sc)); agg::render_scanlines(ras, "
               "sl, solid);\n";
       }
@@ -513,17 +533,17 @@ static void emitNode(std::ostringstream& ss,
       std::string text = p.value("text", "AGG");
       ss << "      agg::gsv_text text; text.size(" << p.value("height", 30.0f)
          << ");\n";
-      ss << "      text.start_point(" << p.value("x", 0.1f) << "f*" << w << ", "
-         << p.value("y", 0.5f) << "f*" << h << ");\n";
+      ss << "      text.start_point(" << pf(p, "x", 0.1f) << "*" << w << ", "
+         << pf(p, "y", 0.5f) << "*" << h << ");\n";
       ss << "      text.text(\"" << text << "\");\n";
       ss << "      agg::conv_stroke<agg::gsv_text> stroke(text);\n";
       ss << "      stroke.width(" << p.value("thickness", 1.5f)
          << "); stroke.line_cap(agg::round_cap);\n";
       ss << "      agg::rasterizer_scanline_aa<> ras; agg::scanline_u8 sl; "
             "AggRendererSolid solid(ren);\n";
-      ss << "      ras.add_path(stroke); float col[] = {" << p.value("cr", 1.0f)
-         << "f," << p.value("cg", 1.0f) << "f," << p.value("cb", 1.0f) << "f,"
-         << p.value("ca", 1.0f) << "f};\n";
+      ss << "      ras.add_path(stroke); float col[] = {" << pf(p, "cr", 1.0f)
+         << "," << pf(p, "cg", 1.0f) << "," << pf(p, "cb", 1.0f) << ","
+         << pf(p, "ca", 1.0f) << "};\n";
       ss << "      solid.color(agg_color(col)); agg::render_scanlines(ras, sl, "
             "solid);\n";
     }
@@ -536,14 +556,21 @@ static void emitNode(std::ostringstream& ss,
   }
 }
 
+#ifndef TEXGEN_NO_UI
 bool exportCHeader(NodeGraph* graph,
                    const std::string& name,
                    const std::string& outPath) {
   if (!graph)
     return false;
-
-  // Save current graph state as JSON to walk the topology
   nlohmann::json j = graph->save();
+  return exportCHeaderFromJSON(j, name, outPath);
+}
+#endif
+
+bool exportCHeaderFromJSON(const nlohmann::json& project,
+                           const std::string& name,
+                           const std::string& outPath) {
+  nlohmann::json j = project;  // mutable copy
   auto& nodes = j["nodes"];
   auto& conns = j["connections"];
 
