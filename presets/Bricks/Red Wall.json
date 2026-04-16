@@ -1,0 +1,9 @@
+{
+  "widthIdx": 3, "heightIdx": 3,
+  "col0r": 0.5, "col0g": 0.2, "col0b": 0.12, "col0a": 1.0,
+  "col1r": 0.65, "col1g": 0.3, "col1b": 0.18, "col1a": 1.0,
+  "colFuger": 0.35, "colFugeg": 0.33, "colFugeb": 0.3, "colFugea": 1.0,
+  "fugeX": 0.025, "fugeY": 0.05,
+  "tileX": 4, "tileY": 8,
+  "seed": 0, "heads": 2, "colorBalance": 0.5
+}

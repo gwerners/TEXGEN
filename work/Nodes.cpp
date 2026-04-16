@@ -9,11 +9,15 @@
 
 #include <algorithm>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <map>
 #include <queue>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+
+namespace fs = std::filesystem;
 
 // ============================================================
 // Global instance
@@ -118,6 +122,55 @@ void GraphNode::draw(NodeGraph* graph) {
           graph->resetNodeParams(this);
           m_lastParamsHash = tn->saveParams().dump();
         }
+
+        // Presets
+        ImGui::SameLine();
+        std::string presetPopup = "Presets##pop_" + std::to_string(tn->id);
+        if (ImGui::SmallButton(("Presets##" + std::to_string(tn->id)).c_str())) {
+          ImGui::OpenPopup(presetPopup.c_str());
+        }
+        if (ImGui::BeginPopup(presetPopup.c_str())) {
+          std::string presetDir = "presets/" + tn->typeName();
+          // List existing presets
+          try {
+            if (fs::is_directory(presetDir)) {
+              for (auto &entry : fs::directory_iterator(presetDir)) {
+                if (entry.path().extension() == ".json") {
+                  std::string name = entry.path().stem().string();
+                  if (ImGui::MenuItem(name.c_str())) {
+                    std::ifstream pf(entry.path());
+                    if (pf.is_open()) {
+                      nlohmann::json pj;
+                      pf >> pj;
+                      graph->pushUndo();
+                      tn->loadParams(pj);
+                      m_lastParamsHash = tn->saveParams().dump();
+                      graph->refreshNode(this);
+                    }
+                  }
+                }
+              }
+            }
+          } catch (...) {}
+          ImGui::Separator();
+          // Save current as preset
+          static char presetName[128] = "";
+          ImGui::SetNextItemWidth(120);
+          ImGui::InputText("##pname", presetName, sizeof(presetName));
+          ImGui::SameLine();
+          if (ImGui::SmallButton("Save##preset")) {
+            if (strlen(presetName) > 0) {
+              fs::create_directories(presetDir);
+              std::string path = presetDir + "/" + presetName + ".json";
+              std::ofstream of(path);
+              if (of.is_open()) {
+                of << tn->saveParams().dump(2);
+              }
+            }
+          }
+          ImGui::EndPopup();
+        }
+
         ImGui::TreePop();
       }
     }

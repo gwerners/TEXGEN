@@ -1,0 +1,6 @@
+{
+  "widthIdx": 3, "heightIdx": 3,
+  "seed": 55, "count": 20,
+  "colorNear": [1.0, 0.6, 0.1, 1.0],
+  "colorFar": [0.2, 0.02, 0.0, 1.0]
+}

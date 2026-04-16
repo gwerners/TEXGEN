@@ -6,12 +6,14 @@ set(TEXGEN_LIB_SOURCES
   ${TEXGEN_WORK}/ktg/gentexture.cpp
   ${TEXGEN_WORK}/extra_generators.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/texgen_utils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/HeadlessEval.cpp
 )
 
 set(TEXGEN_LIB_INCLUDES
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${TEXGEN_WORK}
   ${TEXGEN_WORK}/ktg
+  ${CMAKE_SOURCE_DIR}/json/include
 )
 
 # Static library
