@@ -47,6 +47,9 @@ EXAMPLES=(
   "04_procedural_brick:procedural_brick"
   "05_crystal_glow:crystal_glow"
   "06_badge_composition:badge_composition"
+  "07_bezier_curves:bezier_curves"
+  "08_dashed_arc:dashed_arc"
+  "09_gradient_fill:gradient_fill"
 )
 
 PASS=0

@@ -1,0 +1,35 @@
+{
+  "connections": [
+    { "fromId": 0, "fromSlot": "Out", "toId": 2, "toSlot": "Bg" },
+    { "fromId": 2, "fromSlot": "Out", "toId": 3, "toSlot": "In" }
+  ],
+  "nodes": [
+    {
+      "id": 0, "typeName": "AggBezier",
+      "posX": -500, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "x1": 0.05, "y1": 0.8, "cx1": 0.3, "cy1": 0.05,
+        "cx2": 0.7, "cy2": 0.95, "x2": 0.95, "y2": 0.2,
+        "thickness": 5.0, "blendMode": 0,
+        "cr": 0.2, "cg": 0.8, "cb": 1.0, "ca": 1.0
+      }
+    },
+    {
+      "id": 2, "typeName": "AggBezier",
+      "posX": -200, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "x1": 0.05, "y1": 0.2, "cx1": 0.3, "cy1": 0.95,
+        "cx2": 0.7, "cy2": 0.05, "x2": 0.95, "y2": 0.8,
+        "thickness": 5.0, "blendMode": 0,
+        "cr": 1.0, "cg": 0.4, "cb": 0.2, "ca": 1.0
+      }
+    },
+    {
+      "id": 3, "typeName": "Output",
+      "posX": 100, "posY": -100, "paramsOpen": false, "previewOpen": true,
+      "params": { "filename": "bezier_curves.tga" }
+    }
+  ]
+}

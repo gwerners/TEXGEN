@@ -5,9 +5,12 @@
 // order_rgba layout.  This header provides a helper to wrap a GenTexture
 // into an AGG rendering pipeline with zero copies.
 
+#include "agg_arc.h"
 #include "agg_basics.h"
 #include "agg_color_rgba.h"
+#include "agg_conv_dash.h"
 #include "agg_conv_stroke.h"
+#include "agg_curves.h"
 #include "agg_ellipse.h"
 #include "agg_path_storage.h"
 #include "agg_pixfmt_rgba.h"

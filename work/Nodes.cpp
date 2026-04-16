@@ -70,6 +70,14 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   registry["AggRect"] = []() { return std::make_unique<AggRectNode>(); };
   registry["AggPolygon"] = []() { return std::make_unique<AggPolygonNode>(); };
   registry["AggText"] = []() { return std::make_unique<AggTextNode>(); };
+  registry["AggArc"] = []() { return std::make_unique<AggArcNode>(); };
+  registry["AggBezier"] = []() { return std::make_unique<AggBezierNode>(); };
+  registry["AggDashLine"] = []() {
+    return std::make_unique<AggDashLineNode>();
+  };
+  registry["AggGradient"] = []() {
+    return std::make_unique<AggGradientNode>();
+  };
 }
 
 // ============================================================

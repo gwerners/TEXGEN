@@ -65,6 +65,30 @@ A multi-layer vector badge built entirely from AGG nodes:
 Demonstrates the full compositing workflow: each AGG node receives the previous
 node's output as its background.
 
+### 07 - Bezier Curves
+**File:** `07_bezier_curves.json`
+
+Two cubic Bezier curves layered with different colors:
+
+- Two **Bezier** nodes with mirrored control points
+- Demonstrates S-curve shapes with 4-point control
+
+### 08 - Dashed Arc
+**File:** `08_dashed_arc.json`
+
+Arc and dashed line primitives:
+
+- **Arc** node drawing a partial ellipse (30-330 degrees)
+- **DashLine** node drawn on top with configurable dash/gap length
+
+### 09 - Gradient Fill
+**File:** `09_gradient_fill.json`
+
+Radial gradient background with a vector overlay:
+
+- **GradientFill** node with radial type (warm center to dark edge)
+- **Polygon** (6-point star, stroke only) drawn on top
+
 ---
 
 ## Node Reference
@@ -95,6 +119,10 @@ All AGG nodes have an optional **Bg** input for compositing on a background.
 | **Rect** | Rectangle with optional rounded corners |
 | **Polygon** | Regular N-sided polygon; inner radius < 1.0 creates stars |
 | **Text** | Vector text using AGG's embedded font |
+| **Arc** | Partial ellipse arc with start/end angles |
+| **Bezier** | Cubic Bezier curve with 4 control points |
+| **DashLine** | Dashed line with configurable dash/gap length |
+| **GradientFill** | Linear or radial gradient fill |
 
 ### Filter Nodes (require input)
 

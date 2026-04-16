@@ -1,0 +1,39 @@
+{
+  "connections": [
+    { "fromId": 0, "fromSlot": "Out", "toId": 2, "toSlot": "Bg" },
+    { "fromId": 2, "fromSlot": "Out", "toId": 3, "toSlot": "In" }
+  ],
+  "nodes": [
+    {
+      "id": 0, "typeName": "AggGradient",
+      "posX": -500, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "type": 1,
+        "x1": 0.5, "y1": 0.5, "x2": 0.9, "y2": 0.5,
+        "blendMode": 0,
+        "c1r": 1.0, "c1g": 0.6, "c1b": 0.1, "c1a": 1.0,
+        "c2r": 0.05, "c2g": 0.0, "c2b": 0.15, "c2a": 1.0
+      }
+    },
+    {
+      "id": 2, "typeName": "AggPolygon",
+      "posX": -200, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "cx": 0.5, "cy": 0.5, "radius": 0.35,
+        "innerRadius": 0.45, "sides": 6, "rotation": 0.0,
+        "thickness": 3.0,
+        "filled": false, "stroked": true,
+        "fr": 1.0, "fg": 1.0, "fb": 1.0, "fa": 1.0,
+        "sr": 1.0, "sg": 0.9, "sb": 0.5, "sa": 1.0,
+        "blendMode": 0
+      }
+    },
+    {
+      "id": 3, "typeName": "Output",
+      "posX": 100, "posY": -100, "paramsOpen": false, "previewOpen": true,
+      "params": { "filename": "gradient_fill.tga" }
+    }
+  ]
+}

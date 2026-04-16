@@ -399,7 +399,9 @@ static void emitNode(std::ostringstream& ss,
 
   // AGG nodes — emit inline AGG code
   else if (type == "AggLine" || type == "AggCircle" || type == "AggRect" ||
-           type == "AggPolygon" || type == "AggText") {
+           type == "AggPolygon" || type == "AggText" || type == "AggArc" ||
+           type == "AggBezier" || type == "AggDashLine" ||
+           type == "AggGradient") {
     int w = sizeFromIdx(p.value("widthIdx", 3));
     int h = sizeFromIdx(p.value("heightIdx", 3));
     int bgSrc = findInputSource(conns, id, "Bg");
@@ -436,8 +438,9 @@ static void emitNode(std::ostringstream& ss,
 
     else if (type == "AggCircle") {
       ss << "      agg::ellipse ell(" << pf(p, "cx", 0.5f) << "*" << w << ", "
-         << "aggY(" << pf(p, "cy", 0.5f) << "," << h << "), " << pf(p, "rx", 0.3f) << "*"
-         << w << ", " << pf(p, "ry", 0.3f) << "*" << h << ", 100);\n";
+         << "aggY(" << pf(p, "cy", 0.5f) << "," << h << "), "
+         << pf(p, "rx", 0.3f) << "*" << w << ", " << pf(p, "ry", 0.3f) << "*"
+         << h << ", 100);\n";
       ss << "      agg::rasterizer_scanline_aa<> ras; agg::scanline_u8 sl; "
             "AggRendererSolid solid(ren);\n";
       if (p.value("filled", true)) {
@@ -461,9 +464,10 @@ static void emitNode(std::ostringstream& ss,
 
     else if (type == "AggRect") {
       ss << "      agg::rounded_rect rect(" << pf(p, "x1", 0.1f) << "*" << w
-         << ", " << "aggY(" << pf(p, "y1", 0.1f) << "," << h << "), " << pf(p, "x2", 0.9f)
-         << "*" << w << ", " << pf(p, "y2", 0.9f) << "*" << h << ", "
-         << pf(p, "cornerRadius", 0.0f) << "*" << std::min(w, h) << "*0.5f);\n";
+         << ", " << "aggY(" << pf(p, "y1", 0.1f) << "," << h << "), "
+         << pf(p, "x2", 0.9f) << "*" << w << ", " << pf(p, "y2", 0.9f) << "*"
+         << h << ", " << pf(p, "cornerRadius", 0.0f) << "*" << std::min(w, h)
+         << "*0.5f);\n";
       ss << "      rect.normalize_radius();\n";
       ss << "      agg::rasterizer_scanline_aa<> ras; agg::scanline_u8 sl; "
             "AggRendererSolid solid(ren);\n";
@@ -546,6 +550,117 @@ static void emitNode(std::ostringstream& ss,
          << pf(p, "ca", 1.0f) << "};\n";
       ss << "      solid.color(agg_color(col)); agg::render_scanlines(ras, sl, "
             "solid);\n";
+    }
+
+    else if (type == "AggArc") {
+      ss << "      agg::arc a(" << pf(p, "cx", 0.5f) << "*" << w << ", aggY("
+         << pf(p, "cy", 0.5f) << "," << h << "), " << pf(p, "rx", 0.3f) << "*"
+         << w << ", " << pf(p, "ry", 0.3f) << "*" << h << ", "
+         << pf(p, "angle1", 0.0f) << "*3.14159265/180.0, "
+         << pf(p, "angle2", 270.0f) << "*3.14159265/180.0, true);\n";
+      ss << "      agg::conv_stroke<agg::arc> stroke(a);\n";
+      ss << "      stroke.width(" << pf(p, "thickness", 3.0f) << ");\n";
+      ss << "      stroke.line_cap(agg::round_cap); "
+            "stroke.line_join(agg::round_join);\n";
+      ss << "      agg::rasterizer_scanline_aa<> ras; agg::scanline_u8 sl; "
+            "AggRendererSolid solid(ren);\n";
+      ss << "      ras.add_path(stroke); float col[] = {" << pf(p, "cr", 1.0f)
+         << "," << pf(p, "cg", 1.0f) << "," << pf(p, "cb", 1.0f) << ","
+         << pf(p, "ca", 1.0f) << "};\n";
+      ss << "      solid.color(agg_color(col)); agg::render_scanlines(ras, sl, "
+            "solid);\n";
+    }
+
+    else if (type == "AggBezier") {
+      ss << "      agg::curve4 curve(" << pf(p, "x1", 0.1f) << "*" << w
+         << ", aggY(" << pf(p, "y1", 0.5f) << "," << h << "), "
+         << pf(p, "cx1", 0.3f) << "*" << w << ", aggY(" << pf(p, "cy1", 0.1f)
+         << "," << h << "), " << pf(p, "cx2", 0.7f) << "*" << w << ", aggY("
+         << pf(p, "cy2", 0.9f) << "," << h << "), " << pf(p, "x2", 0.9f) << "*"
+         << w << ", aggY(" << pf(p, "y2", 0.5f) << "," << h << "));\n";
+      ss << "      agg::conv_stroke<agg::curve4> stroke(curve);\n";
+      ss << "      stroke.width(" << pf(p, "thickness", 3.0f) << ");\n";
+      ss << "      stroke.line_cap(agg::round_cap); "
+            "stroke.line_join(agg::round_join);\n";
+      ss << "      agg::rasterizer_scanline_aa<> ras; agg::scanline_u8 sl; "
+            "AggRendererSolid solid(ren);\n";
+      ss << "      ras.add_path(stroke); float col[] = {" << pf(p, "cr", 1.0f)
+         << "," << pf(p, "cg", 1.0f) << "," << pf(p, "cb", 1.0f) << ","
+         << pf(p, "ca", 1.0f) << "};\n";
+      ss << "      solid.color(agg_color(col)); agg::render_scanlines(ras, sl, "
+            "solid);\n";
+    }
+
+    else if (type == "AggDashLine") {
+      ss << "      agg::path_storage lp;\n";
+      ss << "      lp.move_to(" << pf(p, "x1", 0.1f) << "*" << w << ", aggY("
+         << pf(p, "y1", 0.5f) << "," << h << "));\n";
+      ss << "      lp.line_to(" << pf(p, "x2", 0.9f) << "*" << w << ", aggY("
+         << pf(p, "y2", 0.5f) << "," << h << "));\n";
+      ss << "      agg::conv_dash<agg::path_storage> dash(lp);\n";
+      ss << "      dash.add_dash(" << pf(p, "dashLen", 15.0f) << ", "
+         << pf(p, "gapLen", 10.0f) << ");\n";
+      ss << "      agg::conv_stroke<agg::conv_dash<agg::path_storage>> "
+            "stroke(dash);\n";
+      ss << "      stroke.width(" << pf(p, "thickness", 3.0f)
+         << "); stroke.line_cap(agg::round_cap);\n";
+      ss << "      agg::rasterizer_scanline_aa<> ras; agg::scanline_u8 sl; "
+            "AggRendererSolid solid(ren);\n";
+      ss << "      ras.add_path(stroke); float col[] = {" << pf(p, "cr", 1.0f)
+         << "," << pf(p, "cg", 1.0f) << "," << pf(p, "cb", 1.0f) << ","
+         << pf(p, "ca", 1.0f) << "};\n";
+      ss << "      solid.color(agg_color(col)); agg::render_scanlines(ras, sl, "
+            "solid);\n";
+    }
+
+    else if (type == "AggGradient") {
+      // Gradient fill — emit simplified per-pixel loop (avoids complex span
+      // generator templates in header)
+      int gtype = p.value("type", 0);
+      ss << "      // Gradient fill (" << (gtype == 0 ? "linear" : "radial")
+         << ")\n";
+      ss << "      { float c1[] = {" << pf(p, "c1r", 0.0f) << ","
+         << pf(p, "c1g", 0.0f) << "," << pf(p, "c1b", 0.0f) << ","
+         << pf(p, "c1a", 1.0f) << "};\n";
+      ss << "        float c2[] = {" << pf(p, "c2r", 1.0f) << ","
+         << pf(p, "c2g", 1.0f) << "," << pf(p, "c2b", 1.0f) << ","
+         << pf(p, "c2a", 1.0f) << "};\n";
+      ss << "        agg::rgba16 ac1 = agg_color(c1), ac2 = agg_color(c2);\n";
+      if (gtype == 0) {
+        ss << "        double gx1=" << pf(p, "x1", 0.0f) << "*" << w
+           << ", gy1=aggY(" << pf(p, "y1", 0.5f) << "," << h << ");\n";
+        ss << "        double gx2=" << pf(p, "x2", 1.0f) << "*" << w
+           << ", gy2=aggY(" << pf(p, "y2", 0.5f) << "," << h << ");\n";
+        ss << "        double gdx=gx2-gx1, gdy=gy2-gy1, "
+              "glen=sqrt(gdx*gdx+gdy*gdy);\n";
+        ss << "        if(glen<1.0) glen=1.0;\n";
+        ss << "        for(int y=0; y<" << h << "; y++) for(int x=0; x<" << w
+           << "; x++) {\n";
+        ss << "          double proj=((x-gx1)*gdx+(y-gy1)*gdy)/(glen*glen);\n";
+        ss << "          if(proj<0) proj=0; if(proj>1) proj=1;\n";
+        ss << "          agg::rgba16 c = ac1.gradient(ac2, proj);\n";
+        ss << "          " << v << ".Data[y*" << w
+           << "+x].Init((c.a>>8)<<24|(c.r>>8)<<16|(c.g>>8)<<8|(c.b>>8));\n";
+        ss << "        }\n";
+      } else {
+        ss << "        double gcx=" << pf(p, "x1", 0.5f) << "*" << w
+           << ", gcy=aggY(" << pf(p, "y1", 0.5f) << "," << h << ");\n";
+        ss << "        double gex=" << pf(p, "x2", 0.9f) << "*" << w
+           << ", gey=aggY(" << pf(p, "y2", 0.5f) << "," << h << ");\n";
+        ss << "        double "
+              "gradR=sqrt((gex-gcx)*(gex-gcx)+(gey-gcy)*(gey-gcy));\n";
+        ss << "        if(gradR<1.0) gradR=1.0;\n";
+        ss << "        for(int y=0; y<" << h << "; y++) for(int x=0; x<" << w
+           << "; x++) {\n";
+        ss << "          double "
+              "d=sqrt((x-gcx)*(x-gcx)+(y-gcy)*(y-gcy))/gradR;\n";
+        ss << "          if(d>1.0) d=1.0;\n";
+        ss << "          agg::rgba16 c = ac1.gradient(ac2, d);\n";
+        ss << "          " << v << ".Data[y*" << w
+           << "+x].Init((c.a>>8)<<24|(c.r>>8)<<16|(c.g>>8)<<8|(c.b>>8));\n";
+        ss << "        }\n";
+      }
+      ss << "      }\n";
     }
 
     ss << "    }\n";
