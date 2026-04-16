@@ -13,3 +13,5 @@ imgui.ini
 *.jpg
 *.user
 imgui-docking
+agg
+imgui

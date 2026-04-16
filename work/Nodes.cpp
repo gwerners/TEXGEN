@@ -27,9 +27,6 @@ NodeGraph* g_nodeGraph = nullptr;
 
 void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   registry["Color"] = []() { return std::make_unique<ColorNode>(); };
-  registry["Input"] = []() {
-    return std::make_unique<ColorNode>();
-  };  // legacy alias
   registry["Output"] = []() { return std::make_unique<OutputNode>(); };
   registry["Noise"] = []() { return std::make_unique<NoiseNode>(); };
   registry["Cells"] = []() { return std::make_unique<CellsNode>(); };

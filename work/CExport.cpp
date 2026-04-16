@@ -74,7 +74,7 @@ static void emitNode(std::ostringstream& ss,
                      const nlohmann::json& conns) {
   std::string v = var(id);
 
-  if (type == "Color" || type == "Input") {
+  if (type == "Color") {
     int w = sizeFromIdx(p.value("widthIdx", 3));
     int h = sizeFromIdx(p.value("heightIdx", 3));
     std::string col = colorHex(p, "r", "g", "b", "a");
