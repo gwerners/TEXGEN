@@ -27,14 +27,18 @@ using AggRendererBase = agg::renderer_base<AggPixfmt>;
 using AggRendererSolid = agg::renderer_scanline_aa_solid<AggRendererBase>;
 
 // Wrap a GenTexture into an AGG rendering_buffer (zero-copy).
-// GenTexture has Y=0 at the bottom (OpenGL convention), while AGG has Y=0
-// at the top. A negative stride flips the vertical axis so AGG draws with
-// the correct orientation. Pass the buffer start — AGG internally computes
-// the last-row pointer when stride is negative.
+// Uses positive stride — caller is responsible for Y-flip if needed
+// (use aggY() to convert normalized Y coordinates).
 inline agg::rendering_buffer agg_rbuf_from(GenTexture &tex) {
   int stride = tex.XRes * sizeof(Pixel);
   return agg::rendering_buffer(reinterpret_cast<agg::int8u *>(tex.Data),
-                               tex.XRes, tex.YRes, -stride);
+                               tex.XRes, tex.YRes, stride);
+}
+
+// Convert a normalized Y coordinate (0=bottom, 1=top) to AGG pixel Y
+// (0=top, height=bottom) for GenTexture's OpenGL convention.
+inline float aggY(float normY, int height) {
+  return (1.0f - normY) * height;
 }
 
 // Convert a float[4] color (0..1 range) to agg::rgba16.

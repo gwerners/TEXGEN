@@ -152,8 +152,8 @@ void AggLineNode::execute(const std::vector<GenTexture*>& inputs,
   AggRendererBase ren(pixf);
 
   agg::path_storage path;
-  path.move_to(m_x1 * w, m_y1 * h);
-  path.line_to(m_x2 * w, m_y2 * h);
+  path.move_to(m_x1 * w, aggY(m_y1, h));
+  path.line_to(m_x2 * w, aggY(m_y2, h));
   strokePath(ren, path, m_color, m_thickness);
 }
 
@@ -270,7 +270,7 @@ void AggCircleNode::execute(const std::vector<GenTexture*>& inputs,
   AggPixfmt pixf(rbuf);
   AggRendererBase ren(pixf);
 
-  agg::ellipse ell(m_cx * w, m_cy * h, m_rx * w, m_ry * h, 100);
+  agg::ellipse ell(m_cx * w, aggY(m_cy, h), m_rx * w, m_ry * h, 100);
   if (m_filled)
     fillPath(ren, ell, m_fillColor);
   if (m_stroked)
@@ -403,8 +403,8 @@ void AggRectNode::execute(const std::vector<GenTexture*>& inputs,
   AggPixfmt pixf(rbuf);
   AggRendererBase ren(pixf);
 
-  double px1 = m_x1 * w, py1 = m_y1 * h;
-  double px2 = m_x2 * w, py2 = m_y2 * h;
+  double px1 = m_x1 * w, py1 = aggY(m_y1, h);
+  double px2 = m_x2 * w, py2 = aggY(m_y2, h);
   double rad = m_cornerRadius * sMin(w, h) * 0.5;
 
   agg::rounded_rect rect(px1, py1, px2, py2, rad);
@@ -547,7 +547,7 @@ void AggPolygonNode::execute(const std::vector<GenTexture*>& inputs,
   AggPixfmt pixf(rbuf);
   AggRendererBase ren(pixf);
 
-  double cx = m_cx * w, cy = m_cy * h;
+  double cx = m_cx * w, cy = aggY(m_cy, h);
   double r = m_radius * sMin(w, h) * 0.5;
   double ri = r * m_innerRadius;
   double rotRad = m_rotation * sPI / 180.0;
@@ -706,7 +706,7 @@ void AggTextNode::execute(const std::vector<GenTexture*>& inputs,
 
   agg::gsv_text text;
   text.size(m_height);
-  text.start_point(m_x * w, m_y * h);
+  text.start_point(m_x * w, aggY(m_y, h));
   text.text(m_text);
 
   agg::conv_stroke<agg::gsv_text> stroke(text);

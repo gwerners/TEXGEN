@@ -1,8 +1,8 @@
 # TEXGEN
 
-Node-based procedural texture generator for Linux. Connect generator and filter nodes in a visual graph to create tileable textures, noise patterns, and materials — all in real time.
+Node-based procedural texture generator for Linux. Connect generator, filter, and vector drawing nodes in a visual graph to create tileable textures, noise patterns, and materials — all in real time.
 
-Built with C++20, raylib, and Dear ImGui.
+Built with C++20, raylib, Dear ImGui, and [AGG 2.4](https://github.com/gwerners/agg) for anti-aliased vector drawing.
 
 Texture generation core based on [gentexture](https://github.com/farbrausch/fr_public) by Fabian Giesen (public domain).
 
@@ -11,6 +11,18 @@ Texture generation core based on [gentexture](https://github.com/farbrausch/fr_p
 <p align="center">
   <img src="images/screen.png" alt="TEXGEN node editor" width="100%"/>
 </p>
+
+## Features
+
+- **32 node types** — generators, filters, combiners, AGG vector drawing, and utility nodes
+- **AGG 2.4 vector nodes** — Line, Circle, Rect (rounded corners), Polygon (stars), Text with anti-aliasing
+- **Real-time preview** — auto-updates when parameters change
+- **Export to C** — generate a standalone `.h` header that reproduces the pipeline with `libtexgen` calls
+- **libtexgen** — core texture generation as a standalone static/shared library (no UI dependencies)
+- **Undo/Redo** — 50 levels, with debounced parameter tracking
+- **Copy/Paste** — duplicate node subgraphs with connections
+- **Minimap** — click-drag navigation in the bottom-right corner
+- **16-bit precision** — per-channel RGBA for high-quality compositing
 
 ## Requirements
 
@@ -31,6 +43,14 @@ Clones all dependencies, builds raylib, builds the project, and runs it.
 ```bash
 ./clean.bash        # remove everything (deps + build)
 ./clean.bash build  # remove build products only
+```
+
+## Test Suite
+
+Export C headers from all example projects, compile, and run them standalone (no raylib dependency):
+
+```bash
+./run_tests.bash
 ```
 
 ## Keyboard Shortcuts
@@ -60,13 +80,9 @@ Clones all dependencies, builds raylib, builds the project, and runs it.
 
 The interface is split into three panels:
 
-- **Left Panel** — Generate button, project save/load (with file browser), Save As / Load buttons
+- **Left Panel** — Generate button, project save/load, Export C header
 - **Bottom Panel** — Output image preview with zoom controls (+, -, 1:1). Updates automatically when parameters change
-- **Right Panel** — Node canvas with minimap (bottom-right corner)
-
-### Minimap
-
-The minimap in the bottom-right corner of the canvas shows an overview of all nodes. Blue rectangles are normal nodes, yellow are selected. The white outline shows the current viewport.
+- **Right Panel** — Node canvas with minimap (bottom-right corner, click-drag to navigate)
 
 ## Nodes
 
@@ -74,22 +90,33 @@ The minimap in the bottom-right corner of the canvas shows an overview of all no
 
 | Node | Description |
 |------|-------------|
-| **Input** | Solid color fill (configurable size and RGBA) |
-| **Image** | Load an image file (PNG, TGA, JPG, BMP) with file browser. Auto-resizes to power-of-2 |
+| **Color** | Solid color fill (configurable size and RGBA) |
+| **Image** | Load an image file (PNG, JPG, TGA, BMP, PSD, GIF, HDR) with file browser |
 | **Gradient** | 2-pixel gradient from Color1 to Color2. Used as color ramp for Noise/GlowRect |
 
 ### Generators (procedural patterns)
 
 | Node | Description |
 |------|-------------|
-| **Noise** | Perlin noise with configurable frequency, octaves, fadeoff, and seed. Accepts optional Gradient input for color ramp. Mode controls: Signal (Direct/Abs), Scale (Unnorm/Normalize), Type (White/Bandlimit) |
-| **Cells** | Voronoi cell pattern. Color mode: Gradient (colors from ramp) or Random (per-cell random from seed) |
+| **Noise** | Perlin noise with configurable frequency, octaves, fadeoff, and seed. Accepts optional Gradient input |
+| **Cells** | Voronoi cell pattern. Color mode: Gradient or Random |
 | **Crystal** | Voronoi diagram with near/far coloring |
 | **Bricks** | Brick/tile pattern with configurable size, fuge, and color variation |
 | **Perlin Noise RG2** | Alternative Perlin noise with contrast and start octave controls |
-| **Directional Gradient** | Spatial gradient between two points with configurable colors |
+| **Directional Gradient** | Spatial gradient between two points |
 | **Glow Effect** | Radial glow centered at a point with falloff exponent |
-| **Wavelet** | Wavelet transform (forward/inverse) |
+
+### AGG Vector Drawing
+
+All AGG nodes have an optional **Bg** input for compositing on a background texture.
+
+| Node | Description |
+|------|-------------|
+| **Line** | Line segment with configurable endpoints, thickness, and color |
+| **Circle** | Ellipse with independent fill and stroke (color, thickness) |
+| **Rect** | Rectangle with optional rounded corners, fill and stroke |
+| **Polygon** | Regular N-sided polygon. Inner radius < 1.0 creates star shapes |
+| **Text** | Vector text using AGG's embedded font. Configurable size and thickness |
 
 ### Filters (modify input textures)
 
@@ -97,37 +124,71 @@ The minimap in the bottom-right corner of the canvas shows an overview of all no
 |------|--------|-------------|
 | **Blur** | In | Gaussian blur with configurable radius and order |
 | **Blur Kernel** | In | Kernel blur (Box, Triangle, Gaussian) with wrap modes |
-| **Color Matrix** | In | 4x4 color transform matrix with optional premultiply clamp |
-| **Coord Matrix** | In | 4x4 coordinate transform (rotation, scale, tiling). Filter: WrapNearest/ClampNearest/WrapBilinear/ClampBilinear |
+| **Color Matrix** | In | 4x4 color transform matrix |
+| **Coord Matrix** | In | 4x4 coordinate transform (rotation, scale, tiling) |
 | **Color Remap** | In, MapR, MapG, MapB | Remap each color channel through a lookup texture |
 | **Coord Remap** | In, Remap | Distort coordinates using a displacement map |
 | **Derive** | In | Compute gradient or normal map from input |
 | **HSCB** | In | Hue, Saturation, Contrast, Brightness adjustment |
 | **Color Balance** | In | Shadow/Midtone/Highlight color balance (3-way) |
+| **Wavelet** | In | Wavelet transform (forward/inverse) |
 
 ### Combiners (merge multiple textures)
 
 | Node | Inputs | Description |
 |------|--------|-------------|
-| **Paste** | Background, Snippet | Combine two textures with blend op (Add, Sub, Multiply, Screen, etc.) |
-| **Bump** | Surface, Normals, (Specular), (Falloff) | Apply bump/normal mapping with directional or point light |
-| **Linear Combine** | Image1-4 | Weighted sum of up to 4 textures with UV shift per input |
-| **Ternary** | Image1, Image2, Mask | Lerp or select between two textures using a mask |
-| **Glow Rect** | Background, Gradient | Draw a glowing rectangle on a background using a gradient ramp |
+| **Paste** | Background, Snippet | Combine with blend op (Add, Sub, Multiply, Screen, etc.) |
+| **Bump** | Surface, Normals, (Specular), (Falloff) | Bump/normal mapping with lighting |
+| **Linear Combine** | Image1-4 | Weighted sum of up to 4 textures with UV shift |
+| **Ternary** | Image1, Image2, Mask | Lerp or select between two textures |
+| **Glow Rect** | Background, Gradient | Draw a glowing rectangle on a background |
 
-### Output
+### Utility
 
 | Node | Description |
 |------|-------------|
-| **Output** | Save result to TGA file. Preview shows the final image |
+| **Output** | Save result to TGA file |
+| **Comment** | Visual note for organizing pipelines |
 
-## Project Files
+## Export to C
 
-Projects are saved as JSON files containing all nodes, their parameters, positions, and connections. Example project files included:
+Click **Export C Header** in the left panel to generate a standalone `.h` file. The generated header contains a single function that reproduces the entire node graph:
 
-- `project.json` — Simple test project
-- `demo_pipeline.json` — Full pipeline replicating the KTG demo texture
-- `demo_steps.json` — Same pipeline with Output nodes at each intermediate step for debugging
+```c
+#include "texgen.h"
+
+static inline void my_texture_generate(GenTexture* out) {
+    // ... pipeline steps in topological order ...
+}
+```
+
+The exported code depends only on `libtexgen` (no raylib, no imgui). You can compile and link it against the static library:
+
+```bash
+g++ -std=c++17 -I lib -I work -I work/ktg -I agg/agg_lib/include \
+    my_program.cpp -ltexgen -lagg -lm
+```
+
+## libtexgen
+
+The core texture generation engine is available as a standalone library with no UI dependencies:
+
+- `lib/texgen.h` — public header (includes gentexture, extra generators, AGG bridge, utilities)
+- `build/lib/libtexgen.a` — static library
+- `build/lib/libtexgen.so` — shared library
+
+## Example Projects
+
+See [examples/README.md](examples/README.md) for descriptions and a complete node reference.
+
+| Example | Description |
+|---------|-------------|
+| 01_basic_shapes | Rect + Circle + Line composited via Bg inputs |
+| 02_star_polygon | Polygon star + Crystal voronoi blend |
+| 03_text_on_noise | Perlin noise background with AGG text overlay |
+| 04_procedural_brick | Bricks generator + Blur filter |
+| 05_crystal_glow | Crystal voronoi + GlowEffect blend |
+| 06_badge_composition | Multi-layer badge: Circle + Star + Text |
 
 ## Libraries
 
@@ -135,6 +196,7 @@ All libraries are cloned automatically by `run.bash`:
 
 | Library | Fork | Upstream |
 |---------|------|----------|
+| AGG 2.4 | [gwerners/agg](https://github.com/gwerners/agg) | [antigrain.com](http://www.antigrain.com) |
 | fmt | [gwerners/fmt](https://github.com/gwerners/fmt) | [fmtlib/fmt](https://github.com/fmtlib/fmt) |
 | stb | [gwerners/stb](https://github.com/gwerners/stb) | [nothings/stb](https://github.com/nothings/stb) |
 | imgui (docking) | [gwerners/imgui](https://github.com/gwerners/imgui) | [ocornut/imgui](https://github.com/ocornut/imgui) |
@@ -148,24 +210,47 @@ All libraries are cloned automatically by `run.bash`:
 ```
 CMakeLists.txt          root cmake
 run.bash                build and run script
+run_tests.bash          export C test suite
 clean.bash              cleanup script
+examples/               example project JSONs + README
 images/                 screenshots
 res/                    fonts (FiraCode)
-ref/                    KTG reference images for comparison
-work/                   source code
-  main.cpp              entry point
-  Core.cpp/h            application core, config, window
+ref/                    KTG reference images
+
+work/                   editor application source
+  AggNodes.cpp/h        AGG vector drawing nodes (Line, Circle, Rect, Polygon, Text)
+  AllNodes.cpp/h        procedural/filter/combiner node definitions
+  CExport.cpp/h         C header export from node graph
+  Nodes.cpp/h           node graph logic, undo/redo, copy/paste, minimap
+  TextureNode.h         base class for texture nodes
+  agg_gentexture.h      AGG <-> GenTexture zero-copy bridge
   Ide.cpp/h             imgui IDE layout, docking panels
   FileDialog.h          imgui file browser dialog
-  Nodes.cpp/h           node graph logic, undo/redo, copy/paste, minimap
-  AllNodes.cpp/h        all node type definitions
-  TextureNode.h         base class for texture nodes
-  Generator.h           generator interface
   ProjectIO.cpp/h       project save/load (JSON)
-  Utils.cpp/h           file utilities
-  Gradient.cpp/h        gradient utilities
-  Voronoi.cpp/h         voronoi diagram generation
-  extra_generators.*    custom texture generators
+  Utils.cpp/h           utilities (matrix, image I/O)
+  extra_generators.*    custom texture generators (Crystal, Bricks, etc.)
   ktg/                  gentexture library (Fabian Giesen)
-cmake/                  cmake helper modules
+
+lib/                    libtexgen standalone library (no UI deps)
+  texgen.h              public umbrella header
+  texgen_utils.h/cpp    pure utility functions
+  CMakeLists.txt        builds libtexgen.a + libtexgen.so
+
+tests/                  export C test infrastructure
+  texgen_export.cpp     CLI tool: JSON -> C header
+  test_template.cpp.in  test main template
+
+agg/                    AGG 2.4 library (from github.com/gwerners/agg)
 ```
+
+## License
+
+TEXGEN is released under the [MIT License](LICENSE).
+
+**Generated output is public domain.** Files produced by the "Export C Header"
+feature carry no license restrictions — you may use them for any purpose without
+attribution.
+
+Third-party components carry their own permissive licenses:
+- [gentexture](https://github.com/farbrausch/fr_public) (Fabian Giesen) — public domain
+- [AGG 2.4](https://github.com/gwerners/agg) (Maxim Shemanarev) — permissive (copy/use/modify/sell with copyright notice)
