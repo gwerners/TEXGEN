@@ -38,11 +38,12 @@ function clean_base {
   safeRMDIR imgui-node-editor
   safeRMDIR ImNodes
   safeRMDIR stb
+  safeRMDIR agg
   safeRMDIR .cache
   safeRM *.user
   safeRM *.ini
   safeRM Simple.json
-  safeRM output.tga
+  safeRM *.tga
   cd ${ROOT}
 }
 function clean {

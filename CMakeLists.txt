@@ -7,6 +7,17 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(WORK_PATH "${PROJECT_SOURCE_DIR}/work")
 
 ################################
-# work
+# AGG 2.4 (library only, no examples)
+################################
+set(AGG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+add_subdirectory(agg/agg_lib)
+
+################################
+# libtexgen (core library, no UI)
+################################
+add_subdirectory(lib)
+
+################################
+# work (editor application)
 ################################
 add_subdirectory(work)

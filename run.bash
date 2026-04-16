@@ -94,6 +94,10 @@ function get {
       TAR "$1" "$BRANCH"
     fi
   fi
+  # tarball may extract as name-branch/ instead of name/ — symlink if needed
+  if [ ! -z "$BRANCH" ] && [ ! -d "$1" ] && [ -d "$1-$BRANCH" ]; then
+    ln -sf "$1-$BRANCH" "$1"
+  fi
 }
 function getAll {
   get fmt https://github.com/gwerners/fmt.git
@@ -103,6 +107,7 @@ function getAll {
   get raylib https://github.com/gwerners/raylib.git
   get rlImGui https://github.com/gwerners/rlImGui.git
   get ImNodes https://github.com/gwerners/ImNodes.git
+  get agg https://github.com/gwerners/agg.git
 }
 
 function cleanOldBuild {

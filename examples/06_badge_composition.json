@@ -1,0 +1,50 @@
+{
+  "connections": [
+    { "fromId": 0, "fromSlot": "Out", "toId": 2, "toSlot": "Bg" },
+    { "fromId": 2, "fromSlot": "Out", "toId": 3, "toSlot": "Bg" },
+    { "fromId": 3, "fromSlot": "Out", "toId": 4, "toSlot": "In" }
+  ],
+  "nodes": [
+    {
+      "id": 0, "typeName": "AggCircle",
+      "posX": -700, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "cx": 0.5, "cy": 0.5, "rx": 0.45, "ry": 0.45,
+        "thickness": 6.0,
+        "filled": true, "stroked": true,
+        "fr": 0.1, "fg": 0.2, "fb": 0.5, "fa": 1.0,
+        "sr": 0.8, "sg": 0.75, "sb": 0.3, "sa": 1.0
+      }
+    },
+    {
+      "id": 2, "typeName": "AggPolygon",
+      "posX": -400, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "cx": 0.5, "cy": 0.5, "radius": 0.3,
+        "innerRadius": 0.5, "sides": 5, "rotation": -18.0,
+        "thickness": 2.0,
+        "filled": true, "stroked": false,
+        "fr": 0.8, "fg": 0.75, "fb": 0.3, "fa": 1.0,
+        "sr": 1.0, "sg": 1.0, "sb": 1.0, "sa": 1.0
+      }
+    },
+    {
+      "id": 3, "typeName": "AggText",
+      "posX": -100, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "text": "AGG", "x": 0.32, "y": 0.46,
+        "height": 28.0, "thickness": 2.0,
+        "cr": 1.0, "cg": 1.0, "cb": 1.0, "ca": 1.0,
+        "bgr": 0.0, "bgg": 0.0, "bgb": 0.0, "bga": 0.0
+      }
+    },
+    {
+      "id": 4, "typeName": "Output",
+      "posX": 200, "posY": -100, "paramsOpen": false, "previewOpen": true,
+      "params": { "filename": "badge.tga" }
+    }
+  ]
+}

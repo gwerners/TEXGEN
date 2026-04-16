@@ -1,4 +1,5 @@
 #include "Nodes.h"
+#include "AggNodes.h"
 #include "AllNodes.h"
 #include "Utils.h"
 
@@ -25,7 +26,10 @@ NodeGraph* g_nodeGraph = nullptr;
 // ============================================================
 
 void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
-  registry["Input"] = []() { return std::make_unique<InputNode>(); };
+  registry["Color"] = []() { return std::make_unique<ColorNode>(); };
+  registry["Input"] = []() {
+    return std::make_unique<ColorNode>();
+  };  // legacy alias
   registry["Output"] = []() { return std::make_unique<OutputNode>(); };
   registry["Noise"] = []() { return std::make_unique<NoiseNode>(); };
   registry["Cells"] = []() { return std::make_unique<CellsNode>(); };
@@ -63,6 +67,12 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   registry["Bricks"] = []() { return std::make_unique<BricksNode>(); };
   registry["Gradient"] = []() { return std::make_unique<GradientNode>(); };
   registry["Image"] = []() { return std::make_unique<ImageNode>(); };
+  // AGG vector drawing nodes
+  registry["AggLine"] = []() { return std::make_unique<AggLineNode>(); };
+  registry["AggCircle"] = []() { return std::make_unique<AggCircleNode>(); };
+  registry["AggRect"] = []() { return std::make_unique<AggRectNode>(); };
+  registry["AggPolygon"] = []() { return std::make_unique<AggPolygonNode>(); };
+  registry["AggText"] = []() { return std::make_unique<AggTextNode>(); };
 }
 
 // ============================================================
@@ -211,9 +221,9 @@ void GraphNode::deleteConnection(const NodeConnection& conn) {
 NodeGraph::NodeGraph() {
   registerAllNodes(m_registry);
 
-  // Create default Input node
+  // Create default Color node
   {
-    auto node = std::make_unique<InputNode>();
+    auto node = std::make_unique<ColorNode>();
     node->pos = {100.0f, 200.0f};
     GraphNode* gn = new GraphNode(std::move(node), m_nextId++);
     m_nodes.push_back(gn);

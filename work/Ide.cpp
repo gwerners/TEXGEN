@@ -1,4 +1,5 @@
 #include "Ide.h"
+#include "CExport.h"
 #include "Nodes.h"
 #include "ProjectIO.h"
 #include "Utils.h"
@@ -62,6 +63,7 @@ Ide::Ide(const int /*screenWidth*/,
       m_hasOutputTexture(false) {
   strncpy(m_saveFilename, "project.json", sizeof(m_saveFilename));
   strncpy(m_outputFilename, "output.tga", sizeof(m_outputFilename));
+  strncpy(m_exportName, "my_texture", sizeof(m_exportName));
   m_outputTexture.id = 0;
   m_texture.id = 0;
 
@@ -162,8 +164,8 @@ void Ide::draw() {
 
   TitleBarMaxButton("left", m_isLeftFullscreen, m_resetLayout);
 
-  // Generate button
-  if (ImGui::Button("Generate")) {
+  // ── Generate ──────────────────────────────────────────────
+  if (ImGui::Button("Generate", ImVec2(-1, 30))) {
     if (g_nodeGraph) {
       g_nodeGraph->generate();
       GenTexture* lastOut = g_nodeGraph->getLastOutput();
@@ -177,21 +179,30 @@ void Ide::draw() {
     }
   }
 
+  ImGui::Spacing();
   ImGui::Separator();
+  ImGui::Spacing();
 
-  ImGui::PushItemWidth(120);
+  // ── Project ──────────────────────────────────────────────
+  ImGui::Text("Project");
+  ImGui::PushItemWidth(-1);
   ImGui::InputText("##projectfile", m_saveFilename, sizeof(m_saveFilename));
   ImGui::PopItemWidth();
-  ImGui::SameLine();
-  if (ImGui::Button("Save")) {
+
+  ImGui::Spacing();
+
+  float btnW =
+      (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) *
+      0.5f;
+  if (ImGui::Button("Save", ImVec2(btnW, 0))) {
     saveProject(m_saveFilename);
   }
   ImGui::SameLine();
-  if (ImGui::Button("Save As..")) {
+  if (ImGui::Button("Save As..", ImVec2(btnW, 0))) {
     m_saveDialog.open(m_saveFilename);
   }
-  ImGui::SameLine();
-  if (ImGui::Button("Load")) {
+
+  if (ImGui::Button("Load", ImVec2(btnW, 0))) {
     if (loadProject(m_saveFilename) && g_nodeGraph) {
       g_nodeGraph->generate();
       GenTexture* lastOut = g_nodeGraph->getLastOutput();
@@ -205,8 +216,32 @@ void Ide::draw() {
     }
   }
   ImGui::SameLine();
-  if (ImGui::Button("Load..")) {
+  if (ImGui::Button("Load..", ImVec2(btnW, 0))) {
     m_loadDialog.open(m_saveFilename);
+  }
+
+  ImGui::Spacing();
+  ImGui::Separator();
+  ImGui::Spacing();
+
+  // ── Export ───────────────────────────────────────────────
+  ImGui::Text("Export");
+  ImGui::PushItemWidth(-1);
+  ImGui::InputText("##exportname", m_exportName, sizeof(m_exportName));
+  ImGui::PopItemWidth();
+
+  ImGui::Spacing();
+
+  if (ImGui::Button("Export C Header", ImVec2(-1, 0))) {
+    if (g_nodeGraph) {
+      std::string hName(m_exportName);
+      std::string hPath = hName + ".h";
+      if (exportCHeader(g_nodeGraph, hName, hPath)) {
+        fmt::print(fg(fmt::color::green), "Exported: {}\n", hPath);
+      } else {
+        fmt::print(fg(fmt::color::red), "Export failed: {}\n", hPath);
+      }
+    }
   }
 
   ImGui::End();

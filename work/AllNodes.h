@@ -8,13 +8,13 @@
 #include "gentexture.hpp"
 
 // ============================================================
-// InputNode - creates a blank image filled with a solid color
+// ColorNode - creates a blank image filled with a solid color
 // ============================================================
-class InputNode : public TextureNode {
+class ColorNode : public TextureNode {
  public:
-  InputNode();
-  std::string typeName() const override { return "Input"; }
-  std::string displayTitle() const override { return "Input"; }
+  ColorNode();
+  std::string typeName() const override { return "Color"; }
+  std::string displayTitle() const override { return "Color"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
   std::vector<std::string> inputSlotNames() const override;

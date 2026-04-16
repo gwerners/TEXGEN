@@ -97,6 +97,8 @@ set(SRC
   Utils.cpp
   Nodes.cpp
   AllNodes.cpp
+  AggNodes.cpp
+  CExport.cpp
   ProjectIO.cpp
   Gradient.cpp
   Voronoi.cpp
@@ -119,7 +121,7 @@ set(RAYLIB_STATIC
   ${CMAKE_SOURCE_DIR}/raylib/build/raylib/libraylib.a
 )
 add_executable(${MY_PROJECT_NAME} ${SRC} ${FMT} ${IMGUI} ${IMNODES} ${KTG})
-target_link_libraries(${MY_PROJECT_NAME} ${RAYLIB_STATIC} dl pthread X11 GL m)
+target_link_libraries(${MY_PROJECT_NAME} agg ${RAYLIB_STATIC} dl pthread X11 GL m)
 target_compile_features(${MY_PROJECT_NAME} PRIVATE ${MY_COMPILER_FEATURES})
 
 #module with helper functions

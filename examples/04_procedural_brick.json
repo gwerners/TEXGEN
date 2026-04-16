@@ -1,0 +1,33 @@
+{
+  "connections": [
+    { "fromId": 0, "fromSlot": "Out", "toId": 2, "toSlot": "In" },
+    { "fromId": 2, "fromSlot": "Out", "toId": 3, "toSlot": "In" }
+  ],
+  "nodes": [
+    {
+      "id": 0, "typeName": "Bricks",
+      "posX": -600, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "col0r": 0.55, "col0g": 0.25, "col0b": 0.15, "col0a": 1.0,
+        "col1r": 0.65, "col1g": 0.35, "col1b": 0.2, "col1a": 1.0,
+        "colFuger": 0.3, "colFugeg": 0.3, "colFugeb": 0.28, "colFugea": 1.0,
+        "fugeX": 0.03, "fugeY": 0.06,
+        "tileX": 4, "tileY": 8,
+        "seed": 0, "heads": 2, "colorBalance": 0.5
+      }
+    },
+    {
+      "id": 2, "typeName": "Blur",
+      "posX": -300, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "sizex": 0.005, "sizey": 0.005, "order": 2, "mode": 0
+      }
+    },
+    {
+      "id": 3, "typeName": "Output",
+      "posX": 0, "posY": -100, "paramsOpen": false, "previewOpen": true,
+      "params": { "filename": "bricks.tga" }
+    }
+  ]
+}

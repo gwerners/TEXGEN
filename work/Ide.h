@@ -34,6 +34,7 @@ class Ide {
 
   char m_saveFilename[256];
   char m_outputFilename[256];
+  char m_exportName[128];
   Texture2D m_outputTexture;
   bool m_hasOutputTexture;
   FileDialog m_saveDialog;

@@ -6,6 +6,7 @@
 #include <cstring>
 #include "FileDialog.h"
 #include "Utils.h"
+#include "stb_image.h"
 
 // ============================================================
 // Helpers
@@ -154,30 +155,30 @@ static void applyBlend(std::vector<GenTexture>& outputs,
 }
 
 // ============================================================
-// InputNode
+// ColorNode
 // ============================================================
 
-InputNode::InputNode() : m_widthIdx(3), m_heightIdx(3) {
+ColorNode::ColorNode() : m_widthIdx(3), m_heightIdx(3) {
   m_color[0] = 0.0f;
   m_color[1] = 0.0f;
   m_color[2] = 0.0f;
   m_color[3] = 1.0f;
 }
 
-std::vector<ImNodes::Ez::SlotInfo> InputNode::inputSlotInfos() const {
+std::vector<ImNodes::Ez::SlotInfo> ColorNode::inputSlotInfos() const {
   return {};
 }
-std::vector<ImNodes::Ez::SlotInfo> InputNode::outputSlotInfos() const {
+std::vector<ImNodes::Ez::SlotInfo> ColorNode::outputSlotInfos() const {
   return {{"Out", 1}};
 }
-std::vector<std::string> InputNode::inputSlotNames() const {
+std::vector<std::string> ColorNode::inputSlotNames() const {
   return {};
 }
-std::vector<std::string> InputNode::outputSlotNames() const {
+std::vector<std::string> ColorNode::outputSlotNames() const {
   return {"Out"};
 }
 
-void InputNode::execute(const std::vector<GenTexture*>& /*inputs*/,
+void ColorNode::execute(const std::vector<GenTexture*>& /*inputs*/,
                         std::vector<GenTexture>& outputs) {
   int w = indexToSize(m_widthIdx);
   int h = indexToSize(m_heightIdx);
@@ -188,7 +189,7 @@ void InputNode::execute(const std::vector<GenTexture*>& /*inputs*/,
     outputs[0].Data[i].Init(col);
 }
 
-void InputNode::renderParams() {
+void ColorNode::renderParams() {
   ImGui::PushItemWidth(100);
   ImGui::Combo("W##inp", &m_widthIdx, s_sizesStr);
   ImGui::Combo("H##inp", &m_heightIdx, s_sizesStr);
@@ -196,13 +197,13 @@ void InputNode::renderParams() {
   ImGui::PopItemWidth();
 }
 
-nlohmann::json InputNode::saveParams() const {
+nlohmann::json ColorNode::saveParams() const {
   return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
           {"r", m_color[0]},        {"g", m_color[1]},
           {"b", m_color[2]},        {"a", m_color[3]}};
 }
 
-void InputNode::loadParams(const nlohmann::json& j) {
+void ColorNode::loadParams(const nlohmann::json& j) {
   if (j.contains("widthIdx"))
     m_widthIdx = j["widthIdx"];
   if (j.contains("heightIdx"))
@@ -2081,33 +2082,47 @@ void ImageNode::execute(const std::vector<GenTexture*>& /*inputs*/,
   }
 
   if (!m_loaded && !path.empty()) {
-    Image img = LoadImage(m_filename);
-    if (img.data) {
-      ImageFormat(&img, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-      int w = img.width;
-      int h = img.height;
+    int imgW = 0, imgH = 0, channels = 0;
+    // stbi_load: force 4 channels (RGBA), handles TGA/PNG/JPG/BMP/PSD/GIF/HDR
+    stbi_set_flip_vertically_on_load(0);
+    unsigned char* pixels = stbi_load(m_filename, &imgW, &imgH, &channels, 4);
+    if (pixels) {
       // Resize to nearest power of 2 (GenTexture requirement)
       int pw = 1;
-      while (pw < w)
+      while (pw < imgW)
         pw <<= 1;
       int ph = 1;
-      while (ph < h)
+      while (ph < imgH)
         ph <<= 1;
-      if (pw != w || ph != h) {
-        ImageResize(&img, pw, ph);
-        w = pw;
-        h = ph;
+
+      bool didResize = (pw != imgW || ph != imgH);
+      if (didResize) {
+        unsigned char* resized = (unsigned char*)malloc(pw * ph * 4);
+        for (int y = 0; y < ph; y++) {
+          int srcY = y * imgH / ph;
+          for (int x = 0; x < pw; x++) {
+            int srcX = x * imgW / pw;
+            memcpy(&resized[(y * pw + x) * 4],
+                   &pixels[(srcY * imgW + srcX) * 4], 4);
+          }
+        }
+        stbi_image_free(pixels);
+        pixels = resized;
+        imgW = pw;
+        imgH = ph;
       }
-      m_cache.Init(w, h);
-      unsigned char* pixels = (unsigned char*)img.data;
-      for (int i = 0; i < w * h; i++) {
-        sU8 r = pixels[i * 4 + 0];
-        sU8 g = pixels[i * 4 + 1];
-        sU8 b = pixels[i * 4 + 2];
-        sU8 a = pixels[i * 4 + 3];
-        m_cache.Data[i].Init(r, g, b, a);
+
+      m_cache.Init(imgW, imgH);
+      for (int i = 0; i < imgW * imgH; i++) {
+        m_cache.Data[i].Init(pixels[i * 4 + 0], pixels[i * 4 + 1],
+                             pixels[i * 4 + 2], pixels[i * 4 + 3]);
       }
-      UnloadImage(img);
+
+      if (didResize)
+        free(pixels);
+      else
+        stbi_image_free(pixels);
+
       m_loaded = true;
       m_loadedPath = path;
     }
@@ -2128,7 +2143,7 @@ void ImageNode::renderParams() {
   ImGui::PopItemWidth();
   ImGui::SameLine();
   if (ImGui::SmallButton("...##imgbrowse")) {
-    s_imgDialog.open(m_filename);
+    s_imgDialog.open(m_filename, ".png,.jpg,.jpeg,.tga,.bmp,.psd,.gif,.hdr");
   }
   if (s_imgDialog.show("Select Image", FileDialog::Load, nullptr)) {
     std::string path = s_imgDialog.getResultPath();

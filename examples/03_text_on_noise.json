@@ -1,0 +1,79 @@
+{
+  "connections": [
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "Bg"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "In"
+    }
+  ],
+  "nodes": [
+    {
+      "id": 0,
+      "params": {
+        "c1a": 1.0,
+        "c1b": 0.15000000596046448,
+        "c1g": 0.05000000074505806,
+        "c1r": 0.05000000074505806,
+        "c2a": 1.0,
+        "c2b": 0.4000000059604645,
+        "c2g": 0.20000000298023224,
+        "c2r": 0.20000000298023224,
+        "fadeoff": 0.5,
+        "freqX": 4,
+        "freqY": 4,
+        "mode": 0,
+        "oct": 4,
+        "seed": 42,
+        "sizeIdx": 3
+      },
+      "paramsOpen": true,
+      "posX": -245.0,
+      "posY": -116.0,
+      "previewOpen": true,
+      "typeName": "Noise"
+    },
+    {
+      "id": 3,
+      "params": {
+        "filename": "text_on_noise.tga"
+      },
+      "paramsOpen": false,
+      "posX": 637.0,
+      "posY": -106.0,
+      "previewOpen": true,
+      "typeName": "Output"
+    },
+    {
+      "id": 2,
+      "params": {
+        "bga": 1.0,
+        "bgb": 0.0,
+        "bgg": 0.0,
+        "bgr": 0.0,
+        "ca": 1.0,
+        "cb": 0.30000001192092896,
+        "cg": 0.8999999761581421,
+        "cr": 1.0,
+        "height": 50.0,
+        "heightIdx": 3,
+        "text": "TEXGEN",
+        "thickness": 2.5,
+        "widthIdx": 3,
+        "x": 0.07999999821186066,
+        "y": 0.44999998807907104
+      },
+      "paramsOpen": true,
+      "posX": 195.0,
+      "posY": -98.0,
+      "previewOpen": true,
+      "typeName": "AggText"
+    }
+  ]
+}

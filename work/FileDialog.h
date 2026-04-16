@@ -30,12 +30,14 @@ class FileDialog {
       // Go up button
       if (ImGui::Button("..##up")) {
         fs::path parent = fs::path(m_currentDir).parent_path();
-        if (!parent.empty())
+        if (!parent.empty()) {
           navigateTo(parent.string());
+          scanDir(m_extension.empty() ? extension : m_extension.c_str());
+        }
       }
       ImGui::SameLine();
       if (ImGui::Button("Refresh"))
-        scanDir(extension);
+        scanDir(m_extension.empty() ? extension : m_extension.c_str());
 
       ImGui::Separator();
 
@@ -50,7 +52,7 @@ class FileDialog {
           if (ImGui::Selectable(label.c_str(), entry.name == m_selected)) {
             if (isDir) {
               navigateTo((fs::path(m_currentDir) / entry.name).string());
-              scanDir(extension);
+              scanDir(m_extension.empty() ? extension : m_extension.c_str());
             } else {
               m_selected = entry.name;
               strncpy(m_filename, entry.name.c_str(), sizeof(m_filename) - 1);
@@ -79,12 +81,13 @@ class FileDialog {
     return result;
   }
 
-  void open(const char* defaultFilename) {
+  void open(const char* defaultFilename, const char* extension = ".json") {
     m_open = true;
     m_selected.clear();
+    m_extension = extension ? extension : "";
     strncpy(m_filename, defaultFilename, sizeof(m_filename) - 1);
     m_currentDir = fs::current_path().string();
-    scanDir(".json");
+    scanDir(extension);
   }
 
   bool isOpen() const { return m_open; }
@@ -104,6 +107,23 @@ class FileDialog {
 
   void scanDir(const char* extension) {
     m_entries.clear();
+    // Build set of accepted extensions from comma-separated string
+    // e.g. ".png,.jpg,.tga,.bmp" or single ".json"
+    std::vector<std::string> exts;
+    if (extension && strlen(extension) > 0) {
+      std::string s(extension);
+      size_t pos = 0;
+      while (pos < s.size()) {
+        size_t comma = s.find(',', pos);
+        if (comma == std::string::npos) comma = s.size();
+        std::string ext = s.substr(pos, comma - pos);
+        // trim whitespace
+        while (!ext.empty() && ext.front() == ' ') ext.erase(ext.begin());
+        while (!ext.empty() && ext.back() == ' ') ext.pop_back();
+        if (!ext.empty()) exts.push_back(ext);
+        pos = comma + 1;
+      }
+    }
     try {
       for (auto& p : fs::directory_iterator(m_currentDir)) {
         Entry e;
@@ -113,9 +133,20 @@ class FileDialog {
         if (e.name[0] == '.' && e.name != "..")
           continue;
 
-        if (!e.isDir && extension && strlen(extension) > 0) {
-          if (p.path().extension().string() != extension)
-            continue;
+        if (!e.isDir && !exts.empty()) {
+          std::string fileExt = p.path().extension().string();
+          // case-insensitive comparison
+          std::string lower;
+          lower.resize(fileExt.size());
+          std::transform(fileExt.begin(), fileExt.end(), lower.begin(), ::tolower);
+          bool match = false;
+          for (auto& ext : exts) {
+            std::string extLower;
+            extLower.resize(ext.size());
+            std::transform(ext.begin(), ext.end(), extLower.begin(), ::tolower);
+            if (lower == extLower) { match = true; break; }
+          }
+          if (!match) continue;
         }
         m_entries.push_back(e);
       }
@@ -133,6 +164,7 @@ class FileDialog {
   std::string m_currentDir;
   std::string m_selected;
   std::string m_resultPath;
+  std::string m_extension;
   char m_filename[256] = {};
   std::vector<Entry> m_entries;
 };

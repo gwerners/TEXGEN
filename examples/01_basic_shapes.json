@@ -1,0 +1,49 @@
+{
+  "connections": [
+    { "fromId": 0, "fromSlot": "Out", "toId": 3, "toSlot": "Bg" },
+    { "fromId": 3, "fromSlot": "Out", "toId": 4, "toSlot": "Bg" },
+    { "fromId": 4, "fromSlot": "Out", "toId": 5, "toSlot": "In" }
+  ],
+  "nodes": [
+    {
+      "id": 0, "typeName": "AggRect",
+      "posX": -800, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "x1": 0.05, "y1": 0.05, "x2": 0.95, "y2": 0.95,
+        "cornerRadius": 0.1, "thickness": 4.0,
+        "filled": true, "stroked": true,
+        "fr": 0.15, "fg": 0.15, "fb": 0.25, "fa": 1.0,
+        "sr": 0.5, "sg": 0.7, "sb": 1.0, "sa": 1.0
+      }
+    },
+    {
+      "id": 3, "typeName": "AggCircle",
+      "posX": -500, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "cx": 0.5, "cy": 0.5, "rx": 0.3, "ry": 0.3,
+        "thickness": 3.0,
+        "filled": true, "stroked": true,
+        "fr": 0.9, "fg": 0.3, "fb": 0.2, "fa": 1.0,
+        "sr": 1.0, "sg": 1.0, "sb": 1.0, "sa": 1.0
+      }
+    },
+    {
+      "id": 4, "typeName": "AggLine",
+      "posX": -200, "posY": -100, "paramsOpen": true, "previewOpen": true,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "x1": 0.1, "y1": 0.1, "x2": 0.9, "y2": 0.9,
+        "thickness": 5.0,
+        "cr": 1.0, "cg": 1.0, "cb": 0.0, "ca": 1.0,
+        "bgr": 0.0, "bgg": 0.0, "bgb": 0.0, "bga": 1.0
+      }
+    },
+    {
+      "id": 5, "typeName": "Output",
+      "posX": 100, "posY": -100, "paramsOpen": false, "previewOpen": true,
+      "params": { "filename": "basic_shapes.tga" }
+    }
+  ]
+}

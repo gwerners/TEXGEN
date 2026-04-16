@@ -1,51 +1,45 @@
 {
   "connections": [
     {
-      "fromId": 0,
-      "fromSlot": "Out",
-      "toId": 2,
-      "toSlot": "In"
-    },
-    {
       "fromId": 2,
       "fromSlot": "Out",
-      "toId": 3,
-      "toSlot": "In"
+      "toId": 5,
+      "toSlot": "Image1"
     },
     {
       "fromId": 3,
       "fromSlot": "Out",
-      "toId": 4,
+      "toId": 5,
+      "toSlot": "Image2"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 1,
       "toSlot": "In"
     },
     {
       "fromId": 4,
       "fromSlot": "Out",
-      "toId": 1,
-      "toSlot": "In"
+      "toId": 5,
+      "toSlot": "Image3"
     }
   ],
   "nodes": [
     {
-      "id": 0,
+      "id": 1,
       "params": {
-        "a": 1.0,
-        "b": 0.18544034659862518,
-        "g": 0.7088607549667358,
-        "heightIdx": 3,
-        "r": 0.2251938432455063,
-        "widthIdx": 3
+        "filename": "output.tga"
       },
       "paramsOpen": false,
-      "posX": -1159.824462890625,
-      "posY": -109.12197875976563,
-      "previewOpen": false,
-      "typeName": "Input"
+      "posX": -254.261474609375,
+      "posY": -139.78762817382813,
+      "previewOpen": true,
+      "typeName": "Output"
     },
     {
       "id": 2,
       "params": {
-        "blendMode": 3,
         "colorFar": [
           0.0,
           0.0,
@@ -64,15 +58,14 @@
         "widthIdx": 3
       },
       "paramsOpen": false,
-      "posX": -955.1879272460938,
-      "posY": -109.35134887695313,
-      "previewOpen": false,
+      "posX": -1117.18798828125,
+      "posY": -166.35134887695313,
+      "previewOpen": true,
       "typeName": "Crystal"
     },
     {
       "id": 3,
       "params": {
-        "blendMode": 1,
         "c1a": 1.0,
         "c1b": 0.0,
         "c1g": 0.0,
@@ -90,21 +83,51 @@
         "sizeIdx": 3
       },
       "paramsOpen": false,
-      "posX": -727.71484375,
-      "posY": -109.25619506835938,
-      "previewOpen": false,
+      "posX": -1210.71484375,
+      "posY": 90.74380493164063,
+      "previewOpen": true,
       "typeName": "Noise"
     },
     {
-      "id": 1,
+      "id": 5,
       "params": {
-        "filename": "output.tga"
+        "constColor": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "constWeight": 0.0,
+        "filterMode": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "uShift": [
+          0.0,
+          0.0,
+          0.5479999780654907,
+          0.0
+        ],
+        "vShift": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "weights": [
+          0.3569999933242798,
+          0.21400000154972076,
+          1.0,
+          0.0
+        ]
       },
       "paramsOpen": false,
-      "posX": -254.261474609375,
-      "posY": -139.78762817382813,
+      "posX": -730.0,
+      "posY": -183.0,
       "previewOpen": true,
-      "typeName": "Output"
+      "typeName": "LinearCombine"
     },
     {
       "id": 4,
@@ -115,7 +138,6 @@
           0.0,
           1.0
         ],
-        "blendMode": 1,
         "cx": 0.5,
         "cy": 0.5,
         "exponent": 2.0,
@@ -131,8 +153,8 @@
         "widthIdx": 3
       },
       "paramsOpen": false,
-      "posX": -479.24658203125,
-      "posY": -111.31318664550781,
+      "posX": -1152.24658203125,
+      "posY": 353.68682861328125,
       "previewOpen": false,
       "typeName": "GlowEffect"
     }

@@ -1,0 +1,131 @@
+{
+  "connections": [
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "Image1"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "Image2"
+    }
+  ],
+  "nodes": [
+    {
+      "id": 2,
+      "params": {
+        "bgCol": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "cx": 0.5,
+        "cy": 0.5,
+        "exponent": 1.5,
+        "glowCol": [
+          0.30000001192092896,
+          0.6000000238418579,
+          1.0,
+          1.0
+        ],
+        "heightIdx": 3,
+        "intensity": 0.699999988079071,
+        "scale": 0.800000011920929,
+        "widthIdx": 3
+      },
+      "paramsOpen": false,
+      "posX": -521.0,
+      "posY": -100.0,
+      "previewOpen": true,
+      "typeName": "GlowEffect"
+    },
+    {
+      "id": 3,
+      "params": {
+        "filename": "crystal_glow.tga"
+      },
+      "paramsOpen": false,
+      "posX": 249.0,
+      "posY": -144.0,
+      "previewOpen": true,
+      "typeName": "Output"
+    },
+    {
+      "id": 4,
+      "params": {
+        "constColor": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "constWeight": 1.0,
+        "filterMode": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "uShift": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vShift": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "weights": [
+          0.6660000085830688,
+          0.23800000548362732,
+          0.0,
+          0.0
+        ]
+      },
+      "paramsOpen": false,
+      "posX": -181.0,
+      "posY": -46.0,
+      "previewOpen": false,
+      "typeName": "LinearCombine"
+    },
+    {
+      "id": 0,
+      "params": {
+        "colorFar": [
+          0.0,
+          0.05000000074505806,
+          0.10000000149011612,
+          1.0
+        ],
+        "colorNear": [
+          0.10000000149011612,
+          0.6000000238418579,
+          0.8999999761581421,
+          1.0
+        ],
+        "count": 50,
+        "heightIdx": 3,
+        "seed": 77,
+        "widthIdx": 3
+      },
+      "paramsOpen": false,
+      "posX": -502.0,
+      "posY": 136.0,
+      "previewOpen": true,
+      "typeName": "Crystal"
+    }
+  ]
+}
