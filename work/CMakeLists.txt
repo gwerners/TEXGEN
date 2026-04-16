@@ -65,6 +65,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/ImNodes
   ${CMAKE_SOURCE_DIR}/work
   ${CMAKE_SOURCE_DIR}/work/ktg
+  ${CMAKE_SOURCE_DIR}/lib
 )
 #link_directories(${CMAKE_SOURCE_DIR}/BLAKE3/c/build)
 

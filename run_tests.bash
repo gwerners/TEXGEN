@@ -78,7 +78,7 @@ for entry in "${EXAMPLES[@]}"; do
 
   # Compile test (link with libtexgen + libagg, no raylib)
   if ! g++ -std=c++17 \
-      -I "$GEN_DIR" -I lib -I work -I work/ktg -I agg/agg_lib/include \
+      -I "$GEN_DIR" -I lib -I work -I work/ktg -I agg/agg_lib/include -I json/include \
       -o "$TEST_BIN" "$TEST_CPP" \
       "$BUILD_DIR/lib/libtexgen.a" "$BUILD_DIR/agg/agg_lib/libagg.a" \
       -lm 2> "$GEN_DIR/${FUNC_NAME}_compile.log"; then

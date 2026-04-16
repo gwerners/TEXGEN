@@ -22,3 +22,10 @@
 
 // Pure utility functions (matrix ops, gradients, SaveImage, Voronoi)
 #include "texgen_utils.h"
+
+// Headless graph evaluation (JSON project -> GenTexture output)
+#include "HeadlessEval.h"
+
+// Core node base class and registry (for extending with custom nodes)
+#include "CoreNode.h"
+#include "CoreNodeRegistry.h"

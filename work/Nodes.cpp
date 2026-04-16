@@ -126,7 +126,8 @@ void GraphNode::draw(NodeGraph* graph) {
         // Presets
         ImGui::SameLine();
         std::string presetPopup = "Presets##pop_" + std::to_string(tn->id);
-        if (ImGui::SmallButton(("Presets##" + std::to_string(tn->id)).c_str())) {
+        if (ImGui::SmallButton(
+                ("Presets##" + std::to_string(tn->id)).c_str())) {
           ImGui::OpenPopup(presetPopup.c_str());
         }
         if (ImGui::BeginPopup(presetPopup.c_str())) {
@@ -134,7 +135,7 @@ void GraphNode::draw(NodeGraph* graph) {
           // List existing presets
           try {
             if (fs::is_directory(presetDir)) {
-              for (auto &entry : fs::directory_iterator(presetDir)) {
+              for (auto& entry : fs::directory_iterator(presetDir)) {
                 if (entry.path().extension() == ".json") {
                   std::string name = entry.path().stem().string();
                   if (ImGui::MenuItem(name.c_str())) {
@@ -151,7 +152,8 @@ void GraphNode::draw(NodeGraph* graph) {
                 }
               }
             }
-          } catch (...) {}
+          } catch (...) {
+          }
           ImGui::Separator();
           // Save current as preset
           static char presetName[128] = "";
