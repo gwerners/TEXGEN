@@ -74,6 +74,15 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<WarpCoreNode>(r);
     registerType<ColorizeCoreNode>(r);
     registerType<MMBricksCoreNode>(r);
+    registerType<MaterialCoreNode>(r);
+    registerType<NormalMapCoreNode>(r);
+    registerType<SdfShapeCoreNode>(r);
+    registerType<SdfOpCoreNode>(r);
+    registerType<SdfTransformCoreNode>(r);
+    registerType<SdfShowCoreNode>(r);
+    registerType<MakeTileableCoreNode>(r);
+    registerType<QuantizeCoreNode>(r);
+    registerType<EmbossCoreNode>(r);
     // Utility
     registerType<OutputCoreNode>(r);
     registerType<CommentCoreNode>(r);

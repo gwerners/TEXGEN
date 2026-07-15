@@ -52,6 +52,8 @@ EXAMPLES=(
   "09_gradient_fill:gradient_fill"
   "10_fbm_warp_colorize:fbm_warp_colorize"
   "11_voronoi_blend_bricks:voronoi_blend_bricks"
+  "12_pbr_material:pbr_material"
+  "13_sdf_badge:sdf_badge"
 )
 
 PASS=0

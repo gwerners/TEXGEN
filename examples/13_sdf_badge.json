@@ -1,0 +1,77 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "SdfShape",
+      "posX": -900,
+      "posY": -200,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "shape": 3, "cx": 0.5, "cy": 0.5, "w": 0.35,
+        "n": 7, "ir": 0.6, "rot": 0.0
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "SdfShape",
+      "posX": -900,
+      "posY": 100,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "shape": 0, "cx": 0.5, "cy": 0.5, "w": 0.16
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "SdfOp",
+      "posX": -600,
+      "posY": -50,
+      "params": { "op": 4, "k": 0.08 }
+    },
+    {
+      "id": 3,
+      "typeName": "SdfTransform",
+      "posX": -400,
+      "posY": -50,
+      "params": {
+        "tx": 0.0, "ty": 0.0, "rot": 0.0, "scale": 1.0,
+        "round": 0.0, "annularW": 0.02, "annularCount": 1
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "SdfShow",
+      "posX": -200,
+      "posY": -50,
+      "params": { "base": 0.0, "bevel": 0.02 }
+    },
+    {
+      "id": 5,
+      "typeName": "Colorize",
+      "posX": 0,
+      "posY": -50,
+      "params": {
+        "stops": [
+          [0.0, 0.08, 0.08, 0.12, 1.0],
+          [0.5, 0.75, 0.55, 0.1, 1.0],
+          [1.0, 1.0, 0.9, 0.45, 1.0]
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Output",
+      "posX": 220,
+      "posY": -50,
+      "params": { "filename": "sdf_badge.png" }
+    }
+  ],
+  "connections": [
+    { "fromId": 1, "fromSlot": "Sdf", "toId": 2, "toSlot": "A" },
+    { "fromId": 0, "fromSlot": "Sdf", "toId": 2, "toSlot": "B" },
+    { "fromId": 2, "fromSlot": "Sdf", "toId": 3, "toSlot": "Sdf" },
+    { "fromId": 3, "fromSlot": "Sdf", "toId": 4, "toSlot": "Sdf" },
+    { "fromId": 4, "fromSlot": "Out", "toId": 5, "toSlot": "In" },
+    { "fromId": 5, "fromSlot": "Out", "toId": 6, "toSlot": "In" }
+  ]
+}

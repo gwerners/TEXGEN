@@ -793,6 +793,128 @@ static void emitNode(std::ostringstream& ss,
        << pf(p, "colorBalance", 0.5f) << ", " << pf(p, "seed", 0.0f) << ");\n";
   }
 
+  else if (type == "Material") {
+    static const char* channels[] = {"Albedo", "Normal", "Roughness",
+                                     "Metallic", "Height", "AO", "Emission"};
+    std::string base = p.value("baseName", std::string("material"));
+    for (auto& ch : channels) {
+      std::string src = srcVar(conns, id, ch);
+      if (src.empty())
+        continue;
+      std::string lower = ch;
+      for (auto& c : lower)
+        c = (char)tolower(c);
+      ss << "    SaveImage(" << src << ", \"" << base << "_" << lower
+         << ".png\");\n";
+    }
+  }
+
+  else if (type == "NormalMap") {
+    std::string in = srcVar(conns, id, "Height");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMNormalMap(" << v << ", " << in << ", "
+         << pf(p, "amount", 1.0f) << ", " << p.value("format", 1) << ");\n";
+    }
+  }
+
+  else if (type == "SdfShape") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    { MMSdfShapeParams sp;\n";
+    ss << "      sp.shape = " << p.value("shape", 0) << "; sp.cx = "
+       << pf(p, "cx", 0.5f) << "; sp.cy = " << pf(p, "cy", 0.5f) << ";\n";
+    ss << "      sp.w = " << pf(p, "w", 0.3f) << "; sp.h = "
+       << pf(p, "h", 0.2f) << "; sp.n = " << p.value("n", 5) << "; sp.ir = "
+       << pf(p, "ir", 0.5f) << "; sp.rot = " << pf(p, "rot", 0.0f) << ";\n";
+    ss << "      sp.ax = " << pf(p, "ax", 0.2f) << "; sp.ay = "
+       << pf(p, "ay", 0.2f) << "; sp.bx = " << pf(p, "bx", 0.8f)
+       << "; sp.by = " << pf(p, "by", 0.8f) << ";\n";
+    ss << "      MMSdfShape(" << v << ", sp); }\n";
+  }
+
+  else if (type == "SdfOp") {
+    std::string a = srcVar(conns, id, "A");
+    std::string b = srcVar(conns, id, "B");
+    ss << "    GenTexture " << v << ";\n";
+    if (a.empty() || b.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << a << ".XRes, " << a << ".YRes);\n";
+      ss << "    MMSdfOp(" << v << ", " << a << ", " << b << ", "
+         << p.value("op", 0) << ", " << pf(p, "k", 0.1f) << ");\n";
+    }
+  }
+
+  else if (type == "SdfTransform") {
+    std::string in = srcVar(conns, id, "Sdf");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMSdfTransform(" << v << ", " << in << ", "
+         << pf(p, "tx", 0.0f) << ", " << pf(p, "ty", 0.0f) << ", "
+         << pf(p, "rot", 0.0f) << ", " << pf(p, "scale", 1.0f) << ", "
+         << pf(p, "round", 0.0f) << ", " << pf(p, "annularW", 0.05f) << ", "
+         << p.value("annularCount", 0) << ");\n";
+    }
+  }
+
+  else if (type == "SdfShow") {
+    std::string in = srcVar(conns, id, "Sdf");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMSdfShow(" << v << ", " << in << ", " << pf(p, "base", 0.0f)
+         << ", " << pf(p, "bevel", 0.01f) << ");\n";
+    }
+  }
+
+  else if (type == "MakeTileable") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMMakeTileable(" << v << ", " << in << ", "
+         << pf(p, "width", 0.1f) << ");\n";
+    }
+  }
+
+  else if (type == "Quantize") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMQuantize(" << v << ", " << in << ", "
+         << p.value("steps", 4) << ");\n";
+    }
+  }
+
+  else if (type == "Emboss") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMEmboss(" << v << ", " << in << ", " << pf(p, "angle", 0.0f)
+         << ", " << pf(p, "amount", 1.0f) << ", " << p.value("width", 1)
+         << ");\n";
+    }
+  }
+
   else {
     ss << "    // [unsupported node: " << type << " id " << id << "]\n";
   }

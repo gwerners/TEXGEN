@@ -245,3 +245,215 @@ void MMBricksNode::renderParams() {
                     ImGuiColorEditFlags_NoInputs);
   ImGui::PopItemWidth();
 }
+
+// ============================================================
+// MaterialNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> MaterialNode::inputSlotInfos() const {
+  return {{"Albedo", 1}, {"Normal", 1}, {"Roughness", 1}, {"Metallic", 1},
+          {"Height", 1}, {"AO", 1},     {"Emission", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> MaterialNode::outputSlotInfos() const {
+  return {};
+}
+
+void MaterialNode::renderParams() {
+  ImGui::PushItemWidth(160);
+  ImGui::InputText("Base##mat", m_core.m_baseName, sizeof(m_core.m_baseName));
+  Hint(
+      "Base filename: each connected channel is saved as\n"
+      "<base>_<channel>.png (e.g. material_albedo.png)");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// NormalMapNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> NormalMapNode::inputSlotInfos() const {
+  return {{"Height", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> NormalMapNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void NormalMapNode::renderParams() {
+  static const char* formats = "Default (-Z)\0OpenGL\0DirectX\0";
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Amount##nm", &m_core.m_amount, 0.0f, 4.0f);
+  Hint("The strength of the generated normals");
+  ImGui::Combo("Format##nm", &m_core.m_format, formats);
+  Hint("Normal map convention (DirectX flips the Y axis)");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// SdfShapeNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> SdfShapeNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> SdfShapeNode::outputSlotInfos() const {
+  return {{"Sdf", 1}};
+}
+
+void SdfShapeNode::renderParams() {
+  static const char* s_sizes = "32\00064\000128\000256\000512\0001024\000";
+  static const char* shapes = "Circle\0Box\0Line\0Star\0N-gon\0Rhombus\0";
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##sdfs", &m_core.m_widthIdx, s_sizes);
+  ImGui::Combo("H##sdfs", &m_core.m_heightIdx, s_sizes);
+  ImGui::Combo("Shape##sdfs", &m_core.m_p.shape, shapes);
+  Hint("The distance-field shape to generate");
+  int sh = m_core.m_p.shape;
+  if (sh == MMSdfLine) {
+    SliderFloatW("Ax##sdfs", &m_core.m_p.ax, 0.0f, 1.0f);
+    SliderFloatW("Ay##sdfs", &m_core.m_p.ay, 0.0f, 1.0f);
+    SliderFloatW("Bx##sdfs", &m_core.m_p.bx, 0.0f, 1.0f);
+    SliderFloatW("By##sdfs", &m_core.m_p.by, 0.0f, 1.0f);
+    SliderFloatW("Width##sdfs", &m_core.m_p.w, 0.0f, 0.5f);
+  } else {
+    SliderFloatW("CX##sdfs", &m_core.m_p.cx, 0.0f, 1.0f);
+    SliderFloatW("CY##sdfs", &m_core.m_p.cy, 0.0f, 1.0f);
+    SliderFloatW("Size##sdfs", &m_core.m_p.w, 0.0f, 1.0f);
+    Hint("Radius (circle/star/ngon) or half-width (box/rhombus)");
+    if (sh == MMSdfBox || sh == MMSdfRhombus)
+      SliderFloatW("SizeY##sdfs", &m_core.m_p.h, 0.0f, 1.0f);
+    if (sh == MMSdfStar || sh == MMSdfNgon) {
+      SliderIntW("Sides##sdfs", &m_core.m_p.n, 2, 16);
+      SliderFloatW("Rot##sdfs", &m_core.m_p.rot, -180.0f, 180.0f);
+    }
+    if (sh == MMSdfStar) {
+      SliderFloatW("Inner##sdfs", &m_core.m_p.ir, 0.0f, 1.0f);
+      Hint("Inner radius ratio (spikiness of the star)");
+    }
+  }
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// SdfOpNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> SdfOpNode::inputSlotInfos() const {
+  return {{"A", 1}, {"B", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> SdfOpNode::outputSlotInfos() const {
+  return {{"Sdf", 1}};
+}
+
+void SdfOpNode::renderParams() {
+  static const char* ops =
+      "Union\0Subtraction (B-A)\0Intersection\0Smooth Union\0"
+      "Smooth Subtraction\0Smooth Intersection\0Morph\0";
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("Op##sdfo", &m_core.m_op, ops);
+  Hint("Boolean operation between the two distance fields");
+  SliderFloatW("K##sdfo", &m_core.m_k, 0.0f, 1.0f);
+  Hint("Smoothness for smooth ops / mix amount for morph");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// SdfTransformNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> SdfTransformNode::inputSlotInfos() const {
+  return {{"Sdf", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> SdfTransformNode::outputSlotInfos() const {
+  return {{"Sdf", 1}};
+}
+
+void SdfTransformNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("TX##sdft", &m_core.m_tx, -1.0f, 1.0f);
+  SliderFloatW("TY##sdft", &m_core.m_ty, -1.0f, 1.0f);
+  SliderFloatW("Rot##sdft", &m_core.m_rot, -180.0f, 180.0f);
+  SliderFloatW("Scale##sdft", &m_core.m_scale, 0.1f, 4.0f);
+  SliderFloatW("Round##sdft", &m_core.m_round, 0.0f, 0.5f);
+  Hint("Grows the shape by rounding its distance field");
+  SliderIntW("Rings##sdft", &m_core.m_annularCount, 0, 8);
+  Hint("Annular ripples: repeats d = abs(d) - width");
+  SliderFloatW("RingW##sdft", &m_core.m_annularW, 0.0f, 0.25f);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// SdfShowNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> SdfShowNode::inputSlotInfos() const {
+  return {{"Sdf", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> SdfShowNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void SdfShowNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Base##sdfw", &m_core.m_base, 0.0f, 1.0f);
+  Hint("Base value added before the distance falloff");
+  SliderFloatW("Bevel##sdfw", &m_core.m_bevel, 0.001f, 0.5f);
+  Hint("Softness of the shape edge");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// MakeTileableNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> MakeTileableNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> MakeTileableNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void MakeTileableNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Width##mt", &m_core.m_width, 0.0f, 0.25f);
+  Hint("Width of the transition areas between parts of the image");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// QuantizeNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> QuantizeNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> QuantizeNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void QuantizeNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderIntW("Steps##qt", &m_core.m_steps, 2, 32);
+  Hint("The number of quantization steps");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// EmbossNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> EmbossNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> EmbossNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void EmbossNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Angle##em", &m_core.m_angle, -180.0f, 180.0f);
+  Hint("Light direction in degrees");
+  SliderFloatW("Amount##em", &m_core.m_amount, 0.0f, 4.0f);
+  SliderIntW("Width##em", &m_core.m_width, 1, 8);
+  Hint("Kernel radius in pixels");
+  ImGui::PopItemWidth();
+}

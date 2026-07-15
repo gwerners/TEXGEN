@@ -1,6 +1,8 @@
 #include "MMCoreNodes.h"
 
+#include <cctype>
 #include <cstring>
+#include "texgen_utils.h"
 
 namespace {
 
@@ -373,4 +375,363 @@ void MMBricksCoreNode::loadParams(const nlohmann::json& j) {
     m_colorBalance = j["colorBalance"];
   if (j.contains("seed"))
     m_seed = j["seed"];
+}
+
+// ============================================================
+// MaterialCoreNode
+// ============================================================
+
+MaterialCoreNode::MaterialCoreNode() {
+  strncpy(m_baseName, "material", sizeof(m_baseName));
+}
+
+std::vector<std::string> MaterialCoreNode::inputSlotNames() const {
+  return {"Albedo", "Normal", "Roughness", "Metallic",
+          "Height", "AO",     "Emission"};
+}
+std::vector<std::string> MaterialCoreNode::outputSlotNames() const {
+  return {};
+}
+
+void MaterialCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                               std::vector<GenTexture>& outputs) {
+  outputs.resize(0);
+  auto slots = inputSlotNames();
+  for (size_t i = 0; i < slots.size() && i < inputs.size(); i++) {
+    if (!inputs[i] || !inputs[i]->Data)
+      continue;
+    std::string channel = slots[i];
+    for (auto& c : channel)
+      c = (char)tolower(c);
+    std::string path = std::string(m_baseName) + "_" + channel + ".png";
+    SaveImage(*inputs[i], path.c_str());
+  }
+}
+
+nlohmann::json MaterialCoreNode::saveParams() const {
+  return {{"baseName", m_baseName}};
+}
+
+void MaterialCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("baseName")) {
+    std::string s = j["baseName"];
+    strncpy(m_baseName, s.c_str(), sizeof(m_baseName) - 1);
+    m_baseName[sizeof(m_baseName) - 1] = '\0';
+  }
+}
+
+// ============================================================
+// NormalMapCoreNode
+// ============================================================
+
+NormalMapCoreNode::NormalMapCoreNode()
+    : m_amount(1.0f), m_format(MMNormalOpenGL) {}
+
+std::vector<std::string> NormalMapCoreNode::inputSlotNames() const {
+  return {"Height"};
+}
+std::vector<std::string> NormalMapCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void NormalMapCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                std::vector<GenTexture>& outputs) {
+  GenTexture* height = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(height->XRes, height->YRes);
+  MMNormalMap(outputs[0], *height, m_amount, m_format);
+}
+
+nlohmann::json NormalMapCoreNode::saveParams() const {
+  return {{"amount", m_amount}, {"format", m_format}};
+}
+
+void NormalMapCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("amount"))
+    m_amount = j["amount"];
+  if (j.contains("format"))
+    m_format = j["format"];
+}
+
+// ============================================================
+// SdfShapeCoreNode
+// ============================================================
+
+SdfShapeCoreNode::SdfShapeCoreNode() : m_widthIdx(3), m_heightIdx(3) {}
+
+std::vector<std::string> SdfShapeCoreNode::inputSlotNames() const {
+  return {};
+}
+std::vector<std::string> SdfShapeCoreNode::outputSlotNames() const {
+  return {"Sdf"};
+}
+
+void SdfShapeCoreNode::execute(const std::vector<GenTexture*>& /*inputs*/,
+                               std::vector<GenTexture>& outputs) {
+  int w = mmSizeFromIdx(m_widthIdx);
+  int h = mmSizeFromIdx(m_heightIdx);
+  outputs.resize(1);
+  outputs[0].Init(w, h);
+  MMSdfShape(outputs[0], m_p);
+}
+
+nlohmann::json SdfShapeCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx},
+          {"heightIdx", m_heightIdx},
+          {"shape", m_p.shape},
+          {"cx", m_p.cx},
+          {"cy", m_p.cy},
+          {"w", m_p.w},
+          {"h", m_p.h},
+          {"n", m_p.n},
+          {"ir", m_p.ir},
+          {"rot", m_p.rot},
+          {"ax", m_p.ax},
+          {"ay", m_p.ay},
+          {"bx", m_p.bx},
+          {"by", m_p.by}};
+}
+
+void SdfShapeCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("shape"))
+    m_p.shape = j["shape"];
+  if (j.contains("cx"))
+    m_p.cx = j["cx"];
+  if (j.contains("cy"))
+    m_p.cy = j["cy"];
+  if (j.contains("w"))
+    m_p.w = j["w"];
+  if (j.contains("h"))
+    m_p.h = j["h"];
+  if (j.contains("n"))
+    m_p.n = j["n"];
+  if (j.contains("ir"))
+    m_p.ir = j["ir"];
+  if (j.contains("rot"))
+    m_p.rot = j["rot"];
+  if (j.contains("ax"))
+    m_p.ax = j["ax"];
+  if (j.contains("ay"))
+    m_p.ay = j["ay"];
+  if (j.contains("bx"))
+    m_p.bx = j["bx"];
+  if (j.contains("by"))
+    m_p.by = j["by"];
+}
+
+// ============================================================
+// SdfOpCoreNode
+// ============================================================
+
+SdfOpCoreNode::SdfOpCoreNode() : m_op(MMSdfUnion), m_k(0.1f) {}
+
+std::vector<std::string> SdfOpCoreNode::inputSlotNames() const {
+  return {"A", "B"};
+}
+std::vector<std::string> SdfOpCoreNode::outputSlotNames() const {
+  return {"Sdf"};
+}
+
+void SdfOpCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                            std::vector<GenTexture>& outputs) {
+  GenTexture* a = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  GenTexture* b = mmEnsure(inputs.size() > 1 ? inputs[1] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(a->XRes, a->YRes);
+  MMSdfOp(outputs[0], *a, *b, m_op, m_k);
+}
+
+nlohmann::json SdfOpCoreNode::saveParams() const {
+  return {{"op", m_op}, {"k", m_k}};
+}
+
+void SdfOpCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("op"))
+    m_op = j["op"];
+  if (j.contains("k"))
+    m_k = j["k"];
+}
+
+// ============================================================
+// SdfTransformCoreNode
+// ============================================================
+
+SdfTransformCoreNode::SdfTransformCoreNode()
+    : m_tx(0.0f),
+      m_ty(0.0f),
+      m_rot(0.0f),
+      m_scale(1.0f),
+      m_round(0.0f),
+      m_annularW(0.05f),
+      m_annularCount(0) {}
+
+std::vector<std::string> SdfTransformCoreNode::inputSlotNames() const {
+  return {"Sdf"};
+}
+std::vector<std::string> SdfTransformCoreNode::outputSlotNames() const {
+  return {"Sdf"};
+}
+
+void SdfTransformCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                   std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMSdfTransform(outputs[0], *in, m_tx, m_ty, m_rot, m_scale, m_round,
+                 m_annularW, m_annularCount);
+}
+
+nlohmann::json SdfTransformCoreNode::saveParams() const {
+  return {{"tx", m_tx},     {"ty", m_ty},
+          {"rot", m_rot},   {"scale", m_scale},
+          {"round", m_round}, {"annularW", m_annularW},
+          {"annularCount", m_annularCount}};
+}
+
+void SdfTransformCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("tx"))
+    m_tx = j["tx"];
+  if (j.contains("ty"))
+    m_ty = j["ty"];
+  if (j.contains("rot"))
+    m_rot = j["rot"];
+  if (j.contains("scale"))
+    m_scale = j["scale"];
+  if (j.contains("round"))
+    m_round = j["round"];
+  if (j.contains("annularW"))
+    m_annularW = j["annularW"];
+  if (j.contains("annularCount"))
+    m_annularCount = j["annularCount"];
+}
+
+// ============================================================
+// SdfShowCoreNode
+// ============================================================
+
+SdfShowCoreNode::SdfShowCoreNode() : m_base(0.0f), m_bevel(0.01f) {}
+
+std::vector<std::string> SdfShowCoreNode::inputSlotNames() const {
+  return {"Sdf"};
+}
+std::vector<std::string> SdfShowCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void SdfShowCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                              std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMSdfShow(outputs[0], *in, m_base, m_bevel);
+}
+
+nlohmann::json SdfShowCoreNode::saveParams() const {
+  return {{"base", m_base}, {"bevel", m_bevel}};
+}
+
+void SdfShowCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("base"))
+    m_base = j["base"];
+  if (j.contains("bevel"))
+    m_bevel = j["bevel"];
+}
+
+// ============================================================
+// MakeTileableCoreNode
+// ============================================================
+
+MakeTileableCoreNode::MakeTileableCoreNode() : m_width(0.1f) {}
+
+std::vector<std::string> MakeTileableCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> MakeTileableCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void MakeTileableCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                   std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMMakeTileable(outputs[0], *in, m_width);
+}
+
+nlohmann::json MakeTileableCoreNode::saveParams() const {
+  return {{"width", m_width}};
+}
+
+void MakeTileableCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("width"))
+    m_width = j["width"];
+}
+
+// ============================================================
+// QuantizeCoreNode
+// ============================================================
+
+QuantizeCoreNode::QuantizeCoreNode() : m_steps(4) {}
+
+std::vector<std::string> QuantizeCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> QuantizeCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void QuantizeCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                               std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMQuantize(outputs[0], *in, m_steps);
+}
+
+nlohmann::json QuantizeCoreNode::saveParams() const {
+  return {{"steps", m_steps}};
+}
+
+void QuantizeCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("steps"))
+    m_steps = j["steps"];
+}
+
+// ============================================================
+// EmbossCoreNode
+// ============================================================
+
+EmbossCoreNode::EmbossCoreNode()
+    : m_angle(0.0f), m_amount(1.0f), m_width(1) {}
+
+std::vector<std::string> EmbossCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> EmbossCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void EmbossCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                             std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMEmboss(outputs[0], *in, m_angle, m_amount, m_width);
+}
+
+nlohmann::json EmbossCoreNode::saveParams() const {
+  return {{"angle", m_angle}, {"amount", m_amount}, {"width", m_width}};
+}
+
+void EmbossCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("angle"))
+    m_angle = j["angle"];
+  if (j.contains("amount"))
+    m_amount = j["amount"];
+  if (j.contains("width"))
+    m_width = j["width"];
 }

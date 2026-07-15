@@ -20,6 +20,10 @@
 // Material Maker ports (Voronoi, FBM, Blend, Warp, Colorize, Bricks v2)
 #include "mm_generators.h"
 
+// Material Maker ports: SDF 2D and filters (NormalMap, MakeTileable, ...)
+#include "mm_filters.h"
+#include "mm_sdf.h"
+
 // AGG 2.4 vector drawing bridge (zero-copy rendering into GenTexture)
 #include "agg_gentexture.h"
 

@@ -44,3 +44,66 @@ class MMBricksNode : public UiNode<MMBricksCoreNode> {
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
   void renderParams() override;
 };
+
+class MaterialNode : public UiNode<MaterialCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class NormalMapNode : public UiNode<NormalMapCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class SdfShapeNode : public UiNode<SdfShapeCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class SdfOpNode : public UiNode<SdfOpCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class SdfTransformNode : public UiNode<SdfTransformCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class SdfShowNode : public UiNode<SdfShowCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class MakeTileableNode : public UiNode<MakeTileableCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class QuantizeNode : public UiNode<QuantizeCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class EmbossNode : public UiNode<EmbossCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};

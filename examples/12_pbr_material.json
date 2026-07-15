@@ -1,0 +1,76 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "BricksMM",
+      "posX": -900,
+      "posY": -200,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "pattern": 0, "countX": 4, "countY": 8, "repeat": 1,
+        "offset": 0.5, "mortar": 0.08, "round": 0.08, "bevel": 0.12,
+        "col0": [0.55, 0.25, 0.15, 1.0],
+        "col1": [0.68, 0.38, 0.22, 1.0],
+        "colMortar": [0.32, 0.3, 0.28, 1.0],
+        "colorBalance": 0.5, "seed": 0.2
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "BricksMM",
+      "posX": -900,
+      "posY": 150,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3,
+        "pattern": 0, "countX": 4, "countY": 8, "repeat": 1,
+        "offset": 0.5, "mortar": 0.08, "round": 0.08, "bevel": 0.12,
+        "col0": [1.0, 1.0, 1.0, 1.0],
+        "col1": [0.85, 0.85, 0.85, 1.0],
+        "colMortar": [0.0, 0.0, 0.0, 1.0],
+        "colorBalance": 0.5, "seed": 0.2
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "NormalMap",
+      "posX": -550,
+      "posY": 150,
+      "params": { "amount": 1.2, "format": 1 }
+    },
+    {
+      "id": 3,
+      "typeName": "Colorize",
+      "posX": -550,
+      "posY": 320,
+      "params": {
+        "stops": [
+          [0.0, 0.95, 0.95, 0.95, 1.0],
+          [1.0, 0.55, 0.55, 0.55, 1.0]
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Material",
+      "posX": -200,
+      "posY": 0,
+      "params": { "baseName": "brick_pbr" }
+    },
+    {
+      "id": 5,
+      "typeName": "Output",
+      "posX": -200,
+      "posY": -250,
+      "params": { "filename": "brick_pbr_preview.png" }
+    }
+  ],
+  "connections": [
+    { "fromId": 0, "fromSlot": "Out", "toId": 4, "toSlot": "Albedo" },
+    { "fromId": 1, "fromSlot": "Out", "toId": 2, "toSlot": "Height" },
+    { "fromId": 1, "fromSlot": "Out", "toId": 4, "toSlot": "Height" },
+    { "fromId": 2, "fromSlot": "Out", "toId": 4, "toSlot": "Normal" },
+    { "fromId": 1, "fromSlot": "Out", "toId": 3, "toSlot": "In" },
+    { "fromId": 3, "fromSlot": "Out", "toId": 4, "toSlot": "Roughness" },
+    { "fromId": 0, "fromSlot": "Out", "toId": 5, "toSlot": "In" }
+  ]
+}

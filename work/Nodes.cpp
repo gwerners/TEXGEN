@@ -38,6 +38,19 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   registry["Warp"] = []() { return std::make_unique<WarpNode>(); };
   registry["Colorize"] = []() { return std::make_unique<ColorizeNode>(); };
   registry["BricksMM"] = []() { return std::make_unique<MMBricksNode>(); };
+  registry["Material"] = []() { return std::make_unique<MaterialNode>(); };
+  registry["NormalMap"] = []() { return std::make_unique<NormalMapNode>(); };
+  registry["SdfShape"] = []() { return std::make_unique<SdfShapeNode>(); };
+  registry["SdfOp"] = []() { return std::make_unique<SdfOpNode>(); };
+  registry["SdfTransform"] = []() {
+    return std::make_unique<SdfTransformNode>();
+  };
+  registry["SdfShow"] = []() { return std::make_unique<SdfShowNode>(); };
+  registry["MakeTileable"] = []() {
+    return std::make_unique<MakeTileableNode>();
+  };
+  registry["Quantize"] = []() { return std::make_unique<QuantizeNode>(); };
+  registry["Emboss"] = []() { return std::make_unique<EmbossNode>(); };
 
   registry["Color"] = []() { return std::make_unique<ColorNode>(); };
   registry["Output"] = []() { return std::make_unique<OutputNode>(); };

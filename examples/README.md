@@ -107,6 +107,27 @@ Herringbone brick wall with procedural variation:
 - **Voronoi** edge distance multiplied on top via **Blend**
   (multiply mode, masked by the Voronoi F1 output)
 
+### 12 - PBR Material Export
+**File:** `12_pbr_material.json`
+
+Full PBR material: one graph, four texture maps on disk:
+
+- **BricksMM** (colored) feeds the **Material** node's Albedo channel
+- A grayscale **BricksMM** drives Height, **NormalMap** and (via
+  **Colorize**) Roughness
+- The **Material** node saves `brick_pbr_albedo.png`, `_normal.png`,
+  `_height.png` and `_roughness.png`
+
+### 13 - SDF Badge
+**File:** `13_sdf_badge.json`
+
+Signed-distance-field composition:
+
+- **SdfShape** star and circle combined with **SdfOp**
+  (smooth subtraction)
+- **SdfTransform** annular ring, **SdfShow** to grayscale,
+  **Colorize** golden ramp
+
 ---
 
 ## Node Reference
@@ -177,6 +198,15 @@ All AGG nodes have an optional **Bg** input for compositing on a background.
 | **Warp** | Displace UVs along a height map gradient |
 | **Colorize** | Multi-stop gradient map |
 | **BricksMM** | Brick layouts: running bond, herringbone, basket weave, spanish bond |
+| **Material** | PBR sink: saves each connected channel as `<base>_<channel>.png` |
+| **NormalMap** | Height to tangent-space normal map (OpenGL/DirectX) |
+| **SdfShape** | 2D signed distance shapes: circle, box, line, star, n-gon, rhombus |
+| **SdfOp** | SDF booleans (union/subtract/intersect), smooth variants, morph |
+| **SdfTransform** | SDF translate/rotate/scale, rounding, annular rings |
+| **SdfShow** | SDF to grayscale image with bevel |
+| **MakeTileable** | Hides seams by blending offset copies |
+| **Quantize** | Posterize RGB into N steps |
+| **Emboss** | Directional relief from a grayscale input |
 
 ### Utility Nodes
 
