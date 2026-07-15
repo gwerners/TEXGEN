@@ -89,6 +89,24 @@ Radial gradient background with a vector overlay:
 - **GradientFill** node with radial type (warm center to dark edge)
 - **Polygon** (6-point star, stroke only) drawn on top
 
+### 10 - FBM + Warp + Colorize (lava)
+**File:** `10_fbm_warp_colorize.json`
+
+Material Maker-style lava material, exported as PNG:
+
+- **FBM** (cellular, 1 fold) as the base pattern
+- **Colorize** mapping it through a 4-stop lava ramp
+- **Warp** displacing it along a second **FBM** (perlin) height map
+
+### 11 - Voronoi + Blend + Bricks v2 (herringbone)
+**File:** `11_voronoi_blend_bricks.json`
+
+Herringbone brick wall with procedural variation:
+
+- **BricksMM** with the herringbone pattern
+- **Voronoi** edge distance multiplied on top via **Blend**
+  (multiply mode, masked by the Voronoi F1 output)
+
 ---
 
 ## Node Reference
@@ -149,9 +167,20 @@ All AGG nodes have an optional **Bg** input for compositing on a background.
 | **Ternary** | Lerp or select between two textures via mask |
 | **GlowRect** | Draw glowing rectangle on background |
 
+### Material Maker Ports
+
+| Node | Description |
+|------|------------|
+| **Voronoi** | Tileable Voronoi with Color / F1 / Edge outputs |
+| **FBM** | Fractal noise (value/perlin/cellular variants, folds) |
+| **Blend** | 15 Photoshop-style blend modes + mask + opacity |
+| **Warp** | Displace UVs along a height map gradient |
+| **Colorize** | Multi-stop gradient map |
+| **BricksMM** | Brick layouts: running bond, herringbone, basket weave, spanish bond |
+
 ### Utility Nodes
 
 | Node | Description |
 |------|------------|
-| **Output** | Saves result to TGA file |
+| **Output** | Saves result to TGA or PNG file (by extension) |
 | **Comment** | Visual note for organizing pipelines |

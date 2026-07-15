@@ -1,0 +1,69 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Voronoi",
+      "posX": -800,
+      "posY": -200,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "scaleX": 6,
+        "scaleY": 6,
+        "stretchX": 1.0,
+        "stretchY": 1.0,
+        "intensity": 0.75,
+        "randomness": 1.0,
+        "seed": 0.42
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "BricksMM",
+      "posX": -800,
+      "posY": 150,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "pattern": 2,
+        "countX": 4,
+        "countY": 1,
+        "repeat": 2,
+        "offset": 0.5,
+        "mortar": 0.05,
+        "round": 0.1,
+        "bevel": 0.15,
+        "col0": [0.55, 0.25, 0.15, 1.0],
+        "col1": [0.68, 0.38, 0.22, 1.0],
+        "colMortar": [0.32, 0.3, 0.28, 1.0],
+        "colorBalance": 0.5,
+        "seed": 0.13
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "Blend",
+      "posX": -450,
+      "posY": 0,
+      "params": {
+        "mode": 2,
+        "opacity": 0.65
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Output",
+      "posX": -150,
+      "posY": 0,
+      "params": {
+        "filename": "voronoi_blend_bricks.png"
+      }
+    }
+  ],
+  "connections": [
+    { "fromId": 0, "fromSlot": "Edge", "toId": 2, "toSlot": "A" },
+    { "fromId": 1, "fromSlot": "Out", "toId": 2, "toSlot": "B" },
+    { "fromId": 0, "fromSlot": "F1", "toId": 2, "toSlot": "Mask" },
+    { "fromId": 2, "fromSlot": "Out", "toId": 3, "toSlot": "In" }
+  ]
+}

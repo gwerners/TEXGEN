@@ -50,6 +50,8 @@ EXAMPLES=(
   "07_bezier_curves:bezier_curves"
   "08_dashed_arc:dashed_arc"
   "09_gradient_fill:gradient_fill"
+  "10_fbm_warp_colorize:fbm_warp_colorize"
+  "11_voronoi_blend_bricks:voronoi_blend_bricks"
 )
 
 PASS=0

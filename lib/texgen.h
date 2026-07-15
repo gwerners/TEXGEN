@@ -17,6 +17,9 @@
 // Procedural generators (Crystal, Perlin, Bricks, Blur, HSCB, etc.)
 #include "extra_generators.hpp"
 
+// Material Maker ports (Voronoi, FBM, Blend, Warp, Colorize, Bricks v2)
+#include "mm_generators.h"
+
 // AGG 2.4 vector drawing bridge (zero-copy rendering into GenTexture)
 #include "agg_gentexture.h"
 
@@ -29,3 +32,8 @@
 // Core node base class and registry (for extending with custom nodes)
 #include "CoreNode.h"
 #include "CoreNodeRegistry.h"
+
+// Built-in node implementations (usable directly from library code)
+#include "AggCoreNodes.h"
+#include "CoreNodes.h"
+#include "MMCoreNodes.h"

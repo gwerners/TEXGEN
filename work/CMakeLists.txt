@@ -99,6 +99,7 @@ set(SRC
   Nodes.cpp
   AllNodes.cpp
   AggNodes.cpp
+  MMNodes.cpp
   CExport.cpp
   ProjectIO.cpp
   Gradient.cpp

@@ -3,6 +3,39 @@
 #include <cstring>
 #include <random>
 
+#define STB_IMAGE_WRITE_STATIC
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
+// Save as PNG (8-bit RGBA) via stb_image_write.
+static bool SaveImagePNG(GenTexture &img, const char *filename) {
+  sU8 *buf = new sU8[img.XRes * img.YRes * 4];
+  for (sInt i = 0; i < img.NPixels; i++) {
+    buf[i * 4 + 0] = img.Data[i].r >> 8;
+    buf[i * 4 + 1] = img.Data[i].g >> 8;
+    buf[i * 4 + 2] = img.Data[i].b >> 8;
+    buf[i * 4 + 3] = img.Data[i].a >> 8;
+  }
+  int ok = stbi_write_png(filename, img.XRes, img.YRes, 4, buf,
+                          img.XRes * 4);
+  delete[] buf;
+  return ok != 0;
+}
+
+static bool hasSuffix(const char *s, const char *suffix) {
+  size_t ls = strlen(s), lf = strlen(suffix);
+  if (lf > ls)
+    return false;
+  for (size_t i = 0; i < lf; i++) {
+    char a = s[ls - lf + i], b = suffix[i];
+    if (a >= 'A' && a <= 'Z')
+      a += 'a' - 'A';
+    if (a != b)
+      return false;
+  }
+  return true;
+}
+
 void MatMult(Matrix44 &dest, const Matrix44 &a, const Matrix44 &b) {
   for (sInt i = 0; i < 4; i++)
     for (sInt j = 0; j < 4; j++)
@@ -60,6 +93,9 @@ void Colorize(GenTexture &img, sU32 startCol, sU32 endCol) {
 }
 
 bool SaveImage(GenTexture &img, const char *filename) {
+  if (hasSuffix(filename, ".png"))
+    return SaveImagePNG(img, filename);
+
   FILE *f = fopen(filename, "wb");
   if (!f)
     return false;

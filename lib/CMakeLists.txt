@@ -8,6 +8,8 @@ set(TEXGEN_LIB_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/texgen_utils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/CoreNodes.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/AggCoreNodes.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mm_generators.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/MMCoreNodes.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/HeadlessEval.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/CoreNodeRegistry.cpp
 )

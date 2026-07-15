@@ -1,4 +1,5 @@
 #include "CExport.h"
+#include "CoreNodeRegistry.h"
 #ifndef TEXGEN_NO_UI
 #include "Nodes.h"
 #endif
@@ -69,6 +70,30 @@ static std::string var(int id) {
   return "n" + std::to_string(id);
 }
 
+// Output slot names per node id (filled at export start from the registry).
+// Multi-output nodes get one variable per slot: n<id>_<slot>.
+static std::map<int, std::vector<std::string>> g_nodeOutputs;
+
+static std::string outVar(int srcId, const std::string& fromSlot) {
+  auto it = g_nodeOutputs.find(srcId);
+  if (it != g_nodeOutputs.end() && it->second.size() > 1)
+    return var(srcId) + "_" + fromSlot;
+  return var(srcId);
+}
+
+// Variable name of the source output feeding (nodeId, slot), "" if none.
+static std::string srcVar(const nlohmann::json& connections,
+                          int nodeId,
+                          const std::string& slotName) {
+  for (auto& c : connections) {
+    if (c["toId"].get<int>() == nodeId &&
+        c["toSlot"].get<std::string>() == slotName) {
+      return outVar(c["fromId"].get<int>(), c["fromSlot"].get<std::string>());
+    }
+  }
+  return "";
+}
+
 // Find which node output connects to a given input slot.
 // Returns the node id of the source, or -1 if not connected.
 static int findInputSource(const nlohmann::json& connections,
@@ -86,9 +111,9 @@ static int findInputSource(const nlohmann::json& connections,
 static std::string inputRef(const nlohmann::json& connections,
                             int nodeId,
                             const std::string& slotName) {
-  int src = findInputSource(connections, nodeId, slotName);
-  if (src >= 0)
-    return "&" + var(src);
+  std::string s = srcVar(connections, nodeId, slotName);
+  if (!s.empty())
+    return "&" + s;
   return "NULL";
 }
 
@@ -223,7 +248,7 @@ static void emitNode(std::ostringstream& ss,
 
   else if (type == "Blur") {
     int src = findInputSource(conns, id, "In");
-    std::string in = (src >= 0) ? var(src) : v;
+    std::string in = (src >= 0) ? srcVar(conns, id, "In") : v;
     if (src >= 0) {
       ss << "    GenTexture " << v << ";\n";
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
@@ -235,7 +260,7 @@ static void emitNode(std::ostringstream& ss,
 
   else if (type == "BlurKernel") {
     int src = findInputSource(conns, id, "In");
-    std::string in = (src >= 0) ? var(src) : v;
+    std::string in = (src >= 0) ? srcVar(conns, id, "In") : v;
     ss << "    GenTexture " << v << ";\n";
     if (src >= 0)
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
@@ -246,7 +271,7 @@ static void emitNode(std::ostringstream& ss,
 
   else if (type == "HSCB") {
     int src = findInputSource(conns, id, "In");
-    std::string in = (src >= 0) ? var(src) : v;
+    std::string in = (src >= 0) ? srcVar(conns, id, "In") : v;
     ss << "    GenTexture " << v << ";\n";
     if (src >= 0)
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
@@ -257,7 +282,7 @@ static void emitNode(std::ostringstream& ss,
 
   else if (type == "Derive") {
     int src = findInputSource(conns, id, "In");
-    std::string in = (src >= 0) ? var(src) : v;
+    std::string in = (src >= 0) ? srcVar(conns, id, "In") : v;
     ss << "    GenTexture " << v << ";\n";
     if (src >= 0)
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
@@ -267,7 +292,7 @@ static void emitNode(std::ostringstream& ss,
 
   else if (type == "ColorMatrix") {
     int src = findInputSource(conns, id, "In");
-    std::string in = (src >= 0) ? var(src) : v;
+    std::string in = (src >= 0) ? srcVar(conns, id, "In") : v;
     ss << "    GenTexture " << v << ";\n";
     if (src >= 0)
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
@@ -295,8 +320,8 @@ static void emitNode(std::ostringstream& ss,
     // Find first connected input for size
     int src1 = findInputSource(conns, id, "Image1");
     if (src1 >= 0)
-      ss << "    " << v << ".Init(" << var(src1) << ".XRes, " << var(src1)
-         << ".YRes);\n";
+      ss << "    " << v << ".Init(" << srcVar(conns, id, "Image1") << ".XRes, "
+         << srcVar(conns, id, "Image1") << ".YRes);\n";
     else
       ss << "    " << v << ".Init(256, 256);\n";
 
@@ -315,11 +340,11 @@ static void emitNode(std::ostringstream& ss,
     for (int i = 0; i < 4; i++) {
       int s = findInputSource(conns, id, slotNames[i]);
       if (s >= 0) {
-        ss << "      li[" << i << "].Tex = &" << var(s) << "; li[" << i
-           << "].Weight = " << fmtf(weights[i].get<float>()) << "; li[" << i
-           << "].UShift = " << fmtf(uShift[i].get<float>()) << "; li[" << i
-           << "].VShift = " << fmtf(vShift[i].get<float>()) << "; li[" << i
-           << "].FilterMode = " << fMode[i].get<int>() << ";\n";
+        ss << "      li[" << i << "].Tex = &" << srcVar(conns, id, slotNames[i])
+           << "; li[" << i << "].Weight = " << fmtf(weights[i].get<float>())
+           << "; li[" << i << "].UShift = " << fmtf(uShift[i].get<float>())
+           << "; li[" << i << "].VShift = " << fmtf(vShift[i].get<float>())
+           << "; li[" << i << "].FilterMode = " << fMode[i].get<int>() << ";\n";
         count = i + 1;
       }
     }
@@ -332,12 +357,12 @@ static void emitNode(std::ostringstream& ss,
     int snSrc = findInputSource(conns, id, "Snippet");
     ss << "    GenTexture " << v << ";\n";
     if (bgSrc >= 0)
-      ss << "    " << v << ".Init(" << var(bgSrc) << ".XRes, " << var(bgSrc)
-         << ".YRes);\n";
+      ss << "    " << v << ".Init(" << srcVar(conns, id, "Background")
+         << ".XRes, " << srcVar(conns, id, "Background") << ".YRes);\n";
     else
       ss << "    " << v << ".Init(256, 256);\n";
-    std::string bg = (bgSrc >= 0) ? var(bgSrc) : v;
-    std::string sn = (snSrc >= 0) ? var(snSrc) : v;
+    std::string bg = (bgSrc >= 0) ? srcVar(conns, id, "Background") : v;
+    std::string sn = (snSrc >= 0) ? srcVar(conns, id, "Snippet") : v;
     ss << "    " << v << ".Paste(" << bg << ", " << sn << ", "
        << pf(p, "orgx", 0.0f) << ", " << pf(p, "orgy", 0.0f) << ", "
        << pf(p, "ux", 1.0f) << ", " << pf(p, "uy", 0.0f) << ", "
@@ -351,11 +376,11 @@ static void emitNode(std::ostringstream& ss,
     int sm = findInputSource(conns, id, "Mask");
     ss << "    GenTexture " << v << ";\n";
     if (s1 >= 0)
-      ss << "    " << v << ".Init(" << var(s1) << ".XRes, " << var(s1)
-         << ".YRes);\n";
-    std::string i1 = (s1 >= 0) ? var(s1) : v;
-    std::string i2 = (s2 >= 0) ? var(s2) : v;
-    std::string mask = (sm >= 0) ? var(sm) : v;
+      ss << "    " << v << ".Init(" << srcVar(conns, id, "Image1") << ".XRes, "
+         << srcVar(conns, id, "Image1") << ".YRes);\n";
+    std::string i1 = (s1 >= 0) ? srcVar(conns, id, "Image1") : v;
+    std::string i2 = (s2 >= 0) ? srcVar(conns, id, "Image2") : v;
+    std::string mask = (sm >= 0) ? srcVar(conns, id, "Mask") : v;
     ss << "    " << v << ".Ternary(" << i1 << ", " << i2 << ", " << mask << ", "
        << p.value("op", 0) << ");\n";
   }
@@ -364,14 +389,14 @@ static void emitNode(std::ostringstream& ss,
     int src = findInputSource(conns, id, "In");
     ss << "    GenTexture " << v << ";\n";
     if (src >= 0)
-      ss << "    " << v << " = " << var(src) << ";\n";
+      ss << "    " << v << " = " << srcVar(conns, id, "In") << ";\n";
     ss << "    Wavelet(" << v << ", " << p.value("mode", 0) << ", "
        << p.value("count", 1) << ");\n";
   }
 
   else if (type == "ColorBalance") {
     int src = findInputSource(conns, id, "In");
-    std::string in = (src >= 0) ? var(src) : v;
+    std::string in = (src >= 0) ? srcVar(conns, id, "In") : v;
     auto sh = p.value("shadow", nlohmann::json::array({0, 0, 0}));
     auto md = p.value("mid", nlohmann::json::array({0, 0, 0}));
     auto hl = p.value("highlight", nlohmann::json::array({0, 0, 0}));
@@ -389,7 +414,7 @@ static void emitNode(std::ostringstream& ss,
   else if (type == "Output") {
     int src = findInputSource(conns, id, "In");
     if (src >= 0)
-      ss << "    *out = " << var(src) << ";\n";
+      ss << "    *out = " << srcVar(conns, id, "In") << ";\n";
   }
 
   // Skip Comment and Image nodes (not exportable as pure C)
@@ -409,10 +434,11 @@ static void emitNode(std::ostringstream& ss,
     ss << "    GenTexture " << v << ";\n";
     ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
     if (bgSrc >= 0) {
-      ss << "    if(" << var(bgSrc) << ".Data && " << var(bgSrc)
-         << ".XRes==" << w << " && " << var(bgSrc) << ".YRes==" << h << ")\n";
-      ss << "      memcpy(" << v << ".Data, " << var(bgSrc) << ".Data, " << w
-         << "*" << h << "*sizeof(Pixel));\n";
+      std::string bgv = srcVar(conns, id, "Bg");
+      ss << "    if(" << bgv << ".Data && " << bgv << ".XRes==" << w << " && "
+         << bgv << ".YRes==" << h << ")\n";
+      ss << "      memcpy(" << v << ".Data, " << bgv << ".Data, " << w << "*"
+         << h << "*sizeof(Pixel));\n";
     }
     ss << "    { agg::rendering_buffer rbuf = agg_rbuf_from(" << v << ");\n";
     ss << "      AggPixfmt pixf(rbuf); AggRendererBase ren(pixf);\n";
@@ -666,6 +692,107 @@ static void emitNode(std::ostringstream& ss,
     ss << "    }\n";
   }
 
+  else if (type == "Voronoi") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    ss << "    GenTexture " << v << "_Color, " << v << "_F1, " << v
+       << "_Edge;\n";
+    ss << "    " << v << "_Color.Init(" << w << ", " << h << "); " << v
+       << "_F1.Init(" << w << ", " << h << "); " << v << "_Edge.Init(" << w
+       << ", " << h << ");\n";
+    ss << "    MMVoronoi(&" << v << "_Color, &" << v << "_F1, &" << v
+       << "_Edge, " << p.value("scaleX", 4) << ", " << p.value("scaleY", 4)
+       << ", " << pf(p, "stretchX", 1.0f) << ", " << pf(p, "stretchY", 1.0f)
+       << ", " << pf(p, "intensity", 0.75f) << ", " << pf(p, "randomness", 1.0f)
+       << ", " << pf(p, "seed", 0.0f) << ");\n";
+  }
+
+  else if (type == "FBM") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMFbm(" << v << ", " << p.value("mode", 1) << ", "
+       << p.value("scaleX", 4) << ", " << p.value("scaleY", 4) << ", "
+       << p.value("folds", 0) << ", " << p.value("octaves", 4) << ", "
+       << pf(p, "persistence", 0.5f) << ", " << pf(p, "seed", 0.0f) << ");\n";
+  }
+
+  else if (type == "Blend") {
+    std::string a = srcVar(conns, id, "A");
+    std::string b = srcVar(conns, id, "B");
+    if (a.empty() || b.empty()) {
+      ss << "    // [Blend node " << id << " skipped: missing A/B input]\n";
+      ss << "    GenTexture " << v << ";\n";
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    GenTexture " << v << ";\n";
+      ss << "    " << v << ".Init(" << b << ".XRes, " << b << ".YRes);\n";
+      ss << "    MMBlend(" << v << ", " << a << ", " << b << ", "
+         << inputRef(conns, id, "Mask") << ", " << p.value("mode", 0) << ", "
+         << pf(p, "opacity", 1.0f) << ");\n";
+    }
+  }
+
+  else if (type == "Warp") {
+    std::string in = srcVar(conns, id, "In");
+    std::string hm = srcVar(conns, id, "Height");
+    if (in.empty() || hm.empty()) {
+      ss << "    // [Warp node " << id
+         << " skipped: missing In/Height input]\n";
+      ss << "    GenTexture " << v << ";\n";
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    GenTexture " << v << ";\n";
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMWarp(" << v << ", " << in << ", " << hm << ", "
+         << inputRef(conns, id, "Strength") << ", " << pf(p, "amount", 0.1f)
+         << ", " << pf(p, "epsilon", 0.005f) << ");\n";
+    }
+  }
+
+  else if (type == "Colorize") {
+    std::string in = srcVar(conns, id, "In");
+    auto stops = p.value("stops", nlohmann::json::array());
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty() || stops.empty()) {
+      ss << "    // [Colorize node " << id << " skipped: missing input]\n";
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    { const MMGradientStop stops[] = {";
+      for (size_t i = 0; i < stops.size(); i++) {
+        auto& s = stops[i];
+        ss << "{" << fmtf(s[0].get<float>()) << ", " << fmtf(s[1].get<float>())
+           << ", " << fmtf(s[2].get<float>()) << ", " << fmtf(s[3].get<float>())
+           << ", " << fmtf(s[4].get<float>()) << "}"
+           << (i + 1 < stops.size() ? ", " : "");
+      }
+      ss << "};\n";
+      ss << "      MMColorize(" << v << ", " << in << ", stops, "
+         << stops.size() << "); }\n";
+    }
+  }
+
+  else if (type == "BricksMM") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    std::string c0 = colorHexArr(
+        p.value("col0", nlohmann::json::array({0.55, 0.25, 0.15, 1.0})));
+    std::string c1 = colorHexArr(
+        p.value("col1", nlohmann::json::array({0.65, 0.35, 0.2, 1.0})));
+    std::string cm = colorHexArr(
+        p.value("colMortar", nlohmann::json::array({0.3, 0.3, 0.28, 1.0})));
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMBricks(" << v << ", " << p.value("pattern", 0) << ", "
+       << p.value("countX", 4) << ", " << p.value("countY", 8) << ", "
+       << p.value("repeat", 1) << ", " << pf(p, "offset", 0.5f) << ", "
+       << pf(p, "mortar", 0.1f) << ", " << pf(p, "round", 0.1f) << ", "
+       << pf(p, "bevel", 0.2f) << ", " << c0 << ", " << c1 << ", " << cm << ", "
+       << pf(p, "colorBalance", 0.5f) << ", " << pf(p, "seed", 0.0f) << ");\n";
+  }
+
   else {
     ss << "    // [unsupported node: " << type << " id " << id << "]\n";
   }
@@ -693,6 +820,14 @@ bool exportCHeaderFromJSON(const nlohmann::json& project,
   std::map<int, nlohmann::json*> nodeMap;
   for (auto& n : nodes)
     nodeMap[n["id"].get<int>()] = &n;
+
+  // Output slot names per node (multi-output nodes get per-slot variables)
+  g_nodeOutputs.clear();
+  for (auto& n : nodes) {
+    auto core = getCoreNodeRegistry().create(n["typeName"].get<std::string>());
+    if (core)
+      g_nodeOutputs[n["id"].get<int>()] = core->outputSlotNames();
+  }
 
   // Topological sort via Kahn's algorithm on the JSON
   std::map<int, int> inDegree;

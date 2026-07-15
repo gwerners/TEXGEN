@@ -1,6 +1,7 @@
 #include "Nodes.h"
 #include "AggNodes.h"
 #include "AllNodes.h"
+#include "MMNodes.h"
 #include "Utils.h"
 
 #include <imgui.h>
@@ -30,6 +31,14 @@ NodeGraph* g_nodeGraph = nullptr;
 // ============================================================
 
 void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
+  // Material Maker ports
+  registry["Voronoi"] = []() { return std::make_unique<VoronoiNode>(); };
+  registry["FBM"] = []() { return std::make_unique<FBMNode>(); };
+  registry["Blend"] = []() { return std::make_unique<BlendNode>(); };
+  registry["Warp"] = []() { return std::make_unique<WarpNode>(); };
+  registry["Colorize"] = []() { return std::make_unique<ColorizeNode>(); };
+  registry["BricksMM"] = []() { return std::make_unique<MMBricksNode>(); };
+
   registry["Color"] = []() { return std::make_unique<ColorNode>(); };
   registry["Output"] = []() { return std::make_unique<OutputNode>(); };
   registry["Noise"] = []() { return std::make_unique<NoiseNode>(); };

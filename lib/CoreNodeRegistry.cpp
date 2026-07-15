@@ -2,6 +2,7 @@
 
 #include "AggCoreNodes.h"
 #include "CoreNodes.h"
+#include "MMCoreNodes.h"
 
 void CoreNodeRegistry::add(const std::string &typeName,
                            CoreNodeFactory factory) {
@@ -66,6 +67,13 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<LinearCombineCoreNode>(r);
     registerType<TernaryCoreNode>(r);
     registerType<GlowRectCoreNode>(r);
+    // Material Maker ports
+    registerType<VoronoiCoreNode>(r);
+    registerType<FBMCoreNode>(r);
+    registerType<BlendCoreNode>(r);
+    registerType<WarpCoreNode>(r);
+    registerType<ColorizeCoreNode>(r);
+    registerType<MMBricksCoreNode>(r);
     // Utility
     registerType<OutputCoreNode>(r);
     registerType<CommentCoreNode>(r);

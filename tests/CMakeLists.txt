@@ -9,7 +9,9 @@ target_include_directories(texgen_export PRIVATE
   ${CMAKE_SOURCE_DIR}/work
   ${CMAKE_SOURCE_DIR}/work/ktg
   ${CMAKE_SOURCE_DIR}/json/include
+  ${CMAKE_SOURCE_DIR}/lib
 )
+target_link_libraries(texgen_export PRIVATE texgen)
 target_compile_definitions(texgen_export PRIVATE TEXGEN_NO_UI)
 target_compile_options(texgen_export PRIVATE -w)
 
