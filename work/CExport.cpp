@@ -1,5 +1,6 @@
 #include "CExport.h"
 #include "CoreNodeRegistry.h"
+#include "GraphEval.h"
 #ifndef TEXGEN_NO_UI
 #include "Nodes.h"
 #endif
@@ -417,8 +418,9 @@ static void emitNode(std::ostringstream& ss,
       ss << "    *out = " << srcVar(conns, id, "In") << ";\n";
   }
 
-  // Skip Comment and Image nodes (not exportable as pure C)
-  else if (type == "Comment" || type == "Image") {
+  // Skip Comment/Image (not exportable) and Remote (already baked into
+  // target params by applyRemotes before emission)
+  else if (type == "Comment" || type == "Image" || type == "Remote") {
     ss << "    // [" << type << " node " << id << " skipped]\n";
   }
 
@@ -794,8 +796,9 @@ static void emitNode(std::ostringstream& ss,
   }
 
   else if (type == "Material") {
-    static const char* channels[] = {"Albedo", "Normal", "Roughness",
-                                     "Metallic", "Height", "AO", "Emission"};
+    static const char* channels[] = {"Albedo",   "Normal", "Roughness",
+                                     "Metallic", "Height", "AO",
+                                     "Emission"};
     std::string base = p.value("baseName", std::string("material"));
     for (auto& ch : channels) {
       std::string src = srcVar(conns, id, ch);
@@ -827,13 +830,14 @@ static void emitNode(std::ostringstream& ss,
     ss << "    GenTexture " << v << ";\n";
     ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
     ss << "    { MMSdfShapeParams sp;\n";
-    ss << "      sp.shape = " << p.value("shape", 0) << "; sp.cx = "
-       << pf(p, "cx", 0.5f) << "; sp.cy = " << pf(p, "cy", 0.5f) << ";\n";
-    ss << "      sp.w = " << pf(p, "w", 0.3f) << "; sp.h = "
-       << pf(p, "h", 0.2f) << "; sp.n = " << p.value("n", 5) << "; sp.ir = "
-       << pf(p, "ir", 0.5f) << "; sp.rot = " << pf(p, "rot", 0.0f) << ";\n";
-    ss << "      sp.ax = " << pf(p, "ax", 0.2f) << "; sp.ay = "
-       << pf(p, "ay", 0.2f) << "; sp.bx = " << pf(p, "bx", 0.8f)
+    ss << "      sp.shape = " << p.value("shape", 0)
+       << "; sp.cx = " << pf(p, "cx", 0.5f) << "; sp.cy = " << pf(p, "cy", 0.5f)
+       << ";\n";
+    ss << "      sp.w = " << pf(p, "w", 0.3f) << "; sp.h = " << pf(p, "h", 0.2f)
+       << "; sp.n = " << p.value("n", 5) << "; sp.ir = " << pf(p, "ir", 0.5f)
+       << "; sp.rot = " << pf(p, "rot", 0.0f) << ";\n";
+    ss << "      sp.ax = " << pf(p, "ax", 0.2f)
+       << "; sp.ay = " << pf(p, "ay", 0.2f) << "; sp.bx = " << pf(p, "bx", 0.8f)
        << "; sp.by = " << pf(p, "by", 0.8f) << ";\n";
     ss << "      MMSdfShape(" << v << ", sp); }\n";
   }
@@ -897,8 +901,8 @@ static void emitNode(std::ostringstream& ss,
       ss << "    " << v << ".Init(256, 256);\n";
     } else {
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
-      ss << "    MMQuantize(" << v << ", " << in << ", "
-         << p.value("steps", 4) << ");\n";
+      ss << "    MMQuantize(" << v << ", " << in << ", " << p.value("steps", 4)
+         << ");\n";
     }
   }
 
@@ -934,7 +938,9 @@ bool exportCHeader(NodeGraph* graph,
 bool exportCHeaderFromJSON(const nlohmann::json& project,
                            const std::string& name,
                            const std::string& outPath) {
-  nlohmann::json j = project;  // mutable copy
+  // Inline subgraphs and bake Remote-driven parameter values, so the
+  // emitter only ever sees flat graphs of concrete nodes.
+  nlohmann::json j = applyRemotes(flattenSubgraphs(project));
   auto& nodes = j["nodes"];
   auto& conns = j["connections"];
 

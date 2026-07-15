@@ -1,0 +1,95 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Subgraph",
+      "posX": -700,
+      "posY": -150,
+      "params": {
+        "title": "LavaGen",
+        "graph": {
+          "nodes": [
+            {
+              "id": 100,
+              "typeName": "FBM",
+              "posX": -900,
+              "posY": -150,
+              "params": {
+                "widthIdx": 3, "heightIdx": 3, "mode": 4,
+                "scaleX": 6, "scaleY": 6, "folds": 1,
+                "octaves": 4, "persistence": 0.5, "seed": 0.77
+              }
+            },
+            {
+              "id": 101,
+              "typeName": "Colorize",
+              "posX": -650,
+              "posY": -150,
+              "params": {
+                "stops": [
+                  [0.0, 0.05, 0.01, 0.0, 1.0],
+                  [0.35, 0.55, 0.06, 0.0, 1.0],
+                  [0.65, 1.0, 0.45, 0.05, 1.0],
+                  [1.0, 1.0, 0.95, 0.55, 1.0]
+                ]
+              }
+            }
+          ],
+          "connections": [
+            { "fromId": 100, "fromSlot": "Out", "toId": 101, "toSlot": "In" }
+          ]
+        },
+        "inputs": [],
+        "outputs": [ { "name": "Out", "id": 101, "slot": "Out" } ]
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "FBM",
+      "posX": -700,
+      "posY": 150,
+      "params": {
+        "widthIdx": 3, "heightIdx": 3, "mode": 1,
+        "scaleX": 4, "scaleY": 4, "folds": 0,
+        "octaves": 5, "persistence": 0.55, "seed": 0.31
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "Warp",
+      "posX": -350,
+      "posY": 0,
+      "params": { "amount": 0.1, "epsilon": 0.01 }
+    },
+    {
+      "id": 3,
+      "typeName": "Remote",
+      "posX": -700,
+      "posY": 350,
+      "params": {
+        "links": [
+          {
+            "label": "Height detail", "nodeId": 1, "param": "scaleX",
+            "min": 1.0, "max": 16.0, "value": 8.0
+          },
+          {
+            "label": "Warp strength", "nodeId": 2, "param": "amount",
+            "min": 0.0, "max": 0.5, "value": 0.18
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Output",
+      "posX": -100,
+      "posY": 0,
+      "params": { "filename": "subgraph_remote.png" }
+    }
+  ],
+  "connections": [
+    { "fromId": 0, "fromSlot": "Out", "toId": 2, "toSlot": "In" },
+    { "fromId": 1, "fromSlot": "Out", "toId": 2, "toSlot": "Height" },
+    { "fromId": 2, "fromSlot": "Out", "toId": 4, "toSlot": "In" }
+  ]
+}

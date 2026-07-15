@@ -128,6 +128,18 @@ Signed-distance-field composition:
 - **SdfTransform** annular ring, **SdfShow** to grayscale,
   **Colorize** golden ramp
 
+### 14 - Subgraph + Remote
+**File:** `14_subgraph_remote.json`
+
+Structural nodes:
+
+- A **Subgraph** ("LavaGen") encapsulating an FBM → Colorize chain,
+  exposed as a single node with an `Out` port
+- A **Remote** node whose sliders drive the height FBM's `scaleX` and
+  the **Warp** amount (values are applied before evaluation)
+- In the editor, select nodes and right-click → *Group Selected* /
+  *Ungroup Selected*
+
 ---
 
 ## Node Reference
@@ -207,6 +219,13 @@ All AGG nodes have an optional **Bg** input for compositing on a background.
 | **MakeTileable** | Hides seams by blending offset copies |
 | **Quantize** | Posterize RGB into N steps |
 | **Emboss** | Directional relief from a grayscale input |
+
+### Structural Nodes
+
+| Node | Description |
+|------|------------|
+| **Subgraph** | A nested graph exposed as one node (Group/Ungroup in the editor) |
+| **Remote** | Sliders that drive parameters of other nodes |
 
 ### Utility Nodes
 

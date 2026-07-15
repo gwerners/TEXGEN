@@ -2,6 +2,7 @@
 #include "AggNodes.h"
 #include "AllNodes.h"
 #include "MMNodes.h"
+#include "StructNodes.h"
 #include "Utils.h"
 
 #include <imgui.h>
@@ -51,6 +52,9 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   };
   registry["Quantize"] = []() { return std::make_unique<QuantizeNode>(); };
   registry["Emboss"] = []() { return std::make_unique<EmbossNode>(); };
+  // Structural
+  registry["Subgraph"] = []() { return std::make_unique<SubgraphNode>(); };
+  registry["Remote"] = []() { return std::make_unique<RemoteNode>(); };
 
   registry["Color"] = []() { return std::make_unique<ColorNode>(); };
   registry["Output"] = []() { return std::make_unique<OutputNode>(); };
@@ -680,6 +684,13 @@ std::vector<GraphNode*> NodeGraph::getDownstreamNodes(GraphNode* start) {
 }
 
 void NodeGraph::refreshNode(GraphNode* node) {
+  // Remote nodes don't process textures: pushing their sliders means
+  // patching the target nodes' params and refreshing those instead.
+  if (node->texNode()->typeName() == "Remote") {
+    applyRemoteNode(node, true);
+    return;
+  }
+
   refreshSingleNode(this, node);
   auto downstream = getDownstreamNodes(node);
   for (auto* dn : downstream) {
@@ -719,6 +730,8 @@ void NodeGraph::resetNodeParams(GraphNode* node) {
 }
 
 void NodeGraph::generate() {
+  applyRemoteValues();
+
   for (auto* n : m_nodes) {
     n->executed = false;
     n->cachedOutputs.clear();
@@ -989,6 +1002,13 @@ void NodeGraph::draw() {
 
     ImGui::Separator();
 
+    if (ImGui::MenuItem("Group Selected"))
+      groupSelected();
+    if (ImGui::MenuItem("Ungroup Selected"))
+      ungroupSelected();
+
+    ImGui::Separator();
+
     if (ImGui::MenuItem("Reset Zoom"))
       ImNodes::GetCurrentCanvas()->Zoom = 1;
 
@@ -1111,4 +1131,340 @@ void createNodeCanvas() {
     g_nodeGraph = new NodeGraph();
   }
   g_nodeGraph->draw();
+}
+
+// ============================================================
+// Subgraphs and Remote parameters
+// ============================================================
+
+bool NodeGraph::makeConnection(GraphNode* from,
+                               const std::string& fromSlot,
+                               GraphNode* to,
+                               const std::string& toSlot) {
+  const char* fromPtr = nullptr;
+  const char* toPtr = nullptr;
+  auto outSlots = from->texNode()->outputSlotInfos();
+  for (auto& s : outSlots)
+    if (s.title && fromSlot == s.title) {
+      fromPtr = s.title;
+      break;
+    }
+  auto inSlots = to->texNode()->inputSlotInfos();
+  for (auto& s : inSlots)
+    if (s.title && toSlot == s.title) {
+      toPtr = s.title;
+      break;
+    }
+  if (!fromPtr || !toPtr)
+    return false;
+  NodeConnection conn;
+  conn.outputNodePtr = from;
+  conn.outputSlot = fromPtr;
+  conn.inputNodePtr = to;
+  conn.inputSlot = toPtr;
+  from->connections().push_back(conn);
+  to->connections().push_back(conn);
+  return true;
+}
+
+void NodeGraph::applyRemoteNode(GraphNode* remote, bool refreshTargets) {
+  nlohmann::json p = remote->texNode()->saveParams();
+  for (auto& l : p.value("links", nlohmann::json::array())) {
+    GraphNode* target = findNodeById(l.value("nodeId", -1));
+    std::string key = l.value("param", std::string());
+    if (!target || key.empty() || target == remote)
+      continue;
+    nlohmann::json patch;
+    patch[key] = l.value("value", 0.0f);
+    target->texNode()->loadParams(patch);
+    if (refreshTargets)
+      refreshNode(target);
+    else
+      target->syncParamsHash();
+  }
+}
+
+void NodeGraph::applyRemoteValues() {
+  for (auto* gn : m_nodes)
+    if (gn->texNode()->typeName() == "Remote")
+      applyRemoteNode(gn, false);
+}
+
+void NodeGraph::groupSelected() {
+  std::vector<GraphNode*> sel;
+  for (auto* gn : m_nodes)
+    if (gn->isSelected())
+      sel.push_back(gn);
+  if (sel.size() < 2)
+    return;
+
+  pushUndo();
+
+  std::set<int> selIds;
+  float cx = 0, cy = 0;
+  for (auto* gn : sel) {
+    selIds.insert(gn->texNode()->id);
+    cx += gn->texNode()->pos.x;
+    cy += gn->texNode()->pos.y;
+  }
+  cx /= sel.size();
+  cy /= sel.size();
+
+  // Inner graph JSON (ids preserved — they are internal to the subgraph)
+  nlohmann::json nodesArr = nlohmann::json::array();
+  for (auto* gn : sel) {
+    TextureNode* tn = gn->texNode();
+    nodesArr.push_back({{"id", tn->id},
+                        {"typeName", tn->typeName()},
+                        {"posX", tn->pos.x},
+                        {"posY", tn->pos.y},
+                        {"params", tn->saveParams()}});
+  }
+  nlohmann::json connsArr = nlohmann::json::array();
+
+  // Boundary analysis. Each connection appears in both endpoints' lists,
+  // so only process entries where gn is the OUTPUT side, plus external
+  // sources feeding selected nodes (processed from the input side).
+  struct ExtRef {
+    GraphNode* node;
+    std::string slot;
+  };
+  struct InPortDef {
+    std::string name;
+    ExtRef source;
+    std::vector<std::pair<int, std::string>> targets;
+  };
+  struct OutPortDef {
+    std::string name;
+    int id;
+    std::string slot;
+    std::vector<ExtRef> dests;
+  };
+  std::vector<InPortDef> inPorts;
+  std::vector<OutPortDef> outPorts;
+
+  auto uniqueName = [](std::vector<std::string>& used, std::string base) {
+    std::string name = base;
+    int n = 2;
+    while (std::find(used.begin(), used.end(), name) != used.end())
+      name = base + "_" + std::to_string(n++);
+    used.push_back(name);
+    return name;
+  };
+  std::vector<std::string> usedIn, usedOut;
+
+  for (auto* gn : sel) {
+    for (auto& conn : gn->connections()) {
+      GraphNode* outNode = (GraphNode*)conn.outputNodePtr;
+      GraphNode* inNode = (GraphNode*)conn.inputNodePtr;
+      if (!outNode || !inNode || !conn.outputSlot || !conn.inputSlot)
+        continue;
+      bool fromSel = selIds.count(outNode->texNode()->id) > 0;
+      bool toSel = selIds.count(inNode->texNode()->id) > 0;
+
+      if (fromSel && toSel) {
+        // internal connection — record once (from the output side)
+        if (outNode == gn)
+          connsArr.push_back({{"fromId", outNode->texNode()->id},
+                              {"fromSlot", conn.outputSlot},
+                              {"toId", inNode->texNode()->id},
+                              {"toSlot", conn.inputSlot}});
+      } else if (!fromSel && toSel && inNode == gn) {
+        // external source -> selected: input port (one per unique source)
+        InPortDef* port = nullptr;
+        for (auto& p : inPorts)
+          if (p.source.node == outNode && p.source.slot == conn.outputSlot) {
+            port = &p;
+            break;
+          }
+        if (!port) {
+          inPorts.push_back({uniqueName(usedIn, conn.inputSlot),
+                             {outNode, conn.outputSlot},
+                             {}});
+          port = &inPorts.back();
+        }
+        port->targets.push_back({inNode->texNode()->id, conn.inputSlot});
+      } else if (fromSel && !toSel && outNode == gn) {
+        // selected -> external: output port (one per unique inner source)
+        OutPortDef* port = nullptr;
+        for (auto& p : outPorts)
+          if (p.id == outNode->texNode()->id && p.slot == conn.outputSlot) {
+            port = &p;
+            break;
+          }
+        if (!port) {
+          outPorts.push_back({uniqueName(usedOut, conn.outputSlot),
+                              outNode->texNode()->id,
+                              conn.outputSlot,
+                              {}});
+          port = &outPorts.back();
+        }
+        port->dests.push_back({inNode, conn.inputSlot});
+      }
+    }
+  }
+
+  // Build subgraph params
+  nlohmann::json ins = nlohmann::json::array();
+  for (auto& p : inPorts) {
+    nlohmann::json targets = nlohmann::json::array();
+    for (auto& t : p.targets)
+      targets.push_back({t.first, t.second});
+    ins.push_back({{"name", p.name}, {"targets", targets}});
+  }
+  nlohmann::json outs = nlohmann::json::array();
+  for (auto& p : outPorts)
+    outs.push_back({{"name", p.name}, {"id", p.id}, {"slot", p.slot}});
+
+  nlohmann::json subParams = {
+      {"title", "Subgraph"},
+      {"graph", {{"nodes", nodesArr}, {"connections", connsArr}}},
+      {"inputs", ins},
+      {"outputs", outs}};
+
+  // Create the subgraph node
+  auto it = m_registry.find("Subgraph");
+  if (it == m_registry.end())
+    return;
+  auto texNode = it->second();
+  int subId = m_nextId++;
+  texNode->id = subId;
+  texNode->pos = {cx, cy};
+  texNode->loadParams(subParams);
+  GraphNode* sub = new GraphNode(std::move(texNode), subId);
+  sub->paramsOpen = true;
+  m_nodes.push_back(sub);
+
+  // Remove selected nodes (this also drops boundary connections from the
+  // external nodes' lists)
+  for (auto* gn : sel) {
+    gn->deleteAllConnections(m_nodes);
+    m_nodes.erase(std::find(m_nodes.begin(), m_nodes.end(), gn));
+    delete gn;
+  }
+
+  // Rewire boundary connections to the subgraph's ports
+  for (auto& p : inPorts)
+    makeConnection(p.source.node, p.source.slot, sub, p.name);
+  for (auto& p : outPorts)
+    for (auto& d : p.dests)
+      makeConnection(sub, p.name, d.node, d.slot);
+
+  generate();
+}
+
+void NodeGraph::ungroupSelected() {
+  std::vector<GraphNode*> subs;
+  for (auto* gn : m_nodes)
+    if (gn->isSelected() && gn->texNode()->typeName() == "Subgraph")
+      subs.push_back(gn);
+  if (subs.empty())
+    return;
+
+  pushUndo();
+
+  for (auto* sub : subs) {
+    nlohmann::json p = sub->texNode()->saveParams();
+    auto inner = p.value("graph", nlohmann::json::object());
+    auto innerNodes = inner.value("nodes", nlohmann::json::array());
+    auto innerConns = inner.value("connections", nlohmann::json::array());
+
+    // Position offset: inner centroid -> subgraph position
+    float icx = 0, icy = 0;
+    for (auto& nj : innerNodes) {
+      icx += nj.value("posX", 0.0f);
+      icy += nj.value("posY", 0.0f);
+    }
+    if (!innerNodes.empty()) {
+      icx /= innerNodes.size();
+      icy /= innerNodes.size();
+    }
+    float dx = sub->texNode()->pos.x - icx;
+    float dy = sub->texNode()->pos.y - icy;
+
+    // Recreate inner nodes with fresh ids
+    std::map<int, int> idMap;
+    for (auto& nj : innerNodes) {
+      std::string typeName = nj["typeName"];
+      auto it = m_registry.find(typeName);
+      if (it == m_registry.end())
+        continue;
+      int oldId = nj["id"];
+      int newId = m_nextId++;
+      idMap[oldId] = newId;
+      auto texNode = it->second();
+      texNode->id = newId;
+      texNode->pos.x = nj.value("posX", 100.0f) + dx;
+      texNode->pos.y = nj.value("posY", 100.0f) + dy;
+      texNode->selected = true;
+      if (nj.contains("params"))
+        texNode->loadParams(nj["params"]);
+      m_nodes.push_back(new GraphNode(std::move(texNode), newId));
+    }
+
+    // Remap Remote link targets inside the expanded nodes
+    for (auto& [oldId, newId] : idMap) {
+      GraphNode* gn = findNodeById(newId);
+      if (!gn || gn->texNode()->typeName() != "Remote")
+        continue;
+      nlohmann::json rp = gn->texNode()->saveParams();
+      for (auto& l : rp["links"]) {
+        int t = l.value("nodeId", -1);
+        if (idMap.count(t))
+          l["nodeId"] = idMap[t];
+      }
+      gn->texNode()->loadParams(rp);
+    }
+
+    // Inner connections
+    for (auto& cj : innerConns) {
+      int f = cj.value("fromId", -1), t = cj.value("toId", -1);
+      if (!idMap.count(f) || !idMap.count(t))
+        continue;
+      makeConnection(findNodeById(idMap[f]), cj.value("fromSlot", ""),
+                     findNodeById(idMap[t]), cj.value("toSlot", ""));
+    }
+
+    // Boundary connections through the port maps
+    auto inPorts = p.value("inputs", nlohmann::json::array());
+    auto outPorts = p.value("outputs", nlohmann::json::array());
+    std::vector<NodeConnection> boundary = sub->connections();
+    for (auto& conn : boundary) {
+      if (!conn.outputSlot || !conn.inputSlot)
+        continue;
+      if (conn.inputNodePtr == sub) {
+        // external source -> port
+        GraphNode* ext = (GraphNode*)conn.outputNodePtr;
+        for (auto& ip : inPorts) {
+          if (ip.value("name", std::string()) != conn.inputSlot)
+            continue;
+          for (auto& tgt : ip.value("targets", nlohmann::json::array())) {
+            int ti = tgt[0].get<int>();
+            if (idMap.count(ti))
+              makeConnection(ext, conn.outputSlot, findNodeById(idMap[ti]),
+                             tgt[1].get<std::string>());
+          }
+        }
+      } else if (conn.outputNodePtr == sub) {
+        // port -> external destination
+        GraphNode* ext = (GraphNode*)conn.inputNodePtr;
+        for (auto& op : outPorts) {
+          if (op.value("name", std::string()) != conn.outputSlot)
+            continue;
+          int si = op.value("id", -1);
+          if (idMap.count(si))
+            makeConnection(findNodeById(idMap[si]),
+                           op.value("slot", std::string()), ext,
+                           conn.inputSlot);
+        }
+      }
+    }
+
+    // Remove the subgraph node
+    sub->deleteAllConnections(m_nodes);
+    m_nodes.erase(std::find(m_nodes.begin(), m_nodes.end(), sub));
+    delete sub;
+  }
+
+  generate();
 }

@@ -2,6 +2,7 @@
 
 #include "AggCoreNodes.h"
 #include "CoreNodes.h"
+#include "GraphCoreNodes.h"
 #include "MMCoreNodes.h"
 
 void CoreNodeRegistry::add(const std::string &typeName,
@@ -83,6 +84,9 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<MakeTileableCoreNode>(r);
     registerType<QuantizeCoreNode>(r);
     registerType<EmbossCoreNode>(r);
+    // Structural
+    registerType<SubgraphCoreNode>(r);
+    registerType<RemoteCoreNode>(r);
     // Utility
     registerType<OutputCoreNode>(r);
     registerType<CommentCoreNode>(r);

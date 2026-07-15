@@ -120,6 +120,13 @@ class NodeGraph {
   void copySelected();
   void pasteClipboard();
 
+  // Subgraphs
+  void groupSelected();    // collapse selected nodes into a Subgraph node
+  void ungroupSelected();  // expand selected Subgraph nodes in place
+
+  // Push Remote node values into their target nodes' params
+  void applyRemoteValues();
+
  private:
   std::vector<GraphNode*> m_nodes;
   std::map<std::string, NodeFactory> m_registry;
@@ -131,6 +138,11 @@ class NodeGraph {
   void syncParamHashes();
   GraphNode* findNodeByPtr(void* ptr);
   GraphNode* findNodeById(int id);
+  bool makeConnection(GraphNode* from,
+                      const std::string& fromSlot,
+                      GraphNode* to,
+                      const std::string& toSlot);
+  void applyRemoteNode(GraphNode* remote, bool refreshTargets);
   std::vector<GraphNode*> topologicalSort();
   std::vector<GraphNode*> getDownstreamNodes(GraphNode* start);
 

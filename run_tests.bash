@@ -54,6 +54,7 @@ EXAMPLES=(
   "11_voronoi_blend_bricks:voronoi_blend_bricks"
   "12_pbr_material:pbr_material"
   "13_sdf_badge:sdf_badge"
+  "14_subgraph_remote:subgraph_remote"
 )
 
 PASS=0
