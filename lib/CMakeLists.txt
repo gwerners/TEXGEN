@@ -6,6 +6,8 @@ set(TEXGEN_LIB_SOURCES
   ${TEXGEN_WORK}/ktg/gentexture.cpp
   ${TEXGEN_WORK}/extra_generators.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/texgen_utils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/CoreNodes.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/AggCoreNodes.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/HeadlessEval.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/CoreNodeRegistry.cpp
 )
@@ -15,6 +17,7 @@ set(TEXGEN_LIB_INCLUDES
   ${TEXGEN_WORK}
   ${TEXGEN_WORK}/ktg
   ${CMAKE_SOURCE_DIR}/json/include
+  ${CMAKE_SOURCE_DIR}/stb
 )
 
 # Static library

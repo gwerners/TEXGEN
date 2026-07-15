@@ -1,626 +1,272 @@
 #pragma once
-#include <imgui.h>
-#include <raylib.h>
-#include <string>
-#include <vector>
+#include "CoreNodes.h"
 #include "TextureNode.h"
-#include "extra_generators.hpp"
-#include "gentexture.hpp"
 
 // ============================================================
-// ColorNode - creates a blank image filled with a solid color
+// ColorNode — UI wrapper for ColorCoreNode
 // ============================================================
-class ColorNode : public TextureNode {
+class ColorNode : public UiNode<ColorCoreNode> {
  public:
-  ColorNode();
-  std::string typeName() const override { return "Color"; }
-  std::string displayTitle() const override { return "Color"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  int m_widthIdx;
-  int m_heightIdx;
-  float m_color[4];
 };
 
 // ============================================================
-// OutputNode - saves the image to a file
+// OutputNode — UI wrapper for OutputCoreNode
 // ============================================================
-class OutputNode : public TextureNode {
+class OutputNode : public UiNode<OutputCoreNode> {
  public:
-  OutputNode();
-  std::string typeName() const override { return "Output"; }
-  std::string displayTitle() const override { return "Output"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  char m_filename[256];
 };
 
 // ============================================================
-// NoiseNode - gentexture Noise
+// NoiseNode — UI wrapper for NoiseCoreNode
 // ============================================================
-class NoiseNode : public TextureNode {
+class NoiseNode : public UiNode<NoiseCoreNode> {
  public:
-  NoiseNode();
-  std::string typeName() const override { return "Noise"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  int m_freqX, m_freqY, m_oct, m_seed, m_mode;
-  float m_fadeoff;
-  int m_sizeIdx;
-  float m_col1[4], m_col2[4];
 };
 
 // ============================================================
-// CellsNode - gentexture Cells
+// CellsNode — UI wrapper for CellsCoreNode
 // ============================================================
-class CellsNode : public TextureNode {
+class CellsNode : public UiNode<CellsCoreNode> {
  public:
-  CellsNode();
-  std::string typeName() const override { return "Cells"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  int m_nCenters, m_seed, m_mode;
-  float m_amp;
-  int m_sizeIdx;
-  float m_col1[4], m_col2[4];
-  int m_colorMode;  // 0=Gradient, 1=Random
 };
 
 // ============================================================
-// GlowRectNode - gentexture GlowRect
+// GlowRectNode — UI wrapper for GlowRectCoreNode
 // ============================================================
-class GlowRectNode : public TextureNode {
+class GlowRectNode : public UiNode<GlowRectCoreNode> {
  public:
-  GlowRectNode();
-  std::string typeName() const override { return "GlowRect"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  float m_orgx, m_orgy, m_ux, m_uy, m_vx, m_vy, m_rectu, m_rectv;
 };
 
 // ============================================================
-// ColorMatrixNode - gentexture ColorMatrixTransform
+// ColorMatrixNode — UI wrapper for ColorMatrixCoreNode
 // ============================================================
-class ColorMatrixNode : public TextureNode {
+class ColorMatrixNode : public UiNode<ColorMatrixCoreNode> {
  public:
-  ColorMatrixNode();
-  std::string typeName() const override { return "ColorMatrix"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  float m_matrix[16];
-  bool m_clampPremult;
 };
 
 // ============================================================
-// CoordMatrixNode - gentexture CoordMatrixTransform
+// CoordMatrixNode — UI wrapper for CoordMatrixCoreNode
 // ============================================================
-class CoordMatrixNode : public TextureNode {
+class CoordMatrixNode : public UiNode<CoordMatrixCoreNode> {
  public:
-  CoordMatrixNode();
-  std::string typeName() const override { return "CoordMatrix"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  float m_matrix[16];
-  int m_filterMode;
 };
 
 // ============================================================
-// ColorRemapNode - gentexture ColorRemap
+// ColorRemapNode — UI wrapper for ColorRemapCoreNode
 // ============================================================
-class ColorRemapNode : public TextureNode {
+class ColorRemapNode : public UiNode<ColorRemapCoreNode> {
  public:
-  ColorRemapNode();
-  std::string typeName() const override { return "ColorRemap"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
 };
 
 // ============================================================
-// CoordRemapNode - gentexture CoordRemap
+// CoordRemapNode — UI wrapper for CoordRemapCoreNode
 // ============================================================
-class CoordRemapNode : public TextureNode {
+class CoordRemapNode : public UiNode<CoordRemapCoreNode> {
  public:
-  CoordRemapNode();
-  std::string typeName() const override { return "CoordRemap"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  float m_strengthU, m_strengthV;
-  int m_filterMode;
 };
 
 // ============================================================
-// DeriveNode - gentexture Derive
+// DeriveNode — UI wrapper for DeriveCoreNode
 // ============================================================
-class DeriveNode : public TextureNode {
+class DeriveNode : public UiNode<DeriveCoreNode> {
  public:
-  DeriveNode();
-  std::string typeName() const override { return "Derive"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  int m_op;
-  float m_strength;
 };
 
 // ============================================================
-// BlurNode - gentexture Blur
+// BlurNode — UI wrapper for BlurCoreNode
 // ============================================================
-class BlurNode : public TextureNode {
+class BlurNode : public UiNode<BlurCoreNode> {
  public:
-  BlurNode();
-  std::string typeName() const override { return "Blur"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  float m_sizex, m_sizey;
-  int m_order, m_mode;
 };
 
 // ============================================================
-// TernaryNode - gentexture Ternary
+// TernaryNode — UI wrapper for TernaryCoreNode
 // ============================================================
-class TernaryNode : public TextureNode {
+class TernaryNode : public UiNode<TernaryCoreNode> {
  public:
-  TernaryNode();
-  std::string typeName() const override { return "Ternary"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  int m_op;
 };
 
 // ============================================================
-// PasteNode - gentexture Paste
+// PasteNode — UI wrapper for PasteCoreNode
 // ============================================================
-class PasteNode : public TextureNode {
+class PasteNode : public UiNode<PasteCoreNode> {
  public:
-  PasteNode();
-  std::string typeName() const override { return "Paste"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  float m_orgx, m_orgy, m_ux, m_uy, m_vx, m_vy;
-  int m_op, m_mode;
 };
 
 // ============================================================
-// BumpNode - gentexture Bump
+// BumpNode — UI wrapper for BumpCoreNode
 // ============================================================
-class BumpNode : public TextureNode {
+class BumpNode : public UiNode<BumpCoreNode> {
  public:
-  BumpNode();
-  std::string typeName() const override { return "Bump"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  float m_px, m_py, m_pz, m_dx, m_dy, m_dz;
-  float m_ambient[4];
-  float m_diffuse[4];
-  bool m_directional;
 };
 
 // ============================================================
-// LinearCombineNode - gentexture LinearCombine
+// LinearCombineNode — UI wrapper for LinearCombineCoreNode
 // ============================================================
-class LinearCombineNode : public TextureNode {
+class LinearCombineNode : public UiNode<LinearCombineCoreNode> {
  public:
-  LinearCombineNode();
-  std::string typeName() const override { return "LinearCombine"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  float m_constColor[4];
-  float m_constWeight;
-  float m_weights[4];
-  float m_uShift[4];
-  float m_vShift[4];
-  int m_filterMode[4];
 };
 
 // ============================================================
-// CrystalNode - extra Crystal
+// CrystalNode — UI wrapper for CrystalCoreNode
 // ============================================================
-class CrystalNode : public TextureNode {
+class CrystalNode : public UiNode<CrystalCoreNode> {
  public:
-  CrystalNode();
-  std::string typeName() const override { return "Crystal"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  int m_widthIdx, m_heightIdx;
-  int m_seed, m_count;
-  float m_colorNear[4];
-  float m_colorFar[4];
 };
 
 // ============================================================
-// DirectionalGradientNode - extra DirectionalGradient
+// DirectionalGradientNode — UI wrapper for DirectionalGradientCoreNode
 // ============================================================
-class DirectionalGradientNode : public TextureNode {
+class DirectionalGradientNode : public UiNode<DirectionalGradientCoreNode> {
  public:
-  DirectionalGradientNode();
-  std::string typeName() const override { return "DirectionalGradient"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  int m_widthIdx, m_heightIdx;
-  float m_x1, m_y1, m_x2, m_y2;
-  float m_col1[4];
-  float m_col2[4];
 };
 
 // ============================================================
-// GlowEffectNode - extra GlowEffect
+// GlowEffectNode — UI wrapper for GlowEffectCoreNode
 // ============================================================
-class GlowEffectNode : public TextureNode {
+class GlowEffectNode : public UiNode<GlowEffectCoreNode> {
  public:
-  GlowEffectNode();
-  std::string typeName() const override { return "GlowEffect"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  int m_widthIdx, m_heightIdx;
-  float m_cx, m_cy, m_scale, m_exponent, m_intensity;
-  float m_bgCol[4];
-  float m_glowCol[4];
 };
 
 // ============================================================
-// PerlinNoiseRG2Node - extra PerlinNoiseRG2
+// PerlinNoiseRG2Node — UI wrapper for PerlinNoiseRG2CoreNode
 // ============================================================
-class PerlinNoiseRG2Node : public TextureNode {
+class PerlinNoiseRG2Node : public UiNode<PerlinNoiseRG2CoreNode> {
  public:
-  PerlinNoiseRG2Node();
-  std::string typeName() const override { return "PerlinNoiseRG2"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  int m_widthIdx, m_heightIdx;
-  int m_octaves, m_freqScale, m_seed, m_startOctave;
-  float m_persistence, m_contrast;
-  float m_col1[4];
-  float m_col2[4];
 };
 
 // ============================================================
-// BlurKernelNode - extra BlurKernel
+// BlurKernelNode — UI wrapper for BlurKernelCoreNode
 // ============================================================
-class BlurKernelNode : public TextureNode {
+class BlurKernelNode : public UiNode<BlurKernelCoreNode> {
  public:
-  BlurKernelNode();
-  std::string typeName() const override { return "BlurKernel"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  float m_radiusX, m_radiusY;
-  int m_kernelType, m_wrapMode;
 };
 
 // ============================================================
-// HSCBNode - extra HSCB
+// HSCBNode — UI wrapper for HSCBCoreNode
 // ============================================================
-class HSCBNode : public TextureNode {
+class HSCBNode : public UiNode<HSCBCoreNode> {
  public:
-  HSCBNode();
-  std::string typeName() const override { return "HSCB"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  float m_hue, m_sat, m_contrast, m_brightness;
 };
 
 // ============================================================
-// WaveletNode - extra Wavelet
+// WaveletNode — UI wrapper for WaveletCoreNode
 // ============================================================
-class WaveletNode : public TextureNode {
+class WaveletNode : public UiNode<WaveletCoreNode> {
  public:
-  WaveletNode();
-  std::string typeName() const override { return "Wavelet"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  int m_mode, m_count;
 };
 
 // ============================================================
-// ColorBalanceNode - extra ColorBalance
+// ColorBalanceNode — UI wrapper for ColorBalanceCoreNode
 // ============================================================
-class ColorBalanceNode : public TextureNode {
+class ColorBalanceNode : public UiNode<ColorBalanceCoreNode> {
  public:
-  ColorBalanceNode();
-  std::string typeName() const override { return "ColorBalance"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  // shadow, mid, highlight for R, G, B
-  float m_shadow[3];
-  float m_mid[3];
-  float m_highlight[3];
 };
 
 // ============================================================
-// BricksNode - extra Bricks
+// BricksNode — UI wrapper for BricksCoreNode
 // ============================================================
-class BricksNode : public TextureNode {
+class BricksNode : public UiNode<BricksCoreNode> {
  public:
-  BricksNode();
-  std::string typeName() const override { return "Bricks"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  int m_widthIdx, m_heightIdx;
-  float m_col0[4];
-  float m_col1[4];
-  float m_colFuge[4];
-  float m_fugeX, m_fugeY;
-  int m_tileX, m_tileY;
-  int m_seed, m_heads;
-  float m_colorBalance;
 };
 
 // ============================================================
-// GradientNode - outputs a 2x1 gradient texture from two colors
+// GradientNode — UI wrapper for GradientCoreNode
 // ============================================================
-class GradientNode : public TextureNode {
+class GradientNode : public UiNode<GradientCoreNode> {
  public:
-  GradientNode();
-  std::string typeName() const override { return "Gradient"; }
-  std::string displayTitle() const override { return "Gradient"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  float m_col1[4];
-  float m_col2[4];
 };
 
 // ============================================================
-// ImageNode - loads an image file as texture source
+// ImageNode — UI wrapper for ImageCoreNode
 // ============================================================
-class ImageNode : public TextureNode {
+class ImageNode : public UiNode<ImageCoreNode> {
  public:
-  ImageNode();
-  std::string typeName() const override { return "Image"; }
-  std::string displayTitle() const override { return "Image"; }
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  char m_filename[256];
-  bool m_loaded;
-  GenTexture m_cache;
-  std::string m_loadedPath;
 };
 
 // ============================================================
-// CommentNode - visual note for organizing pipelines
+// CommentNode — UI wrapper for CommentCoreNode
 // ============================================================
-class CommentNode : public TextureNode {
+class CommentNode : public UiNode<CommentCoreNode> {
  public:
-  CommentNode();
-  std::string typeName() const override { return "Comment"; }
-  std::string displayTitle() const override;
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
-  std::vector<std::string> inputSlotNames() const override;
-  std::vector<std::string> outputSlotNames() const override;
-  void execute(const std::vector<GenTexture*>& inputs,
-               std::vector<GenTexture>& outputs) override;
   void renderParams() override;
-  nlohmann::json saveParams() const override;
-  void loadParams(const nlohmann::json& j) override;
-
- private:
-  char m_text[512];
-  float m_color[3];
 };

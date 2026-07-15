@@ -1,5 +1,8 @@
 #include "CoreNodeRegistry.h"
 
+#include "AggCoreNodes.h"
+#include "CoreNodes.h"
+
 void CoreNodeRegistry::add(const std::string &typeName,
                            CoreNodeFactory factory) {
   m_factories[typeName] = std::move(factory);
@@ -17,10 +20,56 @@ bool CoreNodeRegistry::has(const std::string &typeName) const {
   return m_factories.count(typeName) > 0;
 }
 
-// The global registry is currently empty — nodes are evaluated via
-// HeadlessEval's built-in logic. In the future, as nodes are migrated
-// to pure CoreNode implementations, they will be registered here.
+template <typename T> static void registerType(CoreNodeRegistry &reg) {
+  reg.add(T().typeName(), [] { return std::make_unique<T>(); });
+}
+
 CoreNodeRegistry &getCoreNodeRegistry() {
-  static CoreNodeRegistry reg;
+  static CoreNodeRegistry reg = [] {
+    CoreNodeRegistry r;
+    // Sources
+    registerType<ColorCoreNode>(r);
+    registerType<GradientCoreNode>(r);
+    registerType<ImageCoreNode>(r);
+    // Procedural generators
+    registerType<NoiseCoreNode>(r);
+    registerType<CellsCoreNode>(r);
+    registerType<CrystalCoreNode>(r);
+    registerType<BricksCoreNode>(r);
+    registerType<PerlinNoiseRG2CoreNode>(r);
+    registerType<DirectionalGradientCoreNode>(r);
+    registerType<GlowEffectCoreNode>(r);
+    // AGG vector nodes
+    registerType<AggLineCoreNode>(r);
+    registerType<AggCircleCoreNode>(r);
+    registerType<AggRectCoreNode>(r);
+    registerType<AggPolygonCoreNode>(r);
+    registerType<AggTextCoreNode>(r);
+    registerType<AggArcCoreNode>(r);
+    registerType<AggBezierCoreNode>(r);
+    registerType<AggDashLineCoreNode>(r);
+    registerType<AggGradientCoreNode>(r);
+    // Filters
+    registerType<BlurCoreNode>(r);
+    registerType<BlurKernelCoreNode>(r);
+    registerType<ColorMatrixCoreNode>(r);
+    registerType<CoordMatrixCoreNode>(r);
+    registerType<ColorRemapCoreNode>(r);
+    registerType<CoordRemapCoreNode>(r);
+    registerType<DeriveCoreNode>(r);
+    registerType<HSCBCoreNode>(r);
+    registerType<ColorBalanceCoreNode>(r);
+    registerType<WaveletCoreNode>(r);
+    // Combiners
+    registerType<PasteCoreNode>(r);
+    registerType<BumpCoreNode>(r);
+    registerType<LinearCombineCoreNode>(r);
+    registerType<TernaryCoreNode>(r);
+    registerType<GlowRectCoreNode>(r);
+    // Utility
+    registerType<OutputCoreNode>(r);
+    registerType<CommentCoreNode>(r);
+    return r;
+  }();
   return reg;
 }

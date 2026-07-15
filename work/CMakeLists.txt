@@ -121,8 +121,8 @@ set(HEADERS
 set(RAYLIB_STATIC
   ${CMAKE_SOURCE_DIR}/raylib/build/raylib/libraylib.a
 )
-add_executable(${MY_PROJECT_NAME} ${SRC} ${FMT} ${IMGUI} ${IMNODES} ${KTG})
-target_link_libraries(${MY_PROJECT_NAME} agg ${RAYLIB_STATIC} dl pthread X11 GL m)
+add_executable(${MY_PROJECT_NAME} ${SRC} ${FMT} ${IMGUI} ${IMNODES})
+target_link_libraries(${MY_PROJECT_NAME} texgen agg ${RAYLIB_STATIC} dl pthread X11 GL m)
 target_compile_features(${MY_PROJECT_NAME} PRIVATE ${MY_COMPILER_FEATURES})
 
 #module with helper functions
