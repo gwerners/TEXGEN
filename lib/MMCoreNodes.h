@@ -342,3 +342,42 @@ class PatternCoreNode : public CoreNode {
   int m_mix, m_xWave, m_yWave;
   float m_xScale, m_yScale;
 };
+
+// ============================================================
+// CombineCoreNode — four grayscale channels into RGBA
+// ============================================================
+class CombineCoreNode : public CoreNode {
+ public:
+  CombineCoreNode() {}
+  std::string typeName() const override { return "Combine"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+};
+
+// ============================================================
+// DecomposeCoreNode — RGBA into four grayscale outputs
+// ============================================================
+class DecomposeCoreNode : public CoreNode {
+ public:
+  DecomposeCoreNode() {}
+  std::string typeName() const override { return "Decompose"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+};
+
+// ============================================================
+// InvertCoreNode — 1 - rgb, alpha preserved
+// ============================================================
+class InvertCoreNode : public CoreNode {
+ public:
+  InvertCoreNode() {}
+  std::string typeName() const override { return "Invert"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+};

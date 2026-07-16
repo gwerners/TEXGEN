@@ -1,0 +1,573 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Transform2D",
+      "posX": 253.0,
+      "posY": 237.5,
+      "params": {
+        "tx": 0.0,
+        "ty": 0.0,
+        "rot": 240.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "repeat": false
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "Pattern",
+      "posX": -463.0,
+      "posY": -41.5,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 0,
+        "xWave": 0,
+        "xScale": 1.0,
+        "yWave": 0,
+        "yScale": 1.0
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "Colorize",
+      "posX": 968.0,
+      "posY": 12.386353,
+      "params": {
+        "stops": [
+          [
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.090909,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Pattern",
+      "posX": 218.5,
+      "posY": -420.25,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 0,
+        "xWave": 2,
+        "xScale": 1.0,
+        "yWave": 2,
+        "yScale": 1.0
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Material",
+      "posX": 1320.0,
+      "posY": -22.0,
+      "params": {
+        "baseName": "mm_biohazard"
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Transform2D",
+      "posX": 459.5,
+      "posY": -471.25,
+      "params": {
+        "tx": -0.015,
+        "ty": -0.15,
+        "rot": 0.0,
+        "scaleX": 0.05,
+        "scaleY": 2.0,
+        "repeat": false
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Transform2D",
+      "posX": 21.0,
+      "posY": -170.5,
+      "params": {
+        "tx": 0.0,
+        "ty": -0.25,
+        "rot": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "repeat": false
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Transform2D",
+      "posX": 21.0,
+      "posY": 43.5,
+      "params": {
+        "tx": 0.0,
+        "ty": -0.22,
+        "rot": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "repeat": false
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Blend",
+      "posX": 300.0,
+      "posY": -228.5,
+      "params": {
+        "mode": 11,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "Transform2D",
+      "posX": 253.0,
+      "posY": 26.5,
+      "params": {
+        "tx": 0.0,
+        "ty": 0.0,
+        "rot": 120.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "repeat": false
+      }
+    },
+    {
+      "id": 10,
+      "typeName": "Blend",
+      "posX": 554.5,
+      "posY": -231.25,
+      "params": {
+        "mode": 11,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 11,
+      "typeName": "Colorize",
+      "posX": 674.5,
+      "posY": 238.75,
+      "params": {
+        "stops": [
+          [
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.072727,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "typeName": "Colorize",
+      "posX": -216.0,
+      "posY": -50.5,
+      "params": {
+        "stops": [
+          [
+            0.581818,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.645455,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "typeName": "Colorize",
+      "posX": -215.0,
+      "posY": -118.5,
+      "params": {
+        "stops": [
+          [
+            0.663636,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.7,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "typeName": "Blend",
+      "posX": 846.5,
+      "posY": 338.75,
+      "params": {
+        "mode": 11,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 15,
+      "typeName": "Blend",
+      "posX": 887.5,
+      "posY": 185.75,
+      "params": {
+        "mode": 3,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 16,
+      "typeName": "Blend",
+      "posX": 491.0,
+      "posY": 51.5,
+      "params": {
+        "mode": 3,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 17,
+      "typeName": "Blend",
+      "posX": 487.0,
+      "posY": 168.75,
+      "params": {
+        "mode": 3,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 18,
+      "typeName": "Transform2D",
+      "posX": 735.0,
+      "posY": -110.613647,
+      "params": {
+        "tx": 0.0,
+        "ty": 0.0,
+        "rot": 0.0,
+        "scaleX": 0.2,
+        "scaleY": 0.2,
+        "repeat": false
+      }
+    },
+    {
+      "id": 19,
+      "typeName": "Blend",
+      "posX": 731.0,
+      "posY": 94.386353,
+      "params": {
+        "mode": 11,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 20,
+      "typeName": "Combine",
+      "posX": 1099.5,
+      "posY": -77.25,
+      "params": {}
+    },
+    {
+      "id": 21,
+      "typeName": "Color",
+      "posX": 1138.5,
+      "posY": 23.75,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "r": 0.0,
+        "g": 0.0,
+        "b": 0.0,
+        "a": 1.0
+      }
+    },
+    {
+      "id": 22,
+      "typeName": "Blend",
+      "posX": 484.5,
+      "posY": 309.75,
+      "params": {
+        "mode": 11,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 23,
+      "typeName": "Colorize",
+      "posX": 1094.04541,
+      "posY": 85.386353,
+      "params": {
+        "stops": [
+          [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0.118182,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 24,
+      "typeName": "NormalMap",
+      "posX": 1113.5,
+      "posY": 184.75,
+      "params": {
+        "amount": 0.99,
+        "format": 0
+      }
+    },
+    {
+      "id": 25,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_biohazard_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 12,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 12,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 13,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 13,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 16,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 16,
+      "fromSlot": "Out",
+      "toId": 17,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 17,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 10,
+      "fromSlot": "Out",
+      "toId": 16,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 10,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 10,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 13,
+      "fromSlot": "Out",
+      "toId": 22,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 12,
+      "fromSlot": "Out",
+      "toId": 22,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 14,
+      "fromSlot": "Out",
+      "toId": 15,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 17,
+      "fromSlot": "Out",
+      "toId": 11,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 11,
+      "fromSlot": "Out",
+      "toId": 14,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 15,
+      "fromSlot": "Out",
+      "toId": 24,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 24,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 20,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 21,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "Metallic"
+    },
+    {
+      "fromId": 23,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "Roughness"
+    },
+    {
+      "fromId": 15,
+      "fromSlot": "Out",
+      "toId": 23,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 20,
+      "toSlot": "R"
+    },
+    {
+      "fromId": 15,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 13,
+      "fromSlot": "Out",
+      "toId": 18,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 19,
+      "fromSlot": "Out",
+      "toId": 15,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 17,
+      "fromSlot": "Out",
+      "toId": 19,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 18,
+      "fromSlot": "Out",
+      "toId": 19,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 22,
+      "fromSlot": "Out",
+      "toId": 14,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 20,
+      "fromSlot": "Out",
+      "toId": 25,
+      "toSlot": "In"
+    }
+  ]
+}

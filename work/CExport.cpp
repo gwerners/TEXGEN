@@ -953,6 +953,58 @@ static void emitNode(std::ostringstream& ss,
        << p.value("yWave", 0) << ", " << pf(p, "yScale", 4.0f) << ");\n";
   }
 
+  else if (type == "Combine") {
+    std::string r = srcVar(conns, id, "R");
+    std::string g = srcVar(conns, id, "G");
+    std::string b = srcVar(conns, id, "B");
+    std::string a = srcVar(conns, id, "A");
+    std::string first;
+    for (auto& s : {r, g, b, a})
+      if (!s.empty()) {
+        first = s;
+        break;
+      }
+    ss << "    GenTexture " << v << ";\n";
+    if (first.empty())
+      ss << "    " << v << ".Init(256, 256);\n";
+    else
+      ss << "    " << v << ".Init(" << first << ".XRes, " << first
+         << ".YRes);\n";
+    auto ref = [](const std::string& s) {
+      return s.empty() ? std::string("NULL") : "&" + s;
+    };
+    ss << "    MMCombine(" << v << ", " << ref(r) << ", " << ref(g) << ", "
+       << ref(b) << ", " << ref(a) << ");\n";
+  }
+
+  else if (type == "Decompose") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << "_R, " << v << "_G, " << v << "_B, " << v
+       << "_A;\n";
+    if (in.empty()) {
+      ss << "    " << v << "_R.Init(256, 256); " << v << "_G.Init(256, 256); "
+         << v << "_B.Init(256, 256); " << v << "_A.Init(256, 256);\n";
+    } else {
+      ss << "    " << v << "_R.Init(" << in << ".XRes, " << in << ".YRes); "
+         << v << "_G.Init(" << in << ".XRes, " << in << ".YRes); " << v
+         << "_B.Init(" << in << ".XRes, " << in << ".YRes); " << v
+         << "_A.Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMDecompose(" << v << "_R, " << v << "_G, " << v << "_B, "
+         << v << "_A, " << in << ");\n";
+    }
+  }
+
+  else if (type == "Invert") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMInvert(" << v << ", " << in << ");\n";
+    }
+  }
+
   else {
     ss << "    // [unsupported node: " << type << " id " << id << "]\n";
   }

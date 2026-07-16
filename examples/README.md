@@ -147,9 +147,11 @@ Structural nodes:
 `mm_floor1.json`, `mm_emmental.json`, `mm_planet.json`,
 `mm_radiation.json`, `mm_paper.json`, `mm_tiles.json`,
 `mm_brick_rotated.json`, `mm_clump_of_grass.json`,
-`mm_metal_pattern_2.json`, `mm_metal_pattern_3.json`
+`mm_metal_pattern.json`, `mm_metal_pattern_2.json`,
+`mm_metal_pattern_3.json`, `mm_biohazard.json`,
+`mm_wood_with_blood.json`
 
-Nineteen complete PBR materials converted from Material Maker's example
+Twenty-two complete PBR materials converted from Material Maker's example
 projects with `tools/ptex2texgen.py`:
 
 ```
@@ -243,6 +245,9 @@ All AGG nodes have an optional **Bg** input for compositing on a background.
 | **Transform2D** | Translate/rotate/scale with tiling (repeat) or clamp |
 | **Shape** | Soft-edge circle, polygon, star, curved star, rays |
 | **Pattern** | X/Y wave combinations (sine, triangle, square, ...) |
+| **Combine** | Four grayscale channels into one RGBA image |
+| **Decompose** | RGBA split into four grayscale outputs |
+| **Invert** | 1 - RGB, alpha preserved |
 
 ### Structural Nodes
 

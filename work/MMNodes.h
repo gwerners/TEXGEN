@@ -128,3 +128,21 @@ class PatternNode : public UiNode<PatternCoreNode> {
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
   void renderParams() override;
 };
+
+class CombineNode : public UiNode<CombineCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+};
+
+class DecomposeNode : public UiNode<DecomposeCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+};
+
+class InvertNode : public UiNode<InvertCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+};

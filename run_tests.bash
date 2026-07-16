@@ -74,6 +74,9 @@ EXAMPLES=(
   "mm_clump_of_grass:mm_clump_of_grass"
   "mm_metal_pattern_2:mm_metal_pattern_2"
   "mm_metal_pattern_3:mm_metal_pattern_3"
+  "mm_metal_pattern:mm_metal_pattern"
+  "mm_biohazard:mm_biohazard"
+  "mm_wood_with_blood:mm_wood_with_blood"
 )
 
 PASS=0

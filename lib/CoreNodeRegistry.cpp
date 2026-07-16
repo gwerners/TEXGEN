@@ -87,6 +87,9 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<Transform2DCoreNode>(r);
     registerType<ShapeCoreNode>(r);
     registerType<PatternCoreNode>(r);
+    registerType<CombineCoreNode>(r);
+    registerType<DecomposeCoreNode>(r);
+    registerType<InvertCoreNode>(r);
     // Structural
     registerType<SubgraphCoreNode>(r);
     registerType<RemoteCoreNode>(r);

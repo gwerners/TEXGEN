@@ -219,3 +219,68 @@ void MMTransform(GenTexture &out, const GenTexture &in, sF32 tx, sF32 ty,
     }
   }
 }
+
+// combine.mmg: vec4(r, g, b, a) from grayscale inputs.
+void MMCombine(GenTexture &out, const GenTexture *r, const GenTexture *g,
+               const GenTexture *b, const GenTexture *a) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  for (sInt py = 0; py < h; py++) {
+    for (sInt px = 0; px < w; px++) {
+      sF32 u = (px + 0.5f) / w;
+      sF32 v = (py + 0.5f) / h;
+      auto ch = [&](const GenTexture *t, sF32 def) {
+        if (!t || !t->Data)
+          return def;
+        sF32 c[4];
+        sampleRGBA(*t, u, v, c);
+        return (c[0] + c[1] + c[2]) / 3.0f;
+      };
+      Pixel &o = out.Data[py * w + px];
+      o.r = to16(ch(r, 0.0f));
+      o.g = to16(ch(g, 0.0f));
+      o.b = to16(ch(b, 0.0f));
+      o.a = to16(ch(a, 1.0f));
+    }
+  }
+}
+
+// decompose.mmg: four grayscale outputs, one per channel.
+void MMDecompose(GenTexture &outR, GenTexture &outG, GenTexture &outB,
+                 GenTexture &outA, const GenTexture &in) {
+  if (!in.Data)
+    return;
+  const sInt n = in.NPixels;
+  auto fill = [&](GenTexture &dst, int channel) {
+    if (!dst.Data || dst.NPixels != n)
+      return;
+    for (sInt i = 0; i < n; i++) {
+      const Pixel &p = in.Data[i];
+      sU16 val = channel == 0 ? p.r : channel == 1 ? p.g
+                              : channel == 2       ? p.b
+                                                   : p.a;
+      Pixel &o = dst.Data[i];
+      o.r = o.g = o.b = val;
+      o.a = 65535;
+    }
+  };
+  fill(outR, 0);
+  fill(outG, 1);
+  fill(outB, 2);
+  fill(outA, 3);
+}
+
+// invert.mmg: 1 - rgb, alpha preserved.
+void MMInvert(GenTexture &out, const GenTexture &in) {
+  if (!out.Data || !in.Data || out.NPixels != in.NPixels)
+    return;
+  for (sInt i = 0; i < out.NPixels; i++) {
+    const Pixel &p = in.Data[i];
+    Pixel &o = out.Data[i];
+    o.r = 65535 - p.r;
+    o.g = 65535 - p.g;
+    o.b = 65535 - p.b;
+    o.a = p.a;
+  }
+}

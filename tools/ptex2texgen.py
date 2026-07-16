@@ -19,6 +19,9 @@ PORTS_IN = {
     'colorize': ['In'],
     'transform': ['In', None, None, None, None, None],
     'shape': [None, None],
+    'combine': ['R', 'G', 'B', 'A'],
+    'decompose': ['In'],
+    'invert': ['In'],
     'blend': ['A', 'B', 'Mask'],
     'warp': ['In', 'Height'],
     'normal_map': ['Height'],
@@ -39,6 +42,10 @@ PORTS_OUT = {
     'shape': ['Out'],
     'pattern': ['Out'],
     'bricks': ['Out'],
+    'combine': ['Out'],
+    'decompose': ['R', 'G', 'B', 'A'],
+    'invert': ['Out'],
+    'uniform_greyscale': ['Out'],
 }
 
 # MM fbm.mmg noise variant -> FBM mode enum
@@ -182,6 +189,24 @@ def conv_pattern(p):
     }
 
 
+def conv_uniform_greyscale(p):
+    val = float(p.get('color', 0.5))
+    return 'Color', {'widthIdx': 3, 'heightIdx': 3,
+                     'r': val, 'g': val, 'b': val, 'a': 1.0}
+
+
+def conv_passthrough_combine(p):
+    return 'Combine', {}
+
+
+def conv_passthrough_decompose(p):
+    return 'Decompose', {}
+
+
+def conv_passthrough_invert(p):
+    return 'Invert', {}
+
+
 def conv_material(p, basename):
     return 'Material', {'baseName': basename}
 
@@ -199,6 +224,10 @@ CONVERTERS = {
     'transform': conv_transform,
     'shape': conv_shape,
     'pattern': conv_pattern,
+    'uniform_greyscale': conv_uniform_greyscale,
+    'combine': conv_passthrough_combine,
+    'decompose': conv_passthrough_decompose,
+    'invert': conv_passthrough_invert,
 }
 
 

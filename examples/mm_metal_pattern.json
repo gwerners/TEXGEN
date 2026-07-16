@@ -1,0 +1,493 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "FBM",
+      "posX": 1.0,
+      "posY": -330.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 4,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 7,
+        "persistence": 0.85,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "Colorize",
+      "posX": 261.0,
+      "posY": -364.0,
+      "params": {
+        "stops": [
+          [
+            0.427273,
+            0.175781,
+            0.114799,
+            0.036392,
+            1
+          ],
+          [
+            1,
+            0.351563,
+            0.065918,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "Material",
+      "posX": 755.0,
+      "posY": -137.0,
+      "params": {
+        "baseName": "mm_metal_pattern"
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Blend",
+      "posX": 407.094238,
+      "posY": -265.083313,
+      "params": {
+        "mode": 0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Colorize",
+      "posX": 93.0,
+      "posY": -31.0,
+      "params": {
+        "stops": [
+          [
+            0.354545,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.47396,
+            0.1875,
+            0.1875,
+            0.1875,
+            1
+          ],
+          [
+            0.645455,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Color",
+      "posX": 236.0,
+      "posY": -212.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "r": 0.486275,
+        "g": 0.486275,
+        "b": 0.486275,
+        "a": 1.0
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Colorize",
+      "posX": -147.265503,
+      "posY": -170.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.181818,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "FBM",
+      "posX": -161.0,
+      "posY": -86.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 4,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 7,
+        "persistence": 0.9,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Colorize",
+      "posX": 530.0,
+      "posY": -97.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            0.515625,
+            0.515625,
+            0.515625,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "Colorize",
+      "posX": 85.0,
+      "posY": 72.0,
+      "params": {
+        "stops": [
+          [
+            0.418182,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "typeName": "NormalMap",
+      "posX": 294.0,
+      "posY": 76.0,
+      "params": {
+        "amount": 0.99,
+        "format": 0
+      }
+    },
+    {
+      "id": 11,
+      "typeName": "Blend",
+      "posX": 72.734497,
+      "posY": -130.0,
+      "params": {
+        "mode": 2,
+        "opacity": 0.2
+      }
+    },
+    {
+      "id": 12,
+      "typeName": "Blend",
+      "posX": 311.399109,
+      "posY": -106.171265,
+      "params": {
+        "mode": 2,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 13,
+      "typeName": "Subgraph",
+      "posX": -369.5,
+      "posY": 78.333328,
+      "params": {
+        "title": "Pattern",
+        "graph": {
+          "nodes": [
+            {
+              "id": 0,
+              "typeName": "Pattern",
+              "posX": -859.0,
+              "posY": 120.0,
+              "params": {
+                "widthIdx": 3,
+                "heightIdx": 3,
+                "mix": 5,
+                "xWave": 0,
+                "xScale": 8.0,
+                "yWave": 0,
+                "yScale": 8.0
+              }
+            },
+            {
+              "id": 1,
+              "typeName": "Transform2D",
+              "posX": -844.0,
+              "posY": 279.0,
+              "params": {
+                "tx": 0.06,
+                "ty": 0.06,
+                "rot": 0.0,
+                "scaleX": 1.0,
+                "scaleY": 1.0,
+                "repeat": true
+              }
+            },
+            {
+              "id": 2,
+              "typeName": "Colorize",
+              "posX": -828.0,
+              "posY": 218.0,
+              "params": {
+                "stops": [
+                  [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.045455,
+                    1,
+                    1,
+                    1,
+                    1
+                  ]
+                ]
+              }
+            },
+            {
+              "id": 3,
+              "typeName": "Blend",
+              "posX": -632.0,
+              "posY": 77.0,
+              "params": {
+                "mode": 2,
+                "opacity": 1.0
+              }
+            },
+            {
+              "id": 4,
+              "typeName": "Blend",
+              "posX": -633.0,
+              "posY": 181.0,
+              "params": {
+                "mode": 2,
+                "opacity": 1.0
+              }
+            },
+            {
+              "id": 5,
+              "typeName": "Transform2D",
+              "posX": -647.0,
+              "posY": 285.0,
+              "params": {
+                "tx": 0.06,
+                "ty": 0.0,
+                "rot": 90.0,
+                "scaleX": 1.0,
+                "scaleY": 1.0,
+                "repeat": true
+              }
+            }
+          ],
+          "connections": [
+            {
+              "fromId": 0,
+              "fromSlot": "Out",
+              "toId": 2,
+              "toSlot": "In"
+            },
+            {
+              "fromId": 2,
+              "fromSlot": "Out",
+              "toId": 4,
+              "toSlot": "A"
+            },
+            {
+              "fromId": 1,
+              "fromSlot": "Out",
+              "toId": 4,
+              "toSlot": "B"
+            },
+            {
+              "fromId": 2,
+              "fromSlot": "Out",
+              "toId": 1,
+              "toSlot": "In"
+            },
+            {
+              "fromId": 4,
+              "fromSlot": "Out",
+              "toId": 5,
+              "toSlot": "In"
+            },
+            {
+              "fromId": 5,
+              "fromSlot": "Out",
+              "toId": 3,
+              "toSlot": "B"
+            },
+            {
+              "fromId": 4,
+              "fromSlot": "Out",
+              "toId": 3,
+              "toSlot": "A"
+            }
+          ]
+        },
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "port0",
+            "id": 3,
+            "slot": "Out"
+          }
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_metal_pattern_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 13,
+      "fromSlot": "port0",
+      "toId": 9,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 10,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 1,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "Roughness"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 11,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 11,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 13,
+      "fromSlot": "port0",
+      "toId": 6,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 11,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 12,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 12,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 12,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "Mask"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 12,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 14,
+      "toSlot": "In"
+    }
+  ]
+}

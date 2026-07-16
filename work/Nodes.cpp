@@ -57,6 +57,9 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   };
   registry["Shape"] = []() { return std::make_unique<ShapeNode>(); };
   registry["Pattern"] = []() { return std::make_unique<PatternNode>(); };
+  registry["Combine"] = []() { return std::make_unique<CombineNode>(); };
+  registry["Decompose"] = []() { return std::make_unique<DecomposeNode>(); };
+  registry["Invert"] = []() { return std::make_unique<InvertNode>(); };
   // Structural
   registry["Subgraph"] = []() { return std::make_unique<SubgraphNode>(); };
   registry["Remote"] = []() { return std::make_unique<RemoteNode>(); };

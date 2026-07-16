@@ -31,3 +31,12 @@ void MMEmboss(GenTexture &out, const GenTexture &in, sF32 angleDeg,
 // center, scale, then wrap (repeat=true) or clamp the source UVs.
 void MMTransform(GenTexture &out, const GenTexture &in, sF32 tx, sF32 ty,
                  sF32 rotDeg, sF32 scaleX, sF32 scaleY, bool repeat);
+
+// Channel plumbing (combine.mmg / decompose.mmg / invert.mmg).
+// Combine: builds RGBA from four grayscale inputs (null r/g/b -> 0,
+// null a -> 1). Decompose: splits RGBA into four grayscale outputs.
+void MMCombine(GenTexture &out, const GenTexture *r, const GenTexture *g,
+               const GenTexture *b, const GenTexture *a);
+void MMDecompose(GenTexture &outR, GenTexture &outG, GenTexture &outB,
+                 GenTexture &outA, const GenTexture &in);
+void MMInvert(GenTexture &out, const GenTexture &in);

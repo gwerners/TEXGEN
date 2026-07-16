@@ -538,3 +538,28 @@ void PatternNode::renderParams() {
   SliderFloatW("Y Scale##pat", &m_core.m_yScale, 0.0f, 32.0f);
   ImGui::PopItemWidth();
 }
+
+// ============================================================
+// Combine / Decompose / Invert
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> CombineNode::inputSlotInfos() const {
+  return {{"R", 1}, {"G", 1}, {"B", 1}, {"A", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> CombineNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+std::vector<ImNodes::Ez::SlotInfo> DecomposeNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> DecomposeNode::outputSlotInfos() const {
+  return {{"R", 1}, {"G", 1}, {"B", 1}, {"A", 1}};
+}
+
+std::vector<ImNodes::Ez::SlotInfo> InvertNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> InvertNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}

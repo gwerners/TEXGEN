@@ -892,3 +892,70 @@ void PatternCoreNode::loadParams(const nlohmann::json& j) {
   if (j.contains("yScale"))
     m_yScale = j["yScale"];
 }
+
+// ============================================================
+// CombineCoreNode
+// ============================================================
+
+std::vector<std::string> CombineCoreNode::inputSlotNames() const {
+  return {"R", "G", "B", "A"};
+}
+std::vector<std::string> CombineCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void CombineCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                              std::vector<GenTexture>& outputs) {
+  GenTexture* first = nullptr;
+  for (auto* in : inputs)
+    if (in && in->Data) {
+      first = in;
+      break;
+    }
+  outputs.resize(1);
+  outputs[0].Init(first ? first->XRes : 256, first ? first->YRes : 256);
+  auto get = [&](size_t i) -> GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  MMCombine(outputs[0], get(0), get(1), get(2), get(3));
+}
+
+// ============================================================
+// DecomposeCoreNode
+// ============================================================
+
+std::vector<std::string> DecomposeCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> DecomposeCoreNode::outputSlotNames() const {
+  return {"R", "G", "B", "A"};
+}
+
+void DecomposeCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(4);
+  for (int i = 0; i < 4; i++)
+    outputs[i].Init(in->XRes, in->YRes);
+  MMDecompose(outputs[0], outputs[1], outputs[2], outputs[3], *in);
+}
+
+// ============================================================
+// InvertCoreNode
+// ============================================================
+
+std::vector<std::string> InvertCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> InvertCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void InvertCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                             std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMInvert(outputs[0], *in);
+}
