@@ -51,6 +51,8 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
       {"Voronoi",
        {"Generator", "Voronoi cell noise with distance and color outputs"}},
       {"FBM", {"Generator", "Fractal Brownian Motion noise (octaves)"}},
+      {"GradientMM",
+       {"Generator", "Rotated repeating gradient with color stops"}},
       {"Shape", {"Generator", "Parametric shape (polygon, star, arc...)"}},
       {"Pattern",
        {"Generator", "Procedural wave patterns (sine, triangle, square...)"}},
@@ -92,6 +94,13 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
        {"Filter", "Translate, rotate and scale with tiling control"}},
       {"Invert", {"Filter", "Inverts colors (1 - value)"}},
       {"NormalMap", {"Filter", "Generates a normal map from a heightmap"}},
+      {"MathOp", {"Filter", "Per-pixel scalar math (add, mul, min, pow...)"}},
+      {"MultiWarp",
+       {"Filter", "Iterative slope-following warp along a heightmap"}},
+      {"SlopeBlur",
+       {"Filter", "Directional gaussian blur along the heightmap slope"}},
+      {"Tiler",
+       {"Filter", "Scatters jittered copies of the input in a grid"}},
       // Combiners
       {"Blend",
        {"Combine", "Blends two inputs with selectable mode and opacity"}},
@@ -189,6 +198,11 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<InvertCoreNode>(r);
     registerType<LayerMixCoreNode>(r);
     registerType<WorkflowOutputCoreNode>(r);
+    registerType<MathOpCoreNode>(r);
+    registerType<GradientMMCoreNode>(r);
+    registerType<TilerCoreNode>(r);
+    registerType<MultiWarpCoreNode>(r);
+    registerType<SlopeBlurCoreNode>(r);
     // Structural
     registerType<SubgraphCoreNode>(r);
     registerType<RemoteCoreNode>(r);

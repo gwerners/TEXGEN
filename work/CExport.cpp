@@ -887,6 +887,92 @@ static void emitNode(std::ostringstream& ss,
        << ");\n";
   }
 
+  else if (type == "MathOp") {
+    std::string a = srcVar(conns, id, "A");
+    std::string b = srcVar(conns, id, "B");
+    std::string sz = !a.empty() ? a : b;
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init("
+       << (sz.empty() ? "256, 256" : sz + ".XRes, " + sz + ".YRes") << ");\n";
+    ss << "    MMMath(" << v << ", " << (a.empty() ? "nullptr" : "&" + a)
+       << ", " << (b.empty() ? "nullptr" : "&" + b) << ", "
+       << p.value("op", 0) << ", " << pf(p, "def1", 0.0f) << ", "
+       << pf(p, "def2", 0.0f) << ", "
+       << (p.value("clamp", false) ? "true" : "false") << ");\n";
+  }
+
+  else if (type == "GradientMM") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    auto stops = p.value("stops", nlohmann::json::array());
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    if (!stops.empty()) {
+      ss << "    { const MMGradientStop stops[] = {";
+      for (size_t i = 0; i < stops.size(); i++) {
+        auto& s = stops[i];
+        ss << "{" << fmtf(s[0].get<float>()) << ", " << fmtf(s[1].get<float>())
+           << ", " << fmtf(s[2].get<float>()) << ", " << fmtf(s[3].get<float>())
+           << ", " << fmtf(s[4].get<float>()) << "}"
+           << (i + 1 < stops.size() ? ", " : "");
+      }
+      ss << "};\n";
+      ss << "      MMGradientRamp(" << v << ", stops, " << stops.size() << ", "
+         << pf(p, "repeat", 1.0f) << ", " << pf(p, "rotate", 0.0f) << ", "
+         << (p.value("mirror", false) ? "true" : "false") << "); }\n";
+    }
+  }
+
+  else if (type == "Tiler") {
+    std::string in = srcVar(conns, id, "In");
+    std::string mask = srcVar(conns, id, "Mask");
+    ss << "    GenTexture " << v << "_Out, " << v << "_Color;\n";
+    if (in.empty()) {
+      ss << "    " << v << "_Out.Init(256, 256); " << v
+         << "_Color.Init(256, 256);\n";
+    } else {
+      ss << "    " << v << "_Out.Init(" << in << ".XRes, " << in
+         << ".YRes); " << v << "_Color.Init(" << in << ".XRes, " << in
+         << ".YRes);\n";
+      ss << "    MMTiler(" << v << "_Out, &" << v << "_Color, " << in << ", "
+         << (mask.empty() ? "nullptr" : "&" + mask) << ", "
+         << pf(p, "tx", 4.0f) << ", " << pf(p, "ty", 4.0f) << ", "
+         << p.value("overlap", 1) << ", " << p.value("inputs", 1) << ", "
+         << pf(p, "scaleX", 1.0f) << ", " << pf(p, "scaleY", 1.0f) << ", "
+         << pf(p, "fixedOffset", 0.0f) << ", " << pf(p, "offset", 0.5f)
+         << ", " << pf(p, "rotate", 0.0f) << ", " << pf(p, "scale", 0.0f)
+         << ", " << pf(p, "value", 0.0f) << ", " << pf(p, "seed", 0.0f)
+         << ");\n";
+    }
+  }
+
+  else if (type == "MultiWarp") {
+    std::string in = srcVar(conns, id, "In");
+    std::string hm = srcVar(conns, id, "Height");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty() || hm.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMMultiWarp(" << v << ", " << in << ", " << hm << ", "
+         << pf(p, "size", 9.0f) << ", " << pf(p, "intensity", 0.5f) << ", "
+         << pf(p, "quality", 50.0f) << ", " << p.value("mode", 2) << ");\n";
+    }
+  }
+
+  else if (type == "SlopeBlur") {
+    std::string in = srcVar(conns, id, "In");
+    std::string hm = srcVar(conns, id, "Height");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty() || hm.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMSlopeBlur(" << v << ", " << in << ", " << hm << ", "
+         << pf(p, "size", 9.0f) << ", " << pf(p, "sigma", 0.5f) << ");\n";
+    }
+  }
+
   else if (type == "SdfShape") {
     int w = sizeFromIdx(p.value("widthIdx", 3));
     int h = sizeFromIdx(p.value("heightIdx", 3));

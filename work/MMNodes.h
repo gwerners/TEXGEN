@@ -147,6 +147,41 @@ class InvertNode : public UiNode<InvertCoreNode> {
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
 };
 
+class MathOpNode : public UiNode<MathOpCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class GradientMMNode : public UiNode<GradientMMCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class TilerNode : public UiNode<TilerCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class MultiWarpNode : public UiNode<MultiWarpCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class SlopeBlurNode : public UiNode<SlopeBlurCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
 class LayerMixNode : public UiNode<LayerMixCoreNode> {
  public:
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;

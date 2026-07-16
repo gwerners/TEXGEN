@@ -882,3 +882,57 @@ void MMPattern(GenTexture &out, sInt mixMode, sInt xWave, sF32 xScale,
                      waveValue(yWave, yScale * v)));
     }
 }
+
+// Gradient generator (gradient.mmg).
+void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
+                    sInt nStops, sF32 repeat, sF32 rotateDeg, bool mirror) {
+  if (!out.Data || nStops < 1)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 rot = rotateDeg * 0.01745329251f;
+  const sF32 cr = cosf(rot), sr = sinf(rot);
+  // MM normalizes so the ramp spans the rotated unit square exactly
+  const sF32 norm =
+      cosf(fabsf(glslMod(rotateDeg, 90.0f) - 45.0f) * 0.01745329251f) *
+      1.41421356237f;
+
+  auto evalStops = [&](sF32 t, sF32 c[4]) {
+    if (t <= stops[0].pos || nStops == 1) {
+      c[0] = stops[0].r; c[1] = stops[0].g;
+      c[2] = stops[0].b; c[3] = stops[0].a;
+      return;
+    }
+    if (t >= stops[nStops - 1].pos) {
+      c[0] = stops[nStops - 1].r; c[1] = stops[nStops - 1].g;
+      c[2] = stops[nStops - 1].b; c[3] = stops[nStops - 1].a;
+      return;
+    }
+    sInt i = 0;
+    while (i < nStops - 2 && t > stops[i + 1].pos)
+      i++;
+    const sF32 span = stops[i + 1].pos - stops[i].pos;
+    const sF32 f = span > 0.0f ? (t - stops[i].pos) / span : 0.0f;
+    c[0] = stops[i].r + (stops[i + 1].r - stops[i].r) * f;
+    c[1] = stops[i].g + (stops[i + 1].g - stops[i].g) * f;
+    c[2] = stops[i].b + (stops[i + 1].b - stops[i].b) * f;
+    c[3] = stops[i].a + (stops[i + 1].a - stops[i].a) * f;
+  };
+
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      const sF32 r = 0.5f + (cr * (u - 0.5f) + sr * (v - 0.5f)) / norm;
+      sF32 t = glslFract(r * repeat);
+      if (mirror)
+        t = 2.0f * (0.5f - fabsf(t - 0.5f));
+      sF32 c[4];
+      evalStops(t, c);
+      Pixel &p = out.Data[py * w + px];
+      p.r = to16(c[0]);
+      p.g = to16(c[1]);
+      p.b = to16(c[2]);
+      p.a = to16(c[3]);
+    }
+  }
+}

@@ -40,3 +40,37 @@ void MMCombine(GenTexture &out, const GenTexture *r, const GenTexture *g,
 void MMDecompose(GenTexture &outR, GenTexture &outG, GenTexture &outB,
                  GenTexture &outA, const GenTexture &in);
 void MMInvert(GenTexture &out, const GenTexture &in);
+
+// Per-pixel scalar math on grayscale inputs (math.mmg). Ops:
+//  0 a+b   1 a-b    2 a*b     3 a/b      4 log(a)   5 log2(a)
+//  6 a^b   7 |a|    8 round   9 floor   10 ceil    11 trunc
+// 12 fract 13 min  14 max    15 a<b     16 cos(ab) 17 sin(ab)
+// 18 tan(ab) 19 sqrt(1-a*a)
+// Unconnected inputs (null) use the def1/def2 constants.
+void MMMath(GenTexture &out, const GenTexture *in1, const GenTexture *in2,
+            sInt op, sF32 def1, sF32 def2, bool clampResult);
+
+// Iterative slope-following warp (multi_warp.mmg): each pixel walks
+// along the heightmap gradient for ceil(intensity*quality) steps and
+// accumulates samples of 'in'. mode: 0 min, 1 blur (average), 2 max.
+void MMMultiWarp(GenTexture &out, const GenTexture &in,
+                 const GenTexture &height, sF32 size, sF32 intensity,
+                 sF32 quality, sInt mode);
+
+// Instance scatter/tiler (tiler.mmg): composites tx*ty jittered copies
+// of 'in' (random rotate/scale/offset, per-instance value attenuation,
+// optional mask), keeping the max per pixel. out receives the grayscale
+// composite; outColor (optional) a random color per winning instance.
+// inputs = tileset subdivision of 'in' (1, 2 or 4); the per-instance
+// 'variation' sampling of MM is approximated by plain input sampling.
+void MMTiler(GenTexture &out, GenTexture *outColor, const GenTexture &in,
+             const GenTexture *mask, sF32 tx, sF32 ty, sInt overlap,
+             sInt inputs, sF32 scaleX, sF32 scaleY, sF32 fixedOffset,
+             sF32 offset, sF32 rotateDeg, sF32 scaleJitter, sF32 value,
+             sF32 seed);
+
+// Directional gaussian blur along the heightmap slope (slope_blur.mmg):
+// each pixel accumulates 50 samples of 'in' along the normalized slope
+// direction, with sigma scaled by the local slope strength.
+void MMSlopeBlur(GenTexture &out, const GenTexture &in,
+                 const GenTexture &height, sF32 size, sF32 sigma);

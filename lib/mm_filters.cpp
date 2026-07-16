@@ -284,3 +284,306 @@ void MMInvert(GenTexture &out, const GenTexture &in) {
     o.a = p.a;
   }
 }
+
+// Per-pixel scalar math (math.mmg).
+void MMMath(GenTexture &out, const GenTexture *in1, const GenTexture *in2,
+            sInt op, sF32 def1, sF32 def2, bool clampResult) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 a = def1, b = def2;
+      if (in1 && in1->Data) {
+        sF32 c[4];
+        sampleRGBA(*in1, u, v, c);
+        a = (c[0] + c[1] + c[2]) / 3.0f;
+      }
+      if (in2 && in2->Data) {
+        sF32 c[4];
+        sampleRGBA(*in2, u, v, c);
+        b = (c[0] + c[1] + c[2]) / 3.0f;
+      }
+      sF32 r;
+      switch (op) {
+      default:
+      case 0: r = a + b; break;
+      case 1: r = a - b; break;
+      case 2: r = a * b; break;
+      case 3: r = b != 0.0f ? a / b : 0.0f; break;
+      case 4: r = a > 0.0f ? logf(a) : 0.0f; break;
+      case 5: r = a > 0.0f ? log2f(a) : 0.0f; break;
+      case 6: r = powf(a, b); break;
+      case 7: r = fabsf(a); break;
+      case 8: r = roundf(a); break;
+      case 9: r = floorf(a); break;
+      case 10: r = ceilf(a); break;
+      case 11: r = truncf(a); break;
+      case 12: r = a - floorf(a); break;
+      case 13: r = a < b ? a : b; break;
+      case 14: r = a > b ? a : b; break;
+      case 15: r = a < b ? 1.0f : 0.0f; break;
+      case 16: r = cosf(a * b); break;
+      case 17: r = sinf(a * b); break;
+      case 18: r = tanf(a * b); break;
+      case 19: {
+        sF32 s = 1.0f - a * a;
+        r = s > 0.0f ? sqrtf(s) : 0.0f;
+        break;
+      }
+      }
+      if (clampResult)
+        r = clamp01(r);
+      const sU16 g = to16(r);
+      Pixel &p = out.Data[py * w + px];
+      p.r = p.g = p.b = g;
+      p.a = 65535;
+    }
+  }
+}
+
+// Iterative slope-following warp (multi_warp.mmg).
+void MMMultiWarp(GenTexture &out, const GenTexture &in,
+                 const GenTexture &height, sF32 size, sF32 intensity,
+                 sF32 quality, sInt mode) {
+  if (!out.Data || !in.Data || !height.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (size < 1.0f)
+    size = 1.0f;
+  const sF32 dx = 1.0f / size;
+  sInt iterations = (sInt)ceilf(intensity * quality);
+  if (iterations < 1)
+    iterations = 1;
+  const sF32 step = intensity * intensity / (sF32)iterations;
+
+  auto heightAt = [&](sF32 u, sF32 v) -> sF32 {
+    sF32 c[4];
+    sampleRGBA(height, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v0 = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u0 = (px + 0.5f) / w;
+      sF32 ptv[4];
+      sampleRGBA(in, u0, v0, ptv);
+      sF32 iu = u0, iv = v0;
+      sF32 acc[3] = {0.0f, 0.0f, 0.0f};
+      for (sInt i = 0; i < iterations; i++) {
+        const sF32 hv = heightAt(iu, iv);
+        const sF32 sx = (heightAt(iu + dx, iv) - hv) * 2.0f;
+        const sF32 sy = (heightAt(iu, iv + dx) - hv) * 2.0f;
+        iu += sx * step;
+        iv += sy * step;
+        sF32 s[4];
+        sampleRGBA(in, iu, iv, s);
+        for (int k = 0; k < 3; k++) {
+          sF32 val = s[k];
+          if (mode == 0)
+            val = val < ptv[k] ? val : ptv[k];
+          else if (mode == 2)
+            val = val > ptv[k] ? val : ptv[k];
+          acc[k] += val;
+        }
+      }
+      Pixel &p = out.Data[py * w + px];
+      p.r = to16(acc[0] / (sF32)iterations);
+      p.g = to16(acc[1] / (sF32)iterations);
+      p.b = to16(acc[2] / (sF32)iterations);
+      p.a = 65535;
+    }
+  }
+}
+
+namespace {
+
+// MM common.glsl rand2/rand3 (same constants as mm_generators.cpp)
+inline sF32 glslFract2(sF32 v) { return v - floorf(v); }
+inline sF32 glslMod2(sF32 x, sF32 y) { return x - y * floorf(x / y); }
+
+inline void tilerRand2(sF32 x, sF32 y, sF32 o[2]) {
+  o[0] = glslFract2(cosf(glslMod2(x * 13.9898f + y * 8.141f, 3.14f)) *
+                    43758.5f);
+  o[1] = glslFract2(cosf(glslMod2(x * 3.4562f + y * 17.398f, 3.14f)) *
+                    43758.5f);
+}
+
+inline void tilerRand3(sF32 x, sF32 y, sF32 o[3]) {
+  o[0] = glslFract2(cosf(glslMod2(x * 13.9898f + y * 8.141f, 3.14f)) *
+                    43758.5f);
+  o[1] = glslFract2(cosf(glslMod2(x * 3.4562f + y * 17.398f, 3.14f)) *
+                    43758.5f);
+  o[2] = glslFract2(cosf(glslMod2(x * 13.254f + y * 5.867f, 3.14f)) *
+                    43758.5f);
+}
+
+} // namespace
+
+// Instance scatter/tiler (tiler.mmg).
+void MMTiler(GenTexture &out, GenTexture *outColor, const GenTexture &in,
+             const GenTexture *mask, sF32 tx, sF32 ty, sInt overlap,
+             sInt inputs, sF32 scaleX, sF32 scaleY, sF32 fixedOffset,
+             sF32 offset, sF32 rotateDeg, sF32 scaleJitter, sF32 value,
+             sF32 seed) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (tx < 1.0f)
+    tx = 1.0f;
+  if (ty < 1.0f)
+    ty = 1.0f;
+  if (inputs < 1)
+    inputs = 1;
+
+  auto grayIn = [&](sF32 u, sF32 v) -> sF32 {
+    sF32 c[4];
+    sampleRGBA(in, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+  auto maskAt = [&](sF32 u, sF32 v) -> sF32 {
+    if (!mask || !mask->Data)
+      return 1.0f;
+    sF32 c[4];
+    sampleRGBA(*mask, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+
+  for (sInt py = 0; py < h; py++) {
+    const sF32 uvy = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 uvx = (px + 0.5f) / w;
+      sF32 c = 0.0f;
+      sF32 rc[3] = {0.0f, 0.0f, 0.0f};
+
+      for (sInt dx = -overlap; dx <= overlap; dx++) {
+        for (sInt dy = -overlap; dy <= overlap; dy++) {
+          // instance cell center in [-0.5,0.5] tile space
+          sF32 posX = uvx * tx + (sF32)dx;
+          sF32 posY = uvy * ty + (sF32)dy;
+          posX = glslFract2((floorf(glslMod2(posX, tx)) + 0.5f) / tx) - 0.5f;
+          posY = glslFract2((floorf(glslMod2(posY, ty)) + 0.5f) / ty) - 0.5f;
+
+          sF32 sd[2];
+          tilerRand2(posX + seed, posY + seed, sd);
+          sF32 rc1[3];
+          tilerRand3(sd[0], sd[1], rc1);
+
+          const sF32 tileIdxY = floorf(uvy * ty) + (sF32)dy;
+          posX += (fixedOffset / tx) *
+                      glslMod2(glslMod2(tileIdxY, ty), 2.0f) +
+                  offset * sd[0] / tx;
+          posY += offset * sd[1] / ty;
+
+          const sF32 m = maskAt(glslFract2(posX + 0.5f),
+                                glslFract2(posY + 0.5f));
+          if (m <= 0.01f)
+            continue;
+
+          sF32 pvx = glslFract2(uvx - posX) - 0.5f;
+          sF32 pvy = glslFract2(uvy - posY) - 0.5f;
+          tilerRand2(sd[0], sd[1], sd);
+          const sF32 angle = (sd[0] * 2.0f - 1.0f) * rotateDeg *
+                             0.01745329251f;
+          const sF32 ca = cosf(angle), sa = sinf(angle);
+          sF32 rx = ca * pvx + sa * pvy;
+          sF32 ry = -sa * pvx + ca * pvy;
+          const sF32 sj = (sd[1] - 0.5f) * 2.0f * scaleJitter + 1.0f;
+          rx = rx * sj / scaleX + 0.5f;
+          ry = ry * sj / scaleY + 0.5f;
+          tilerRand2(sd[0], sd[1], sd);
+          if (rx < 0.0f || rx > 1.0f || ry < 0.0f || ry > 1.0f)
+            continue;
+
+          // get_from_tileset: pick a random subtile from an NxN tileset
+          sF32 su = rx, sv = ry;
+          if (inputs > 1) {
+            sF32 pick[2];
+            tilerRand2(sd[0], sd[0], pick);
+            su = (rx + floorf(pick[0] * inputs)) / inputs;
+            sv = (ry + floorf(pick[1] * inputs)) / inputs;
+            su = clamp01(su);
+            sv = clamp01(sv);
+          }
+
+          const sF32 c1 = grayIn(su, sv) * m * (1.0f - value * sd[0]);
+          if (c1 >= c) {
+            c = c1;
+            rc[0] = rc1[0];
+            rc[1] = rc1[1];
+            rc[2] = rc1[2];
+          }
+        }
+      }
+
+      Pixel &p = out.Data[py * w + px];
+      const sU16 g = to16(c);
+      p.r = p.g = p.b = g;
+      p.a = 65535;
+      if (outColor && outColor->Data) {
+        Pixel &q = outColor->Data[py * w + px];
+        q.r = to16(rc[0]);
+        q.g = to16(rc[1]);
+        q.b = to16(rc[2]);
+        q.a = 65535;
+      }
+    }
+  }
+}
+
+// Directional gaussian along the heightmap slope (slope_blur.mmg).
+void MMSlopeBlur(GenTexture &out, const GenTexture &in,
+                 const GenTexture &height, sF32 size, sF32 sigma) {
+  if (!out.Data || !in.Data || !height.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (size < 1.0f)
+    size = 1.0f;
+  const sF32 dx = 1.0f / size;
+
+  auto heightAt = [&](sF32 u, sF32 v) -> sF32 {
+    sF32 c[4];
+    sampleRGBA(height, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v0 = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u0 = (px + 0.5f) / w;
+      const sF32 hv = heightAt(u0, v0);
+      sF32 sx = heightAt(u0 + dx, v0) - hv;
+      sF32 sy = heightAt(u0, v0 + dx) - hv;
+      const sF32 slopeStrength = sqrtf(sx * sx + sy * sy) * size;
+      sF32 nx = 0.0f, ny = 1.0f;
+      if (slopeStrength != 0.0f) {
+        const sF32 len = sqrtf(sx * sx + sy * sy);
+        nx = sx / len;
+        ny = sy / len;
+      }
+      const sF32 ex = dx * nx, ey = dx * ny;
+      sF32 sg = sigma * slopeStrength;
+      if (sg < 0.0001f)
+        sg = 0.0001f;
+      sF32 acc[4] = {0, 0, 0, 0};
+      sF32 sum = 0.0f;
+      for (sF32 i = 0.0f; i <= 50.0f; i += 1.0f) {
+        const sF32 coef =
+            expf(-0.5f * (i / sg) * (i / sg)) / (6.28318530718f * sg * sg);
+        sF32 s[4];
+        sampleRGBA(in, u0 + i * ex, v0 + i * ey, s);
+        for (int k = 0; k < 4; k++)
+          acc[k] += s[k] * coef;
+        sum += coef;
+      }
+      Pixel &p = out.Data[py * w + px];
+      p.r = to16(acc[0] / sum);
+      p.g = to16(acc[1] / sum);
+      p.b = to16(acc[2] / sum);
+      p.a = to16(acc[3] / sum);
+    }
+  }
+}

@@ -123,3 +123,8 @@ enum MMWaveMix {
 };
 void MMPattern(GenTexture &out, sInt mixMode, sInt xWave, sF32 xScale,
                sInt yWave, sF32 yScale);
+
+// Gradient generator (gradient.mmg): rotated linear ramp with repeat
+// and optional mirror, mapped through the color stops.
+void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
+                    sInt nStops, sF32 repeat, sF32 rotateDeg, bool mirror);

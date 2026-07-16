@@ -1051,3 +1051,260 @@ void WorkflowOutputCoreNode::execute(const std::vector<GenTexture*>& inputs,
                    outputs[5], outputs[6], get(0), get(1), get(2), get(3),
                    get(4), m_matNormal, m_occlusion);
 }
+
+// ============================================================
+// MathOpCoreNode
+// ============================================================
+
+std::vector<std::string> MathOpCoreNode::inputSlotNames() const {
+  return {"A", "B"};
+}
+std::vector<std::string> MathOpCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json MathOpCoreNode::saveParams() const {
+  return {{"op", m_op},
+          {"def1", m_def1},
+          {"def2", m_def2},
+          {"clamp", m_clamp}};
+}
+
+void MathOpCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("op"))
+    m_op = j["op"];
+  if (j.contains("def1"))
+    m_def1 = j["def1"];
+  if (j.contains("def2"))
+    m_def2 = j["def2"];
+  if (j.contains("clamp"))
+    m_clamp = j["clamp"];
+}
+
+void MathOpCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                             std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> const GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  const GenTexture* a = get(0);
+  const GenTexture* b = get(1);
+  const GenTexture* sz = a ? a : b;
+  outputs.resize(1);
+  outputs[0].Init(sz ? sz->XRes : 256, sz ? sz->YRes : 256);
+  MMMath(outputs[0], a, b, m_op, m_def1, m_def2, m_clamp);
+}
+
+// ============================================================
+// GradientMMCoreNode
+// ============================================================
+
+GradientMMCoreNode::GradientMMCoreNode() {
+  m_stops.push_back({0.0f, 0.0f, 0.0f, 0.0f, 1.0f});
+  m_stops.push_back({1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+}
+
+std::vector<std::string> GradientMMCoreNode::inputSlotNames() const {
+  return {};
+}
+std::vector<std::string> GradientMMCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json GradientMMCoreNode::saveParams() const {
+  nlohmann::json stops = nlohmann::json::array();
+  for (auto& s : m_stops)
+    stops.push_back({s.pos, s.r, s.g, s.b, s.a});
+  return {{"stops", stops},   {"repeat", m_repeat},
+          {"rotate", m_rotate}, {"mirror", m_mirror},
+          {"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx}};
+}
+
+void GradientMMCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("stops") && j["stops"].is_array()) {
+    m_stops.clear();
+    for (auto& s : j["stops"])
+      if (s.is_array() && s.size() >= 5)
+        m_stops.push_back({s[0].get<float>(), s[1].get<float>(),
+                           s[2].get<float>(), s[3].get<float>(),
+                           s[4].get<float>()});
+    if (m_stops.empty()) {
+      m_stops.push_back({0.0f, 0.0f, 0.0f, 0.0f, 1.0f});
+      m_stops.push_back({1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    }
+  }
+  if (j.contains("repeat"))
+    m_repeat = j["repeat"];
+  if (j.contains("rotate"))
+    m_rotate = j["rotate"];
+  if (j.contains("mirror"))
+    m_mirror = j["mirror"];
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+}
+
+void GradientMMCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                 std::vector<GenTexture>& outputs) {
+  (void)inputs;
+  outputs.resize(1);
+  outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
+  std::vector<MMGradientStop> sorted = m_stops;
+  for (size_t i = 1; i < sorted.size(); i++)
+    for (size_t k = i; k > 0 && sorted[k].pos < sorted[k - 1].pos; k--)
+      std::swap(sorted[k], sorted[k - 1]);
+  MMGradientRamp(outputs[0], sorted.data(), (sInt)sorted.size(), m_repeat,
+                 m_rotate, m_mirror);
+}
+
+// ============================================================
+// TilerCoreNode
+// ============================================================
+
+std::vector<std::string> TilerCoreNode::inputSlotNames() const {
+  return {"In", "Mask"};
+}
+std::vector<std::string> TilerCoreNode::outputSlotNames() const {
+  return {"Out", "Color"};
+}
+
+nlohmann::json TilerCoreNode::saveParams() const {
+  return {{"tx", m_tx},
+          {"ty", m_ty},
+          {"overlap", m_overlap},
+          {"inputs", m_inputs},
+          {"scaleX", m_scaleX},
+          {"scaleY", m_scaleY},
+          {"fixedOffset", m_fixedOffset},
+          {"offset", m_offset},
+          {"rotate", m_rotate},
+          {"scale", m_scale},
+          {"value", m_value},
+          {"seed", m_seed}};
+}
+
+void TilerCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("tx"))
+    m_tx = j["tx"];
+  if (j.contains("ty"))
+    m_ty = j["ty"];
+  if (j.contains("overlap"))
+    m_overlap = j["overlap"];
+  if (j.contains("inputs"))
+    m_inputs = j["inputs"];
+  if (j.contains("scaleX"))
+    m_scaleX = j["scaleX"];
+  if (j.contains("scaleY"))
+    m_scaleY = j["scaleY"];
+  if (j.contains("fixedOffset"))
+    m_fixedOffset = j["fixedOffset"];
+  if (j.contains("offset"))
+    m_offset = j["offset"];
+  if (j.contains("rotate"))
+    m_rotate = j["rotate"];
+  if (j.contains("scale"))
+    m_scale = j["scale"];
+  if (j.contains("value"))
+    m_value = j["value"];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void TilerCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                            std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  GenTexture* in = mmEnsure(get(0));
+  outputs.resize(2);
+  outputs[0].Init(in->XRes, in->YRes);
+  outputs[1].Init(in->XRes, in->YRes);
+  MMTiler(outputs[0], &outputs[1], *in, get(1), m_tx, m_ty, m_overlap,
+          m_inputs, m_scaleX, m_scaleY, m_fixedOffset, m_offset, m_rotate,
+          m_scale, m_value, m_seed);
+}
+
+// ============================================================
+// MultiWarpCoreNode
+// ============================================================
+
+std::vector<std::string> MultiWarpCoreNode::inputSlotNames() const {
+  return {"In", "Height"};
+}
+std::vector<std::string> MultiWarpCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json MultiWarpCoreNode::saveParams() const {
+  return {{"size", m_size},
+          {"intensity", m_intensity},
+          {"quality", m_quality},
+          {"mode", m_mode}};
+}
+
+void MultiWarpCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("size"))
+    m_size = j["size"];
+  if (j.contains("intensity"))
+    m_intensity = j["intensity"];
+  if (j.contains("quality"))
+    m_quality = j["quality"];
+  if (j.contains("mode"))
+    m_mode = j["mode"];
+}
+
+void MultiWarpCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  GenTexture* in = mmEnsure(get(0));
+  GenTexture* hm = get(1);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  if (hm)
+    MMMultiWarp(outputs[0], *in, *hm, m_size, m_intensity, m_quality, m_mode);
+  else
+    outputs[0] = *in;
+}
+
+// ============================================================
+// SlopeBlurCoreNode
+// ============================================================
+
+std::vector<std::string> SlopeBlurCoreNode::inputSlotNames() const {
+  return {"In", "Height"};
+}
+std::vector<std::string> SlopeBlurCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json SlopeBlurCoreNode::saveParams() const {
+  return {{"size", m_size}, {"sigma", m_sigma}};
+}
+
+void SlopeBlurCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("size"))
+    m_size = j["size"];
+  if (j.contains("sigma"))
+    m_sigma = j["sigma"];
+}
+
+void SlopeBlurCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  GenTexture* in = mmEnsure(get(0));
+  GenTexture* hm = get(1);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  if (hm)
+    MMSlopeBlur(outputs[0], *in, *hm, m_size, m_sigma);
+  else
+    outputs[0] = *in;
+}

@@ -93,6 +93,13 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"mwf_mix_smooth",
        {"H1", "C1", "ORM1", "EM1", "NM1", "H2", "C2", "ORM2", "EM2", "NM2"}},
       {"mwf_output", {"Height", "Albedo", "ORM", "Emission", "Normal"}},
+      {"math", {"A", "B"}},
+      {"tiler", {"In", "Mask"}},
+      {"multi_warp", {"In", "Height"}},
+      {"slope_blur", {"In", "Height"}},
+      {"scale", {"In"}},
+      {"translate", {"In"}},
+      {"splatter", {"In", "Mask"}},
   };
   return m;
 }
@@ -108,6 +115,8 @@ const std::map<std::string, std::vector<std::string>> &portsOut() {
       {"mwf_output",
        {"Albedo", "Metallic", "Roughness", "Emission", "Normal", "Occlusion",
         "Depth"}},
+      {"tiler", {"Out", "Color", ""}},
+      {"splatter", {"Out", "Color", ""}},
   };
   return m;
 }
@@ -411,6 +420,101 @@ bool convertParams(const std::string &type, const json &p,
     out = {{"baseName", baseName}};
     return true;
   }
+  if (type == "math") {
+    typeName = "MathOp";
+    out = {{"op", intOr(p, "op", 0)},
+           {"def1", numOr(p, "default_in1", 0.0f)},
+           {"def2", numOr(p, "default_in2", 0.0f)},
+           {"clamp", boolOr(p, "clamp", false)}};
+    return true;
+  }
+  if (type == "gradient") {
+    typeName = "GradientMM";
+    out = {{"stops", stopsFromGradient(p.value("gradient", json::object()))},
+           {"repeat", numOr(p, "repeat", 1.0f)},
+           {"rotate", numOr(p, "rotate", 0.0f)},
+           {"mirror", boolOr(p, "mirror", false)},
+           {"widthIdx", 3},
+           {"heightIdx", 3}};
+    return true;
+  }
+  if (type == "tiler") {
+    typeName = "Tiler";
+    int tsIdx = intOr(p, "inputs", 0); // enum index -> tileset count
+    out = {{"tx", numOr(p, "tx", 4.0f)},
+           {"ty", numOr(p, "ty", 4.0f)},
+           {"overlap", intOr(p, "overlap", 1)},
+           {"inputs", tsIdx == 2 ? 4 : (tsIdx == 1 ? 2 : 1)},
+           {"scaleX", numOr(p, "scale_x", 1.0f)},
+           {"scaleY", numOr(p, "scale_y", 1.0f)},
+           {"fixedOffset", numOr(p, "fixed_offset", 0.5f)},
+           {"offset", numOr(p, "offset", 0.5f)},
+           {"rotate", numOr(p, "rotate", 0.0f)},
+           {"scale", numOr(p, "scale", 0.0f)},
+           {"value", numOr(p, "value", 0.5f)},
+           {"seed", numOr(p, "seed", 0.0f)}};
+    return true;
+  }
+  if (type == "multi_warp") {
+    // graph macro: param0=size, param1=intensity, param2=quality,
+    // param3=mode (see multi_warp.mmg gen_parameters)
+    typeName = "MultiWarp";
+    out = {{"size", numOr(p, "param0", 9.0f)},
+           {"intensity", numOr(p, "param1", 0.5f)},
+           {"quality", numOr(p, "param2", 50.0f)},
+           {"mode", intOr(p, "param3", 2)}};
+    return true;
+  }
+  if (type == "slope_blur") {
+    // graph macro: param0=size, param1=sigma
+    typeName = "SlopeBlur";
+    out = {{"size", numOr(p, "param0", 9.0f)},
+           {"sigma", numOr(p, "param1", 0.5f)}};
+    return true;
+  }
+  if (type == "scale") {
+    // scale around (0.5+cx, 0.5+cy); the center offset is dropped
+    typeName = "Transform2D";
+    out = {{"tx", 0.0f},
+           {"ty", 0.0f},
+           {"rot", 0.0f},
+           {"scaleX", numOr(p, "scale_x", 1.0f)},
+           {"scaleY", numOr(p, "scale_y", 1.0f)},
+           {"repeat", true}};
+    return true;
+  }
+  if (type == "translate") {
+    typeName = "Transform2D";
+    out = {{"tx", numOr(p, "translate_x", 0.0f)},
+           {"ty", numOr(p, "translate_y", 0.0f)},
+           {"rot", 0.0f},
+           {"scaleX", 1.0f},
+           {"scaleY", 1.0f},
+           {"repeat", true}};
+    return true;
+  }
+  if (type == "splatter") {
+    // approximated by the tiler with a grid of ~count instances
+    typeName = "Tiler";
+    int count = intOr(p, "count", 10);
+    int grid = 1;
+    while (grid * grid < count)
+      grid++;
+    int tsIdx = intOr(p, "inputs", 0);
+    out = {{"tx", (float)grid},
+           {"ty", (float)grid},
+           {"overlap", 2},
+           {"inputs", tsIdx == 2 ? 4 : (tsIdx == 1 ? 2 : 1)},
+           {"scaleX", numOr(p, "scale_x", 1.0f)},
+           {"scaleY", numOr(p, "scale_y", 1.0f)},
+           {"fixedOffset", 0.0f},
+           {"offset", 1.0f},
+           {"rotate", numOr(p, "rotate", 0.0f)},
+           {"scale", numOr(p, "scale", 0.0f)},
+           {"value", numOr(p, "value", 0.5f)},
+           {"seed", numOr(p, "seed", 0.0f)}};
+    return true;
+  }
   if (type == "mwf_mix" || type == "mwf_mix_smooth") {
     typeName = "LayerMix";
     out = {{"mode", type == "mwf_mix" ? 0 : 1},
@@ -524,6 +628,13 @@ GraphResult convertGraph(json mmNodes, json mmConns,
     std::string name = n.value("name", std::string());
     json pos = n.value("node_position", json::object());
     json params = n.value("parameters", json::object());
+    // MM stores the instance seed at node level, not in parameters
+    if (!params.contains("seed")) {
+      if (n.contains("seed"))
+        params["seed"] = n["seed"];
+      else if (n.contains("seed_int"))
+        params["seed"] = n["seed_int"];
+    }
 
     std::string typeName;
     json p;
@@ -598,6 +709,52 @@ GraphResult convertGraph(json mmNodes, json mmConns,
       }
     }
   }
+
+  // Prune recently-added filter types that lost every incoming
+  // connection to unsupported sources: a converted filter with no
+  // input feeds black downstream, while a missing node lets consumers
+  // degrade gracefully (e.g. a Blend without mask). Restricted to
+  // these types to keep the long-standing behavior of the others;
+  // nodes with no connections in the original MM graph are kept —
+  // they legitimately run on their defaults (e.g. math).
+  {
+    static const std::set<std::string> prunable = {
+        "scale", "translate", "tiler",   "splatter",
+        "math",  "slope_blur", "multi_warp"};
+    std::set<std::string> hadInput;
+    for (auto &c : mmConns)
+      hadInput.insert(c.value("to", std::string()));
+    std::set<int> hadInputIds;
+    for (auto &kv : byName)
+      if (hadInput.count(kv.first) && prunable.count(kv.second.second))
+        hadInputIds.insert(kv.second.first);
+
+    for (;;) {
+      std::set<int> hasIncoming;
+      for (auto &c : res.conns)
+        hasIncoming.insert(c["toId"].get<int>());
+      std::set<int> pruned;
+      json keptNodes = json::array();
+      for (auto &n : res.nodes) {
+        int id = n["id"].get<int>();
+        if (hadInputIds.count(id) && !hasIncoming.count(id))
+          pruned.insert(id);
+        else
+          keptNodes.push_back(n);
+      }
+      if (pruned.empty())
+        break;
+      res.nodes = keptNodes;
+      json keptConns = json::array();
+      for (auto &c : res.conns)
+        if (!pruned.count(c["fromId"].get<int>()) &&
+            !pruned.count(c["toId"].get<int>()))
+          keptConns.push_back(c);
+      res.conns = keptConns;
+      if (pruned.count(res.previewId))
+        res.previewId = -1;
+    }
+  }
   return res;
 }
 
@@ -636,8 +793,15 @@ json graphToSubgraph(const json &n, const std::string &baseName,
 
   GraphResult inner = convertGraph(innerNodes, innerConns, baseName, skipped);
   std::map<std::string, int> nameToId;
-  for (auto &kv : inner.byName)
-    nameToId[kv.first] = kv.second.first;
+  {
+    // byName may still reference nodes pruned by convertGraph
+    std::set<int> kept;
+    for (auto &nj : inner.nodes)
+      kept.insert(nj["id"].get<int>());
+    for (auto &kv : inner.byName)
+      if (kept.count(kv.second.first))
+        nameToId[kv.first] = kv.second.first;
+  }
 
   json inputs = json::array();
   for (auto &pn : inPortNames)

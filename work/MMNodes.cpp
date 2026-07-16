@@ -613,3 +613,166 @@ void WorkflowOutputNode::renderParams() {
   Hint("Strength of the ambient occlusion approximated from height");
   ImGui::PopItemWidth();
 }
+
+// ============================================================
+// MathOpNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> MathOpNode::inputSlotInfos() const {
+  return {{"A", 1}, {"B", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> MathOpNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void MathOpNode::renderParams() {
+  static const char* ops =
+      "A + B\0A - B\0A * B\0A / B\0log(A)\0log2(A)\0pow(A, B)\0abs(A)\0"
+      "round(A)\0floor(A)\0ceil(A)\0trunc(A)\0fract(A)\0min(A, B)\0"
+      "max(A, B)\0A < B\0cos(A*B)\0sin(A*B)\0tan(A*B)\0sqrt(1-A*A)\0";
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("Op##math", &m_core.m_op, ops);
+  Hint("Per-pixel scalar operation on the grayscale inputs");
+  SliderFloatW("Default A##math", &m_core.m_def1, 0.0f, 1.0f);
+  Hint("Constant used when input A is not connected");
+  SliderFloatW("Default B##math", &m_core.m_def2, 0.0f, 1.0f);
+  Hint("Constant used when input B is not connected");
+  ImGui::Checkbox("Clamp##math", &m_core.m_clamp);
+  Hint("Clamp the result to [0, 1]");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// GradientMMNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> GradientMMNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> GradientMMNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void GradientMMNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##gmm", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##gmm", &m_core.m_heightIdx, s_sizesStr);
+  SliderFloatW("Repeat##gmm", &m_core.m_repeat, 0.0f, 16.0f);
+  Hint("Number of ramp repetitions across the texture");
+  SliderFloatW("Rotate##gmm", &m_core.m_rotate, -180.0f, 180.0f);
+  Hint("Ramp direction in degrees");
+  ImGui::Checkbox("Mirror##gmm", &m_core.m_mirror);
+  Hint("Mirror each repetition (triangle wave)");
+  ImGui::Text("Gradient stops:");
+  int removeIdx = -1;
+  for (int i = 0; i < (int)m_core.m_stops.size(); i++) {
+    auto& s = m_core.m_stops[i];
+    ImGui::PushID(i + 1000);
+    float col[4] = {s.r, s.g, s.b, s.a};
+    if (ImGui::ColorEdit4("##gstopcol", col, ImGuiColorEditFlags_NoInputs)) {
+      s.r = col[0];
+      s.g = col[1];
+      s.b = col[2];
+      s.a = col[3];
+    }
+    ImGui::SameLine();
+    SliderFloatW("##gstoppos", &s.pos, 0.0f, 1.0f);
+    if (m_core.m_stops.size() > 1) {
+      ImGui::SameLine();
+      if (ImGui::SmallButton("x"))
+        removeIdx = i;
+    }
+    ImGui::PopID();
+  }
+  if (removeIdx >= 0)
+    m_core.m_stops.erase(m_core.m_stops.begin() + removeIdx);
+  if (m_core.m_stops.size() < 8 && ImGui::SmallButton("+ stop##gmm")) {
+    MMGradientStop last = m_core.m_stops.back();
+    m_core.m_stops.push_back(last);
+  }
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// TilerNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> TilerNode::inputSlotInfos() const {
+  return {{"In", 1}, {"Mask", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> TilerNode::outputSlotInfos() const {
+  return {{"Out", 1}, {"Color", 1}};
+}
+
+void TilerNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Tile X##til", &m_core.m_tx, 1.0f, 32.0f);
+  SliderFloatW("Tile Y##til", &m_core.m_ty, 1.0f, 32.0f);
+  Hint("Grid size (instances per axis)");
+  ImGui::SliderInt("Overlap##til", &m_core.m_overlap, 0, 3);
+  Hint("How far instances can spill into neighbor cells");
+  static const char* tilesets = "1\0002x2\0004x4\0";
+  int tsIdx = m_core.m_inputs == 4 ? 2 : (m_core.m_inputs == 2 ? 1 : 0);
+  if (ImGui::Combo("Tileset##til", &tsIdx, tilesets))
+    m_core.m_inputs = tsIdx == 2 ? 4 : (tsIdx == 1 ? 2 : 1);
+  Hint("Treat the input as an NxN tileset and pick tiles at random");
+  SliderFloatW("Scale X##til", &m_core.m_scaleX, 0.1f, 4.0f);
+  SliderFloatW("Scale Y##til", &m_core.m_scaleY, 0.1f, 4.0f);
+  SliderFloatW("Fixed offset##til", &m_core.m_fixedOffset, 0.0f, 1.0f);
+  Hint("Per-row horizontal offset (brick-like layouts)");
+  SliderFloatW("Offset##til", &m_core.m_offset, 0.0f, 1.0f);
+  Hint("Random position jitter");
+  SliderFloatW("Rotate##til", &m_core.m_rotate, 0.0f, 180.0f);
+  Hint("Random rotation range in degrees");
+  SliderFloatW("Scale jitter##til", &m_core.m_scale, 0.0f, 1.0f);
+  Hint("Random scale variation");
+  SliderFloatW("Value##til", &m_core.m_value, 0.0f, 1.0f);
+  Hint("Random brightness attenuation per instance");
+  SliderFloatW("Seed##til", &m_core.m_seed, 0.0f, 64.0f);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// MultiWarpNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> MultiWarpNode::inputSlotInfos() const {
+  return {{"In", 1}, {"Height", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> MultiWarpNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void MultiWarpNode::renderParams() {
+  static const char* modes = "Min\0Blur\0Max\0";
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Size##mw", &m_core.m_size, 1.0f, 64.0f);
+  Hint("Gradient sampling distance (1/size texels)");
+  SliderFloatW("Intensity##mw", &m_core.m_intensity, 0.0f, 1.0f);
+  Hint("Warp strength (also scales the iteration count)");
+  SliderFloatW("Quality##mw", &m_core.m_quality, 1.0f, 100.0f);
+  Hint("Maximum iterations at full intensity");
+  ImGui::Combo("Mode##mw", &m_core.m_mode, modes);
+  Hint("How samples accumulate along the walk");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// SlopeBlurNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> SlopeBlurNode::inputSlotInfos() const {
+  return {{"In", 1}, {"Height", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> SlopeBlurNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void SlopeBlurNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Size##sb", &m_core.m_size, 1.0f, 64.0f);
+  Hint("Slope sampling distance (1/size texels)");
+  SliderFloatW("Sigma##sb", &m_core.m_sigma, 0.0f, 50.0f);
+  Hint("Blur strength, scaled by the local slope");
+  ImGui::PopItemWidth();
+}

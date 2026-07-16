@@ -383,6 +383,110 @@ class InvertCoreNode : public CoreNode {
 };
 
 // ============================================================
+// MathOpCoreNode — per-pixel scalar math (math.mmg)
+// ============================================================
+class MathOpCoreNode : public CoreNode {
+ public:
+  MathOpCoreNode() {}
+  std::string typeName() const override { return "MathOp"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_op = 0;
+  float m_def1 = 0.0f;  // used when A is unconnected
+  float m_def2 = 0.0f;  // used when B is unconnected
+  bool m_clamp = false;
+};
+
+// ============================================================
+// GradientMMCoreNode — rotated repeating gradient (gradient.mmg)
+// ============================================================
+class GradientMMCoreNode : public CoreNode {
+ public:
+  GradientMMCoreNode();
+  std::string typeName() const override { return "GradientMM"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  std::vector<MMGradientStop> m_stops;
+  float m_repeat = 1.0f;
+  float m_rotate = 0.0f;
+  bool m_mirror = false;
+  int m_widthIdx = 3, m_heightIdx = 3;
+};
+
+// ============================================================
+// TilerCoreNode — instance scatter/tiler (tiler.mmg)
+// ============================================================
+class TilerCoreNode : public CoreNode {
+ public:
+  TilerCoreNode() {}
+  std::string typeName() const override { return "Tiler"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_tx = 4.0f, m_ty = 4.0f;
+  int m_overlap = 1;
+  int m_inputs = 1;  // tileset subdivision of the input (1, 2 or 4)
+  float m_scaleX = 1.0f, m_scaleY = 1.0f;
+  float m_fixedOffset = 0.0f, m_offset = 0.5f;
+  float m_rotate = 0.0f, m_scale = 0.0f;
+  float m_value = 0.0f;
+  float m_seed = 0.0f;
+};
+
+// ============================================================
+// MultiWarpCoreNode — iterative slope warp (multi_warp.mmg)
+// ============================================================
+class MultiWarpCoreNode : public CoreNode {
+ public:
+  MultiWarpCoreNode() {}
+  std::string typeName() const override { return "MultiWarp"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_size = 9.0f;
+  float m_intensity = 0.5f;
+  float m_quality = 50.0f;
+  int m_mode = 2;  // 0 min, 1 blur, 2 max
+};
+
+// ============================================================
+// SlopeBlurCoreNode — directional gaussian along the heightmap
+// slope (slope_blur.mmg)
+// ============================================================
+class SlopeBlurCoreNode : public CoreNode {
+ public:
+  SlopeBlurCoreNode() {}
+  std::string typeName() const override { return "SlopeBlur"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_size = 9.0f;
+  float m_sigma = 0.5f;
+};
+
+// ============================================================
 // LayerMixCoreNode — height-based mix of two material layers
 // (Material Maker mwf_mix / mwf_mix_smooth)
 // ============================================================
