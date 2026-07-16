@@ -153,13 +153,18 @@ bool GraphEval::load(const nlohmann::json &rawProject) {
   auto &registry = getCoreNodeRegistry();
 
   for (auto &n : project["nodes"]) {
-    int id = n["id"].get<int>();
-    std::string type = n["typeName"].get<std::string>();
+    int id = n.value("id", -1);
+    std::string type = n.value("typeName", std::string());
     auto core = registry.create(type);
-    if (!core)
+    if (!core || id < 0)
       continue; // unknown/legacy type — skip
     core->id = id;
-    core->loadParams(n.value("params", nlohmann::json::object()));
+    // Unexpected value types (old project formats) keep node defaults
+    // instead of aborting the evaluation.
+    try {
+      core->loadParams(n.value("params", nlohmann::json::object()));
+    } catch (const std::exception &) {
+    }
     ENode en;
     en.inSlots = core->inputSlotNames();
     en.outSlots = core->outputSlotNames();
@@ -168,9 +173,11 @@ bool GraphEval::load(const nlohmann::json &rawProject) {
   }
   if (project.contains("connections")) {
     for (auto &c : project["connections"]) {
-      addConnection(c["fromId"].get<int>(),
-                    c["fromSlot"].get<std::string>(), c["toId"].get<int>(),
-                    c["toSlot"].get<std::string>());
+      if (!c.contains("fromId") || !c.contains("toId"))
+        continue;
+      addConnection(c.value("fromId", -1),
+                    c.value("fromSlot", std::string()), c.value("toId", -1),
+                    c.value("toSlot", std::string()));
     }
   }
   return true;

@@ -19,7 +19,12 @@ int main(int argc, char *argv[]) {
   }
 
   nlohmann::json j;
-  f >> j;
+  try {
+    f >> j;
+  } catch (const std::exception& e) {
+    fprintf(stderr, "Error: invalid JSON in %s: %s\n", argv[1], e.what());
+    return 1;
+  }
 
   if (exportCHeaderFromJSON(j, argv[2], argv[3])) {
     printf("OK: %s -> %s\n", argv[1], argv[3]);

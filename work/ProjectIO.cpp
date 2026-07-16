@@ -1,4 +1,5 @@
 #include "ProjectIO.h"
+#include <cstdio>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include "Nodes.h"
@@ -20,8 +21,14 @@ bool loadProject(const std::string& filepath) {
   std::ifstream f(filepath);
   if (!f.is_open())
     return false;
-  nlohmann::json j;
-  f >> j;
-  g_nodeGraph->load(j);
+  try {
+    nlohmann::json j;
+    f >> j;
+    g_nodeGraph->load(j);
+  } catch (const std::exception& e) {
+    fprintf(stderr, "loadProject: failed to load '%s': %s\n",
+            filepath.c_str(), e.what());
+    return false;
+  }
   return true;
 }

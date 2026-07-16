@@ -21,7 +21,12 @@ int main(int argc, char *argv[]) {
   }
 
   nlohmann::json j;
-  f >> j;
+  try {
+    f >> j;
+  } catch (const std::exception& e) {
+    fprintf(stderr, "Error: invalid JSON in %s: %s\n", argv[1], e.what());
+    return 1;
+  }
 
   GenTexture output;
   if (!headlessEvaluate(j, output)) {

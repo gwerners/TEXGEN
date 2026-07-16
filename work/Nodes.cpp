@@ -828,7 +828,7 @@ void NodeGraph::load(const nlohmann::json& j) {
     return;
 
   for (const auto& nj : j["nodes"]) {
-    std::string typeName = nj["typeName"];
+    std::string typeName = nj.value("typeName", std::string());
     auto it = m_registry.find(typeName);
     if (it == m_registry.end())
       continue;
@@ -836,8 +836,16 @@ void NodeGraph::load(const nlohmann::json& j) {
     auto texNode = it->second();
     texNode->pos.x = nj.value("posX", 100.0f);
     texNode->pos.y = nj.value("posY", 100.0f);
-    if (nj.contains("params"))
-      texNode->loadParams(nj["params"]);
+    if (nj.contains("params")) {
+      // Unexpected value types (old project formats) must not take the
+      // editor down — keep that node's defaults instead.
+      try {
+        texNode->loadParams(nj["params"]);
+      } catch (const std::exception& e) {
+        fprintf(stderr, "load: bad params for node type '%s' (%s)\n",
+                typeName.c_str(), e.what());
+      }
+    }
 
     int id = nj.value("id", m_nextId);
     if (id >= m_nextId)
