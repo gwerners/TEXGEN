@@ -64,6 +64,16 @@ EXAMPLES=(
   "mm_grass_with_flowers:mm_grass_with_flowers"
   "mm_mosaic:mm_mosaic"
   "mm_rock:mm_rock"
+  "mm_floor1:mm_floor1"
+  "mm_emmental:mm_emmental"
+  "mm_planet:mm_planet"
+  "mm_radiation:mm_radiation"
+  "mm_paper:mm_paper"
+  "mm_tiles:mm_tiles"
+  "mm_brick_rotated:mm_brick_rotated"
+  "mm_clump_of_grass:mm_clump_of_grass"
+  "mm_metal_pattern_2:mm_metal_pattern_2"
+  "mm_metal_pattern_3:mm_metal_pattern_3"
 )
 
 PASS=0

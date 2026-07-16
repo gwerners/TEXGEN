@@ -735,3 +735,160 @@ void EmbossCoreNode::loadParams(const nlohmann::json& j) {
   if (j.contains("width"))
     m_width = j["width"];
 }
+
+// ============================================================
+// Transform2DCoreNode
+// ============================================================
+
+Transform2DCoreNode::Transform2DCoreNode()
+    : m_tx(0.0f),
+      m_ty(0.0f),
+      m_rot(0.0f),
+      m_scaleX(1.0f),
+      m_scaleY(1.0f),
+      m_repeat(true) {}
+
+std::vector<std::string> Transform2DCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> Transform2DCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void Transform2DCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                  std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMTransform(outputs[0], *in, m_tx, m_ty, m_rot, m_scaleX, m_scaleY,
+              m_repeat);
+}
+
+nlohmann::json Transform2DCoreNode::saveParams() const {
+  return {{"tx", m_tx},         {"ty", m_ty},
+          {"rot", m_rot},       {"scaleX", m_scaleX},
+          {"scaleY", m_scaleY}, {"repeat", m_repeat}};
+}
+
+void Transform2DCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("tx"))
+    m_tx = j["tx"];
+  if (j.contains("ty"))
+    m_ty = j["ty"];
+  if (j.contains("rot"))
+    m_rot = j["rot"];
+  if (j.contains("scaleX"))
+    m_scaleX = j["scaleX"];
+  if (j.contains("scaleY"))
+    m_scaleY = j["scaleY"];
+  if (j.contains("repeat"))
+    m_repeat = j["repeat"];
+}
+
+// ============================================================
+// ShapeCoreNode
+// ============================================================
+
+ShapeCoreNode::ShapeCoreNode()
+    : m_widthIdx(3),
+      m_heightIdx(3),
+      m_shape(MMShapeCircle),
+      m_sides(3.0f),
+      m_radius(1.0f),
+      m_edge(0.2f) {}
+
+std::vector<std::string> ShapeCoreNode::inputSlotNames() const {
+  return {};
+}
+std::vector<std::string> ShapeCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void ShapeCoreNode::execute(const std::vector<GenTexture*>& /*inputs*/,
+                            std::vector<GenTexture>& outputs) {
+  int w = mmSizeFromIdx(m_widthIdx);
+  int h = mmSizeFromIdx(m_heightIdx);
+  outputs.resize(1);
+  outputs[0].Init(w, h);
+  MMShape(outputs[0], m_shape, m_sides, m_radius, m_edge);
+}
+
+nlohmann::json ShapeCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx},
+          {"heightIdx", m_heightIdx},
+          {"shape", m_shape},
+          {"sides", m_sides},
+          {"radius", m_radius},
+          {"edge", m_edge}};
+}
+
+void ShapeCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("shape"))
+    m_shape = j["shape"];
+  if (j.contains("sides"))
+    m_sides = j["sides"];
+  if (j.contains("radius"))
+    m_radius = j["radius"];
+  if (j.contains("edge"))
+    m_edge = j["edge"];
+}
+
+// ============================================================
+// PatternCoreNode
+// ============================================================
+
+PatternCoreNode::PatternCoreNode()
+    : m_widthIdx(3),
+      m_heightIdx(3),
+      m_mix(MMWaveMixMultiply),
+      m_xWave(MMWaveSine),
+      m_yWave(MMWaveSine),
+      m_xScale(4.0f),
+      m_yScale(4.0f) {}
+
+std::vector<std::string> PatternCoreNode::inputSlotNames() const {
+  return {};
+}
+std::vector<std::string> PatternCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void PatternCoreNode::execute(const std::vector<GenTexture*>& /*inputs*/,
+                              std::vector<GenTexture>& outputs) {
+  int w = mmSizeFromIdx(m_widthIdx);
+  int h = mmSizeFromIdx(m_heightIdx);
+  outputs.resize(1);
+  outputs[0].Init(w, h);
+  MMPattern(outputs[0], m_mix, m_xWave, m_xScale, m_yWave, m_yScale);
+}
+
+nlohmann::json PatternCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx},
+          {"heightIdx", m_heightIdx},
+          {"mix", m_mix},
+          {"xWave", m_xWave},
+          {"yWave", m_yWave},
+          {"xScale", m_xScale},
+          {"yScale", m_yScale}};
+}
+
+void PatternCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("mix"))
+    m_mix = j["mix"];
+  if (j.contains("xWave"))
+    m_xWave = j["xWave"];
+  if (j.contains("yWave"))
+    m_yWave = j["yWave"];
+  if (j.contains("xScale"))
+    m_xScale = j["xScale"];
+  if (j.contains("yScale"))
+    m_yScale = j["yScale"];
+}

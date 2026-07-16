@@ -26,3 +26,8 @@ void MMQuantize(GenTexture &out, const GenTexture &in, sInt steps);
 // angleDeg = light direction, width = kernel radius in pixels.
 void MMEmboss(GenTexture &out, const GenTexture &in, sF32 angleDeg,
               sF32 amount, sInt width);
+
+// 2D affine transform (transform.mmg): translate, rotate around the
+// center, scale, then wrap (repeat=true) or clamp the source UVs.
+void MMTransform(GenTexture &out, const GenTexture &in, sF32 tx, sF32 ty,
+                 sF32 rotDeg, sF32 scaleX, sF32 scaleY, bool repeat);

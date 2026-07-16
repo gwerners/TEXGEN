@@ -919,6 +919,40 @@ static void emitNode(std::ostringstream& ss,
     }
   }
 
+  else if (type == "Transform2D") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMTransform(" << v << ", " << in << ", " << pf(p, "tx", 0.0f)
+         << ", " << pf(p, "ty", 0.0f) << ", " << pf(p, "rot", 0.0f) << ", "
+         << pf(p, "scaleX", 1.0f) << ", " << pf(p, "scaleY", 1.0f) << ", "
+         << (p.value("repeat", true) ? "true" : "false") << ");\n";
+    }
+  }
+
+  else if (type == "Shape") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMShape(" << v << ", " << p.value("shape", 0) << ", "
+       << pf(p, "sides", 3.0f) << ", " << pf(p, "radius", 1.0f) << ", "
+       << pf(p, "edge", 0.2f) << ");\n";
+  }
+
+  else if (type == "Pattern") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMPattern(" << v << ", " << p.value("mix", 0) << ", "
+       << p.value("xWave", 0) << ", " << pf(p, "xScale", 4.0f) << ", "
+       << p.value("yWave", 0) << ", " << pf(p, "yScale", 4.0f) << ");\n";
+  }
+
   else {
     ss << "    // [unsupported node: " << type << " id " << id << "]\n";
   }

@@ -143,9 +143,13 @@ Structural nodes:
 ### mm_* — Material Maker ports
 **Files:** `mm_wood.json`, `mm_lava.json`, `mm_rusted_metal.json`,
 `mm_dry_earth.json`, `mm_crocodile_skin.json`, `mm_floor2.json`,
-`mm_grass_with_flowers.json`, `mm_mosaic.json`, `mm_rock.json`
+`mm_grass_with_flowers.json`, `mm_mosaic.json`, `mm_rock.json`,
+`mm_floor1.json`, `mm_emmental.json`, `mm_planet.json`,
+`mm_radiation.json`, `mm_paper.json`, `mm_tiles.json`,
+`mm_brick_rotated.json`, `mm_clump_of_grass.json`,
+`mm_metal_pattern_2.json`, `mm_metal_pattern_3.json`
 
-Nine complete PBR materials converted from Material Maker's example
+Nineteen complete PBR materials converted from Material Maker's example
 projects with `tools/ptex2texgen.py`:
 
 ```
@@ -236,6 +240,9 @@ All AGG nodes have an optional **Bg** input for compositing on a background.
 | **MakeTileable** | Hides seams by blending offset copies |
 | **Quantize** | Posterize RGB into N steps |
 | **Emboss** | Directional relief from a grayscale input |
+| **Transform2D** | Translate/rotate/scale with tiling (repeat) or clamp |
+| **Shape** | Soft-edge circle, polygon, star, curved star, rays |
+| **Pattern** | X/Y wave combinations (sine, triangle, square, ...) |
 
 ### Structural Nodes
 

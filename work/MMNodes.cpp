@@ -457,3 +457,84 @@ void EmbossNode::renderParams() {
   Hint("Kernel radius in pixels");
   ImGui::PopItemWidth();
 }
+
+// ============================================================
+// Transform2DNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> Transform2DNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> Transform2DNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void Transform2DNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("TX##t2d", &m_core.m_tx, -1.0f, 1.0f);
+  Hint("Translation along the X axis");
+  SliderFloatW("TY##t2d", &m_core.m_ty, -1.0f, 1.0f);
+  Hint("Translation along the Y axis");
+  SliderFloatW("Rot##t2d", &m_core.m_rot, -180.0f, 180.0f);
+  Hint("Rotation around the center, in degrees");
+  SliderFloatW("ScaleX##t2d", &m_core.m_scaleX, 0.05f, 4.0f);
+  SliderFloatW("ScaleY##t2d", &m_core.m_scaleY, 0.05f, 4.0f);
+  ImGui::Checkbox("Repeat##t2d", &m_core.m_repeat);
+  Hint("Wrap the image (tile) instead of clamping at the edges");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// ShapeNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> ShapeNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> ShapeNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void ShapeNode::renderParams() {
+  static const char* s_sizes = "32\00064\000128\000256\000512\0001024\000";
+  static const char* shapes = "Circle\0Polygon\0Star\0Curved Star\0Rays\0";
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##shp", &m_core.m_widthIdx, s_sizes);
+  ImGui::Combo("H##shp", &m_core.m_heightIdx, s_sizes);
+  ImGui::Combo("Shape##shp", &m_core.m_shape, shapes);
+  Hint("Draws a white shape on a black background");
+  SliderFloatW("Sides##shp", &m_core.m_sides, 2.0f, 16.0f);
+  Hint("Number of sides (polygon/star/rays)");
+  SliderFloatW("Radius##shp", &m_core.m_radius, 0.0f, 1.0f);
+  SliderFloatW("Edge##shp", &m_core.m_edge, 0.0f, 1.0f);
+  Hint("Edge softness");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// PatternNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> PatternNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> PatternNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void PatternNode::renderParams() {
+  static const char* s_sizes = "32\00064\000128\000256\000512\0001024\000";
+  static const char* waves =
+      "Sine\0Triangle\0Square\0Sawtooth\0Constant\0Bounce\0";
+  static const char* mixes = "Multiply\0Add\0Max\0Min\0Xor\0Pow\0";
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##pat", &m_core.m_widthIdx, s_sizes);
+  ImGui::Combo("H##pat", &m_core.m_heightIdx, s_sizes);
+  ImGui::Combo("Mix##pat", &m_core.m_mix, mixes);
+  Hint("How the X and Y waves are combined");
+  ImGui::Combo("X Wave##pat", &m_core.m_xWave, waves);
+  SliderFloatW("X Scale##pat", &m_core.m_xScale, 0.0f, 32.0f);
+  ImGui::Combo("Y Wave##pat", &m_core.m_yWave, waves);
+  SliderFloatW("Y Scale##pat", &m_core.m_yScale, 0.0f, 32.0f);
+  ImGui::PopItemWidth();
+}

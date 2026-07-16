@@ -1,0 +1,309 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Material",
+      "posX": 510.0,
+      "posY": -55.0,
+      "params": {
+        "baseName": "mm_tiles"
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "Shape",
+      "posX": -624.5,
+      "posY": -157.5,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "shape": 0,
+        "sides": 6.0,
+        "radius": 1.0,
+        "edge": 0.0625
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "Transform2D",
+      "posX": -445.5,
+      "posY": -87.5,
+      "params": {
+        "tx": 0.0,
+        "ty": 0.0,
+        "rot": 0.0,
+        "scaleX": 0.125,
+        "scaleY": 0.125,
+        "repeat": true
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Pattern",
+      "posX": -726.5,
+      "posY": -55.5,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 0,
+        "xWave": 4,
+        "xScale": 2.0,
+        "yWave": 3,
+        "yScale": 1.0
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Blend",
+      "posX": -444.240479,
+      "posY": -198.5,
+      "params": {
+        "mode": 2,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Transform2D",
+      "posX": -222.240479,
+      "posY": -85.5,
+      "params": {
+        "tx": 0.06,
+        "ty": 0.06,
+        "rot": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "repeat": true
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Blend",
+      "posX": -167.240479,
+      "posY": -198.5,
+      "params": {
+        "mode": 9,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "BricksMM",
+      "posX": -506.407684,
+      "posY": 150.5,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "pattern": 0,
+        "countX": 8,
+        "countY": 8,
+        "repeat": 1,
+        "offset": 0.0,
+        "mortar": 0.1,
+        "round": 0.0,
+        "bevel": 0.0,
+        "colorBalance": 0.5,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Blend",
+      "posX": 2.592316,
+      "posY": 168.5,
+      "params": {
+        "mode": 0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "Transform2D",
+      "posX": -262.407715,
+      "posY": 140.0,
+      "params": {
+        "tx": 0.56,
+        "ty": 0.56,
+        "rot": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "repeat": true
+      }
+    },
+    {
+      "id": 10,
+      "typeName": "Blend",
+      "posX": 5.592316,
+      "posY": 65.5,
+      "params": {
+        "mode": 11,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 11,
+      "typeName": "Colorize",
+      "posX": -14.407684,
+      "posY": 262.5,
+      "params": {
+        "stops": [
+          [
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.072727,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "typeName": "NormalMap",
+      "posX": 83.448486,
+      "posY": -87.5,
+      "params": {
+        "amount": 0.69,
+        "format": 0
+      }
+    },
+    {
+      "id": 13,
+      "typeName": "Colorize",
+      "posX": 217.448486,
+      "posY": 41.5,
+      "params": {
+        "stops": [
+          [
+            0,
+            1,
+            0.375,
+            0,
+            1
+          ],
+          [
+            1,
+            0.640625,
+            0.300293,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_tiles_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 10,
+      "fromSlot": "Out",
+      "toId": 11,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 11,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "Mask"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 12,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 12,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "Out",
+      "toId": 13,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 13,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 13,
+      "fromSlot": "Out",
+      "toId": 14,
+      "toSlot": "In"
+    }
+  ]
+}

@@ -1,0 +1,556 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Transform2D",
+      "posX": -147.0,
+      "posY": 781.0,
+      "params": {
+        "tx": 0.0,
+        "ty": 0.0,
+        "rot": 90.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "repeat": true
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "FBM",
+      "posX": -146.0,
+      "posY": 108.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 4,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 7,
+        "persistence": 0.95,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "NormalMap",
+      "posX": 665.0,
+      "posY": 565.0,
+      "params": {
+        "amount": 0.185,
+        "format": 0
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Colorize",
+      "posX": 572.308655,
+      "posY": 641.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Colorize",
+      "posX": 95.0,
+      "posY": 85.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            0.208333,
+            0.071615,
+            0,
+            1
+          ],
+          [
+            0.936364,
+            0.640625,
+            0.42041,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Colorize",
+      "posX": 95.0,
+      "posY": 159.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            0.583333,
+            0.583333,
+            0.583333,
+            1
+          ],
+          [
+            1,
+            0.244792,
+            0.244792,
+            0.244792,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Colorize",
+      "posX": 101.308655,
+      "posY": 249.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            0.78125,
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0.25,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Blend",
+      "posX": 115.0,
+      "posY": 425.0,
+      "params": {
+        "mode": 10,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Blend",
+      "posX": 294.308655,
+      "posY": 144.0,
+      "params": {
+        "mode": 0,
+        "opacity": 0.5
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "Blend",
+      "posX": 490.308655,
+      "posY": 309.0,
+      "params": {
+        "mode": 0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 10,
+      "typeName": "Colorize",
+      "posX": 701.0,
+      "posY": 469.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            0.229167,
+            0.229167,
+            0.229167,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "typeName": "BricksMM",
+      "posX": -146.0,
+      "posY": 455.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "pattern": 0,
+        "countX": 6,
+        "countY": 6,
+        "repeat": 1,
+        "offset": 0.0,
+        "mortar": 0.01,
+        "round": 0.0,
+        "bevel": 0.03,
+        "colorBalance": 0.5,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 12,
+      "typeName": "Transform2D",
+      "posX": 49.0,
+      "posY": 634.0,
+      "params": {
+        "tx": 0.0,
+        "ty": 0.0,
+        "rot": 0.0,
+        "scaleX": 0.5,
+        "scaleY": 0.5,
+        "repeat": true
+      }
+    },
+    {
+      "id": 13,
+      "typeName": "Pattern",
+      "posX": -358.0,
+      "posY": 630.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 0,
+        "xWave": 0,
+        "xScale": 1.0,
+        "yWave": 0,
+        "yScale": 1.0
+      }
+    },
+    {
+      "id": 14,
+      "typeName": "Transform2D",
+      "posX": -349.0,
+      "posY": 730.0,
+      "params": {
+        "tx": 0.0,
+        "ty": 0.0,
+        "rot": 0.0,
+        "scaleX": 0.5,
+        "scaleY": 1.0,
+        "repeat": false
+      }
+    },
+    {
+      "id": 15,
+      "typeName": "Blend",
+      "posX": -127.0,
+      "posY": 673.0,
+      "params": {
+        "mode": 9,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 16,
+      "typeName": "Colorize",
+      "posX": 65.0,
+      "posY": 549.0,
+      "params": {
+        "stops": [
+          [
+            0.7,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0.754545,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 17,
+      "typeName": "Colorize",
+      "posX": 281.0,
+      "posY": 638.0,
+      "params": {
+        "stops": [
+          [
+            0.736364,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.790909,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 18,
+      "typeName": "Blend",
+      "posX": 294.0,
+      "posY": 514.0,
+      "params": {
+        "mode": 9,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 19,
+      "typeName": "Blend",
+      "posX": 469.308655,
+      "posY": 463.0,
+      "params": {
+        "mode": 0,
+        "opacity": 0.072487
+      }
+    },
+    {
+      "id": 20,
+      "typeName": "Material",
+      "posX": 906.0,
+      "posY": 387.0,
+      "params": {
+        "baseName": "mm_floor1"
+      }
+    },
+    {
+      "id": 21,
+      "typeName": "Color",
+      "posX": 700.308594,
+      "posY": 404.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "r": 0.0,
+        "g": 0.0,
+        "b": 0.0,
+        "a": 1.0
+      }
+    },
+    {
+      "id": 22,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_floor1_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 20,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 13,
+      "fromSlot": "Out",
+      "toId": 14,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 14,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 14,
+      "fromSlot": "Out",
+      "toId": 15,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 15,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 15,
+      "fromSlot": "Out",
+      "toId": 12,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 12,
+      "fromSlot": "Out",
+      "toId": 16,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 11,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 16,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 18,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 12,
+      "fromSlot": "Out",
+      "toId": 17,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 17,
+      "fromSlot": "Out",
+      "toId": 18,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "Mask"
+    },
+    {
+      "fromId": 18,
+      "fromSlot": "Out",
+      "toId": 19,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 19,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 21,
+      "fromSlot": "Out",
+      "toId": 20,
+      "toSlot": "Metallic"
+    },
+    {
+      "fromId": 19,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 20,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 17,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "Mask"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 19,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 10,
+      "fromSlot": "Out",
+      "toId": 20,
+      "toSlot": "Roughness"
+    },
+    {
+      "fromId": 19,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 20,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 22,
+      "toSlot": "In"
+    }
+  ]
+}

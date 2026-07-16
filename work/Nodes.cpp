@@ -52,6 +52,11 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   };
   registry["Quantize"] = []() { return std::make_unique<QuantizeNode>(); };
   registry["Emboss"] = []() { return std::make_unique<EmbossNode>(); };
+  registry["Transform2D"] = []() {
+    return std::make_unique<Transform2DNode>();
+  };
+  registry["Shape"] = []() { return std::make_unique<ShapeNode>(); };
+  registry["Pattern"] = []() { return std::make_unique<PatternNode>(); };
   // Structural
   registry["Subgraph"] = []() { return std::make_unique<SubgraphNode>(); };
   registry["Remote"] = []() { return std::make_unique<RemoteNode>(); };

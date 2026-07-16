@@ -737,3 +737,148 @@ void MMBricks(GenTexture &out, sInt pattern, sInt countX, sInt countY,
     }
   }
 }
+
+// ============================================================
+// Shape (shape.mmg)
+// ============================================================
+
+namespace {
+
+sF32 shapeValue(sInt shape, sF32 u, sF32 v, sF32 sides, sF32 size,
+                sF32 edge) {
+  sF32 x = 2.0f * u - 1.0f;
+  sF32 y = 2.0f * v - 1.0f;
+  const sF32 tau = 6.28318530718f;
+  switch (shape) {
+  case MMShapeCircle: {
+    sF32 e = edge > 1e-8f ? edge : 1e-8f;
+    return clamp01((1.0f - sqrtf(x * x + y * y) / size) / e);
+  }
+  case MMShapePolygon: {
+    sF32 e = edge > 1e-8f ? edge : 1e-8f;
+    sF32 angle = atan2f(x, y) + 3.14159265359f;
+    sF32 slice = tau / sides;
+    return clamp01((1.0f - (cosf(floorf(0.5f + angle / slice) * slice -
+                                 angle) *
+                            sqrtf(x * x + y * y)) /
+                               size) /
+                   e);
+  }
+  case MMShapeStar: {
+    sF32 e = edge > 1e-8f ? edge : 1e-8f;
+    sF32 angle = atan2f(x, y);
+    sF32 slice = tau / sides;
+    sF32 t = angle * sides / tau;
+    sF32 stepv = glslFract(t) <= 0.5f ? 1.0f : 0.0f;
+    return clamp01((1.0f - (cosf(floorf(t - 0.5f + 2.0f * stepv) * slice -
+                                 angle) *
+                            sqrtf(x * x + y * y)) /
+                               size) /
+                   e);
+  }
+  case MMShapeCurvedStar: {
+    sF32 e = edge > 1e-8f ? edge : 1e-8f;
+    sF32 angle = 2.0f * (atan2f(x, y) + 3.14159265359f);
+    sF32 slice = tau / sides;
+    return clamp01((1.0f - cosf(floorf(0.5f + 0.5f * angle / slice) * 2.0f *
+                                    slice -
+                                angle) *
+                               sqrtf(x * x + y * y) / size) /
+                   e);
+  }
+  case MMShapeRays: {
+    sF32 e = 0.5f * (edge > 1e-8f ? edge : 1e-8f) * size;
+    sF32 slice = tau / sides;
+    sF32 angle =
+        glslMod(atan2f(x, y) + 3.14159265359f, slice) / slice;
+    sF32 a = (size - angle) / e;
+    sF32 b = angle / e;
+    return clamp01(a < b ? a : b);
+  }
+  default:
+    return 0.0f;
+  }
+}
+
+} // namespace
+
+void MMShape(GenTexture &out, sInt shape, sF32 sides, sF32 radius,
+             sF32 edge) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      sF32 u = (px + 0.5f) / w;
+      sF32 v = (py + 0.5f) / h;
+      gray16(out.Data[py * w + px],
+             shapeValue(shape, u, v, sides + 1e-5f, radius, edge));
+    }
+}
+
+// ============================================================
+// Pattern (pattern.mmg)
+// ============================================================
+
+namespace {
+
+sF32 waveValue(sInt wave, sF32 x) {
+  switch (wave) {
+  case MMWaveSine:
+    return 0.5f - 0.5f * cosf(3.14159265359f * 2.0f * x);
+  case MMWaveTriangle: {
+    sF32 f = glslFract(x);
+    return 2.0f * f < 2.0f - 2.0f * f ? 2.0f * f : 2.0f - 2.0f * f;
+  }
+  case MMWaveSquare:
+    return glslFract(x) < 0.5f ? 0.0f : 1.0f;
+  case MMWaveSawtooth:
+    return glslFract(x);
+  case MMWaveConstant:
+    return 1.0f;
+  case MMWaveBounce: {
+    sF32 f = 2.0f * (glslFract(x) - 0.5f);
+    return sqrtf(1.0f - f * f);
+  }
+  default:
+    return 0.0f;
+  }
+}
+
+sF32 waveMix(sInt mode, sF32 x, sF32 y) {
+  switch (mode) {
+  case MMWaveMixMultiply:
+    return x * y;
+  case MMWaveMixAdd:
+    return x + y < 1.0f ? x + y : 1.0f;
+  case MMWaveMixMax:
+    return x > y ? x : y;
+  case MMWaveMixMin:
+    return x < y ? x : y;
+  case MMWaveMixXor: {
+    sF32 a = x + y, b = 2.0f - x - y;
+    return a < b ? a : b;
+  }
+  case MMWaveMixPow:
+    return powf(x, y);
+  default:
+    return x;
+  }
+}
+
+} // namespace
+
+void MMPattern(GenTexture &out, sInt mixMode, sInt xWave, sF32 xScale,
+               sInt yWave, sF32 yScale) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      sF32 u = (px + 0.5f) / w;
+      sF32 v = (py + 0.5f) / h;
+      gray16(out.Data[py * w + px],
+             waveMix(mixMode, waveValue(xWave, xScale * u),
+                     waveValue(yWave, yScale * v)));
+    }
+}

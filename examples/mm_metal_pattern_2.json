@@ -1,0 +1,160 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Pattern",
+      "posX": 78.0,
+      "posY": 382.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 4,
+        "xWave": 2,
+        "xScale": 4.0,
+        "yWave": 2,
+        "yScale": 4.0
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "Colorize",
+      "posX": 148.0,
+      "posY": 258.0,
+      "params": {
+        "stops": [
+          [
+            0.181818,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0.436364,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "Pattern",
+      "posX": -127.0,
+      "posY": 256.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 0,
+        "xWave": 1,
+        "xScale": 40.0,
+        "yWave": 1,
+        "yScale": 8.0
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Transform2D",
+      "posX": 372.0,
+      "posY": 37.0,
+      "params": {
+        "tx": 0.0,
+        "ty": 0.0,
+        "rot": 90.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "repeat": true
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Material",
+      "posX": 930.0,
+      "posY": 199.0,
+      "params": {
+        "baseName": "mm_metal_pattern_2"
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "NormalMap",
+      "posX": 668.0,
+      "posY": 268.0,
+      "params": {
+        "amount": 0.99,
+        "format": 0
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Blend",
+      "posX": 381.0,
+      "posY": 252.0,
+      "params": {
+        "mode": 0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_metal_pattern_2_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 1,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "Mask"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "In"
+    }
+  ]
+}

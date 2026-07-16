@@ -1,0 +1,224 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Colorize",
+      "posX": -16.0,
+      "posY": 97.0,
+      "params": {
+        "stops": [
+          [
+            0.236364,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.254545,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "Material",
+      "posX": 508.0,
+      "posY": 116.0,
+      "params": {
+        "baseName": "mm_metal_pattern_3"
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "NormalMap",
+      "posX": 257.0,
+      "posY": 286.0,
+      "params": {
+        "amount": 0.99,
+        "format": 0
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Color",
+      "posX": 330.0,
+      "posY": 33.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "r": 0.51796,
+        "g": 0.736813,
+        "b": 0.855469,
+        "a": 1.0
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Color",
+      "posX": 333.0,
+      "posY": 85.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "r": 1.0,
+        "g": 1.0,
+        "b": 1.0,
+        "a": 1.0
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Color",
+      "posX": 336.0,
+      "posY": 138.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "r": 0.632813,
+        "g": 0.632813,
+        "b": 0.632813,
+        "a": 1.0
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Pattern",
+      "posX": -46.0,
+      "posY": -2.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 3,
+        "xWave": 1,
+        "xScale": 1.0,
+        "yWave": 1,
+        "yScale": 1.0
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Pattern",
+      "posX": -32.0,
+      "posY": 191.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 0,
+        "xWave": 0,
+        "xScale": 16.0,
+        "yWave": 0,
+        "yScale": 16.0
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Blend",
+      "posX": 254.0,
+      "posY": 196.0,
+      "params": {
+        "mode": 9,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "Colorize",
+      "posX": -15.0,
+      "posY": 289.0,
+      "params": {
+        "stops": [
+          [
+            0.845455,
+            0.546875,
+            0.546875,
+            0.546875,
+            1
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_metal_pattern_3_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 1,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 1,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 1,
+      "toSlot": "Metallic"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 1,
+      "toSlot": "Roughness"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "In"
+    }
+  ]
+}

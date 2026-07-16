@@ -285,3 +285,60 @@ class EmbossCoreNode : public CoreNode {
   float m_angle, m_amount;
   int m_width;
 };
+
+// ============================================================
+// Transform2DCoreNode — affine transform with tiling
+// ============================================================
+class Transform2DCoreNode : public CoreNode {
+ public:
+  Transform2DCoreNode();
+  std::string typeName() const override { return "Transform2D"; }
+  std::string displayTitle() const override { return "Transform"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_tx, m_ty, m_rot, m_scaleX, m_scaleY;
+  bool m_repeat;
+};
+
+// ============================================================
+// ShapeCoreNode — simple soft-edge shapes
+// ============================================================
+class ShapeCoreNode : public CoreNode {
+ public:
+  ShapeCoreNode();
+  std::string typeName() const override { return "Shape"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx, m_heightIdx;
+  int m_shape;
+  float m_sides, m_radius, m_edge;
+};
+
+// ============================================================
+// PatternCoreNode — X/Y wave combinations
+// ============================================================
+class PatternCoreNode : public CoreNode {
+ public:
+  PatternCoreNode();
+  std::string typeName() const override { return "Pattern"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx, m_heightIdx;
+  int m_mix, m_xWave, m_yWave;
+  float m_xScale, m_yScale;
+};

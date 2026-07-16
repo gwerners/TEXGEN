@@ -84,6 +84,9 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<MakeTileableCoreNode>(r);
     registerType<QuantizeCoreNode>(r);
     registerType<EmbossCoreNode>(r);
+    registerType<Transform2DCoreNode>(r);
+    registerType<ShapeCoreNode>(r);
+    registerType<PatternCoreNode>(r);
     // Structural
     registerType<SubgraphCoreNode>(r);
     registerType<RemoteCoreNode>(r);

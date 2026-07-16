@@ -1,0 +1,305 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Material",
+      "posX": 479.0,
+      "posY": -5.0,
+      "params": {
+        "baseName": "mm_paper"
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "Pattern",
+      "posX": -295.25,
+      "posY": -24.25,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 3,
+        "xWave": 1,
+        "xScale": 8.0,
+        "yWave": 1,
+        "yScale": 8.0
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "Pattern",
+      "posX": -303.0,
+      "posY": -157.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 3,
+        "xWave": 4,
+        "xScale": 4.0,
+        "yWave": 1,
+        "yScale": 32.0
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Colorize",
+      "posX": -13.25,
+      "posY": -31.25,
+      "params": {
+        "stops": [
+          [
+            0.036364,
+            0.583333,
+            0.752604,
+            1,
+            1
+          ],
+          [
+            0.054545,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Colorize",
+      "posX": -34.0,
+      "posY": -153.0,
+      "params": {
+        "stops": [
+          [
+            0.054545,
+            0.583333,
+            0.752604,
+            1,
+            1
+          ],
+          [
+            0.081818,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Blend",
+      "posX": 231.0,
+      "posY": 5.5,
+      "params": {
+        "mode": 10,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "FBM",
+      "posX": -27.999969,
+      "posY": 111.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 4,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 3,
+        "persistence": 0.5,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Shape",
+      "posX": -300.999969,
+      "posY": 281.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "shape": 1,
+        "sides": 4.0,
+        "radius": 0.452055,
+        "edge": 0.465753
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Colorize",
+      "posX": -137.999969,
+      "posY": 291.0,
+      "params": {
+        "stops": [
+          [
+            0.3,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.509091,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0.754545,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "FBM",
+      "posX": -267.999969,
+      "posY": 487.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 16,
+        "scaleY": 16,
+        "folds": 0,
+        "octaves": 6,
+        "persistence": 0.5,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 10,
+      "typeName": "Blend",
+      "posX": 312.000031,
+      "posY": 380.5,
+      "params": {
+        "mode": 0,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 11,
+      "typeName": "Colorize",
+      "posX": 48.000031,
+      "posY": 499.5,
+      "params": {
+        "stops": [
+          [
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "typeName": "Transform2D",
+      "posX": 66.000031,
+      "posY": 250.5,
+      "params": {
+        "tx": 0.01,
+        "ty": 0.0,
+        "rot": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "repeat": true
+      }
+    },
+    {
+      "id": 13,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_paper_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "Out",
+      "toId": 12,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 11,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 12,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 11,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 13,
+      "toSlot": "In"
+    }
+  ]
+}

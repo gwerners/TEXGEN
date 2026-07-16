@@ -89,3 +89,37 @@ void MMBricks(GenTexture &out, sInt pattern, sInt countX, sInt countY,
               sInt repeat, sF32 offset, sF32 mortar, sF32 roundRadius,
               sF32 bevel, sU32 col0, sU32 col1, sU32 colMortar,
               sF32 colorBalance, sF32 seed);
+
+// Simple shapes (shape.mmg): white shape on black, soft edge.
+enum MMShapeType {
+  MMShapeCircle = 0,
+  MMShapePolygon,
+  MMShapeStar,
+  MMShapeCurvedStar,
+  MMShapeRays,
+  MMShapeTypeCount
+};
+void MMShape(GenTexture &out, sInt shape, sF32 sides, sF32 radius,
+             sF32 edge);
+
+// Wave pattern (pattern.mmg): combines an X wave and a Y wave.
+enum MMWaveType {
+  MMWaveSine = 0,
+  MMWaveTriangle,
+  MMWaveSquare,
+  MMWaveSawtooth,
+  MMWaveConstant,
+  MMWaveBounce,
+  MMWaveTypeCount
+};
+enum MMWaveMix {
+  MMWaveMixMultiply = 0,
+  MMWaveMixAdd,
+  MMWaveMixMax,
+  MMWaveMixMin,
+  MMWaveMixXor,
+  MMWaveMixPow,
+  MMWaveMixCount
+};
+void MMPattern(GenTexture &out, sInt mixMode, sInt xWave, sF32 xScale,
+               sInt yWave, sF32 yScale);

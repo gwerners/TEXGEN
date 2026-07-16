@@ -1,0 +1,228 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "FBM",
+      "posX": -254.0,
+      "posY": 101.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 32,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 4,
+        "persistence": 1.0,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "Pattern",
+      "posX": -272.0,
+      "posY": -14.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 0,
+        "xWave": 0,
+        "xScale": 1.0,
+        "yWave": 3,
+        "yScale": 1.0
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "Blend",
+      "posX": -4.0,
+      "posY": 18.0,
+      "params": {
+        "mode": 2,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Pattern",
+      "posX": -295.0,
+      "posY": 245.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mix": 0,
+        "xWave": 4,
+        "xScale": 4.0,
+        "yWave": 3,
+        "yScale": 1.0
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Colorize",
+      "posX": -8.0,
+      "posY": 207.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            0.765625,
+            0.765625,
+            0.765625,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Transform2D",
+      "posX": 206.0,
+      "posY": 16.0,
+      "params": {
+        "tx": 0.0,
+        "ty": 0.0,
+        "rot": 0.0,
+        "scaleX": 1.6,
+        "scaleY": 1.0,
+        "repeat": false
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Colorize",
+      "posX": 435.0,
+      "posY": 12.0,
+      "params": {
+        "stops": [
+          [
+            0.081818,
+            0.125,
+            0.5,
+            0,
+            0
+          ],
+          [
+            0.145455,
+            0.125,
+            0.5,
+            0,
+            1
+          ],
+          [
+            0.436364,
+            0.050781,
+            0.203125,
+            0,
+            1
+          ],
+          [
+            0.727273,
+            0.090541,
+            0.362165,
+            0,
+            1
+          ],
+          [
+            1,
+            0.050781,
+            0.203125,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Material",
+      "posX": 790.0,
+      "posY": -6.0,
+      "params": {
+        "baseName": "mm_clump_of_grass"
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "NormalMap",
+      "posX": 478.850098,
+      "posY": 143.444443,
+      "params": {
+        "amount": 0.995,
+        "format": 0
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_clump_of_grass_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "In"
+    }
+  ]
+}

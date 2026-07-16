@@ -107,3 +107,24 @@ class EmbossNode : public UiNode<EmbossCoreNode> {
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
   void renderParams() override;
 };
+
+class Transform2DNode : public UiNode<Transform2DCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class ShapeNode : public UiNode<ShapeCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class PatternNode : public UiNode<PatternCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};

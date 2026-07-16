@@ -17,6 +17,8 @@ import sys
 # input/output slot names by MM port index
 PORTS_IN = {
     'colorize': ['In'],
+    'transform': ['In', None, None, None, None, None],
+    'shape': [None, None],
     'blend': ['A', 'B', 'Mask'],
     'warp': ['In', 'Height'],
     'normal_map': ['Height'],
@@ -33,6 +35,10 @@ PORTS_OUT = {
     'normal_map': ['Out'],
     # MM voronoi ports: 0=Nodes(F1), 1=Borders(Edge), 2=Random color, 3=Fill
     'voronoi': ['F1', 'Edge', 'Color', None],
+    'transform': ['Out'],
+    'shape': ['Out'],
+    'pattern': ['Out'],
+    'bricks': ['Out'],
 }
 
 # MM fbm.mmg noise variant -> FBM mode enum
@@ -144,6 +150,38 @@ def conv_bricks(p):
     }
 
 
+def conv_transform(p):
+    return 'Transform2D', {
+        'tx': float(p.get('translate_x', 0.0)),
+        'ty': float(p.get('translate_y', 0.0)),
+        'rot': float(p.get('rotate', 0.0)),
+        'scaleX': float(p.get('scale_x', 1.0)),
+        'scaleY': float(p.get('scale_y', 1.0)),
+        'repeat': bool(p.get('repeat', False)),
+    }
+
+
+def conv_shape(p):
+    return 'Shape', {
+        'widthIdx': 3, 'heightIdx': 3,
+        'shape': int(p.get('shape', 0)),
+        'sides': float(p.get('sides', 3.0)),
+        'radius': float(p.get('radius', 1.0)),
+        'edge': float(p.get('edge', 0.2)),
+    }
+
+
+def conv_pattern(p):
+    return 'Pattern', {
+        'widthIdx': 3, 'heightIdx': 3,
+        'mix': int(p.get('mix', 0)),
+        'xWave': int(p.get('x_wave', 0)),
+        'xScale': float(p.get('x_scale', 4.0)),
+        'yWave': int(p.get('y_wave', 0)),
+        'yScale': float(p.get('y_scale', 4.0)),
+    }
+
+
 def conv_material(p, basename):
     return 'Material', {'baseName': basename}
 
@@ -158,17 +196,26 @@ CONVERTERS = {
     'normal_map': conv_normal_map,
     'uniform': conv_uniform,
     'bricks': conv_bricks,
+    'transform': conv_transform,
+    'shape': conv_shape,
+    'pattern': conv_pattern,
 }
 
 
-def convert(ptex, basename):
-    skipped = {}
+def convert_graph(mm_nodes, mm_conns, basename, skipped, dyn_out_ports):
+    """Convert a list of MM nodes/connections. Returns
+    (nodes_out, conns_out, name_to_id, albedo_source)."""
     nodes_out = []
     conns_out = []
     name_to_id = {}
-    next_id = 0
+    next_id = [0]
 
-    for n in ptex.get('nodes', []):
+    def alloc():
+        i = next_id[0]
+        next_id[0] += 1
+        return i
+
+    for n in mm_nodes:
         mm_type = n.get('type', '?')
         name = n.get('name', '?')
         pos = n.get('node_position', {})
@@ -177,20 +224,26 @@ def convert(ptex, basename):
         if mm_type == 'material':
             type_name, p = conv_material(params, basename)
         elif mm_type == 'comment':
-            # MM stores comment text/color at node level, not in parameters
             col = n.get('color', {})
             type_name = 'Comment'
             p = {'text': n.get('text', ''),
                  'color': [col.get('r', 0.3), col.get('g', 0.3),
                            col.get('b', 0.3)]}
+        elif mm_type == 'graph':
+            type_name, p, ports_in, ports_out = graph_to_subgraph(
+                n, basename, skipped)
+            dyn_out_ports[name] = (ports_in, ports_out)
         elif mm_type in CONVERTERS:
             type_name, p = CONVERTERS[mm_type](params)
+        elif mm_type in ('remote', 'debug'):
+            # Remotes only drive params whose current values are already
+            # baked into each node's parameters — safe to drop silently.
+            continue
         else:
             skipped.setdefault(mm_type, []).append(name)
             continue
 
-        nid = next_id
-        next_id += 1
+        nid = alloc()
         name_to_id[name] = (nid, mm_type)
         nodes_out.append({
             'id': nid,
@@ -201,28 +254,109 @@ def convert(ptex, basename):
         })
 
     albedo_source = None
-    for c in ptex.get('connections', []):
+    for c in mm_conns:
         src = name_to_id.get(c.get('from'))
         dst = name_to_id.get(c.get('to'))
         if not src or not dst:
             continue
         from_id, from_type = src
         to_id, to_type = dst
-        outs = PORTS_OUT.get(from_type, ['Out'])
-        ins = PORTS_IN.get(to_type, [])
         fp, tp = c.get('from_port', 0), c.get('to_port', 0)
-        if fp >= len(outs) or outs[fp] is None or tp >= len(ins):
+
+        if from_type == 'graph':
+            outs = dyn_out_ports.get(c.get('from'), ([], []))[1]
+        else:
+            outs = PORTS_OUT.get(from_type, ['Out'])
+        if to_type == 'graph':
+            ins = dyn_out_ports.get(c.get('to'), ([], []))[0]
+        else:
+            ins = PORTS_IN.get(to_type, [])
+
+        if fp >= len(outs) or outs[fp] is None or tp >= len(ins) or \
+           ins[tp] is None:
             print(f'  ! conexao ignorada: {c} (porta sem mapeamento)')
             continue
         conns_out.append({'fromId': from_id, 'fromSlot': outs[fp],
                           'toId': to_id, 'toSlot': ins[tp]})
-        if to_type == 'material' and ins[tp] == 'Albedo':
-            albedo_source = (from_id, outs[fp])
+        if to_type == 'material':
+            # preview priority: Albedo > Height > Normal > first connected
+            prio = {'Albedo': 3, 'Height': 2, 'Normal': 1}
+            cur = prio.get(ins[tp], 0)
+            if albedo_source is None or cur > albedo_source[2]:
+                albedo_source = (from_id, outs[fp], cur)
+
+    return nodes_out, conns_out, name_to_id, albedo_source
+
+
+def graph_to_subgraph(n, basename, skipped):
+    """Convert an MM 'graph' node into a TEXGEN Subgraph node.
+    Returns (typeName, params, in_port_names, out_port_names)."""
+    inner_nodes = [x for x in n.get('nodes', []) if x.get('type') != 'ios']
+    inner_conns = n.get('connections', [])
+    gen_in = next((x for x in n.get('nodes', [])
+                   if x.get('name') == 'gen_inputs'), {})
+    gen_out = next((x for x in n.get('nodes', [])
+                    if x.get('name') == 'gen_outputs'), {})
+    in_ports = [p.get('name', f'in{i}')
+                for i, p in enumerate(gen_in.get('ports', []))]
+    out_ports = [p.get('name', f'out{i}')
+                 for i, p in enumerate(gen_out.get('ports', []))]
+
+    dyn = {}
+    real_conns = [c for c in inner_conns
+                  if c.get('from') != 'gen_inputs' and
+                  c.get('to') != 'gen_outputs']
+    nodes_out, conns_out, name_to_id, _ = convert_graph(
+        inner_nodes, real_conns, basename, skipped, dyn)
+
+    # boundary connections -> port declarations
+    inputs = [{'name': pn, 'targets': []} for pn in in_ports]
+    outputs = [{'name': pn, 'id': -1, 'slot': 'Out'} for pn in out_ports]
+    for c in inner_conns:
+        if c.get('from') == 'gen_inputs':
+            k = c.get('from_port', 0)
+            dst = name_to_id.get(c.get('to'))
+            if k >= len(inputs) or not dst:
+                continue
+            to_id, to_type = dst
+            ins = (dyn.get(c.get('to'), ([], []))[0]
+                   if to_type == 'graph' else PORTS_IN.get(to_type, []))
+            tp = c.get('to_port', 0)
+            if tp < len(ins) and ins[tp]:
+                inputs[k]['targets'].append([to_id, ins[tp]])
+        elif c.get('to') == 'gen_outputs':
+            k = c.get('to_port', 0)
+            src = name_to_id.get(c.get('from'))
+            if k >= len(outputs) or not src:
+                continue
+            from_id, from_type = src
+            outs = (dyn.get(c.get('from'), ([], []))[1]
+                    if from_type == 'graph' else
+                    PORTS_OUT.get(from_type, ['Out']))
+            fp = c.get('from_port', 0)
+            if fp < len(outs) and outs[fp]:
+                outputs[k]['id'] = from_id
+                outputs[k]['slot'] = outs[fp]
+
+    params = {
+        'title': n.get('label', 'Subgraph'),
+        'graph': {'nodes': nodes_out, 'connections': conns_out},
+        'inputs': inputs,
+        'outputs': outputs,
+    }
+    return 'Subgraph', params, in_ports, out_ports
+
+
+def convert(ptex, basename):
+    skipped = {}
+    dyn = {}
+    nodes_out, conns_out, name_to_id, albedo_source = convert_graph(
+        ptex.get('nodes', []), ptex.get('connections', []), basename,
+        skipped, dyn)
 
     # add an Output node (TEXGEN's render sink) fed by the albedo chain
     if albedo_source:
-        out_id = next_id
-        next_id += 1
+        out_id = max((n['id'] for n in nodes_out), default=-1) + 1
         nodes_out.append({'id': out_id, 'typeName': 'Output',
                           'posX': 1200.0, 'posY': 0.0,
                           'params': {'filename': basename + '_preview.png'}})

@@ -1,0 +1,208 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Shape",
+      "posX": -35.0,
+      "posY": 36.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "shape": 0,
+        "sides": 3.0,
+        "radius": 0.18,
+        "edge": 0.05
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "Shape",
+      "posX": -407.0,
+      "posY": 19.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "shape": 4,
+        "sides": 3.0,
+        "radius": 0.5,
+        "edge": 0.02
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "Shape",
+      "posX": -412.0,
+      "posY": -117.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "shape": 0,
+        "sides": 3.0,
+        "radius": 0.87,
+        "edge": 0.02
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Shape",
+      "posX": -411.0,
+      "posY": -218.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "shape": 0,
+        "sides": 3.0,
+        "radius": 0.34,
+        "edge": 0.02
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Blend",
+      "posX": -236.0,
+      "posY": -159.0,
+      "params": {
+        "mode": 11,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Material",
+      "posX": 528.0,
+      "posY": -57.0,
+      "params": {
+        "baseName": "mm_radiation"
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Blend",
+      "posX": -40.0,
+      "posY": -82.0,
+      "params": {
+        "mode": 2,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Transform2D",
+      "posX": -245.657654,
+      "posY": -16.611115,
+      "params": {
+        "tx": 0.0,
+        "ty": 0.0,
+        "rot": 30.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "repeat": true
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Blend",
+      "posX": 145.0,
+      "posY": 36.0,
+      "params": {
+        "mode": 3,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "Colorize",
+      "posX": 292.081177,
+      "posY": -103.5,
+      "params": {
+        "stops": [
+          [
+            0,
+            0.9375,
+            0.820313,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_radiation_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "In"
+    }
+  ]
+}

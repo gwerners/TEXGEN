@@ -185,3 +185,37 @@ void MMEmboss(GenTexture &out, const GenTexture &in, sF32 angleDeg,
     }
   }
 }
+
+// transform.mmg: translate, rotate around center, scale, repeat/clamp.
+void MMTransform(GenTexture &out, const GenTexture &in, sF32 tx, sF32 ty,
+                 sF32 rotDeg, sF32 scaleX, sF32 scaleY, bool repeat) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 rot = rotDeg * 0.01745329251f;
+  const sF32 c = cosf(rot), s = sinf(rot);
+  const sF32 sx = fabsf(scaleX) > 1e-6f ? scaleX : 1e-6f;
+  const sF32 sy = fabsf(scaleY) > 1e-6f ? scaleY : 1e-6f;
+  for (sInt py = 0; py < h; py++) {
+    for (sInt px = 0; px < w; px++) {
+      sF32 u = (px + 0.5f) / w - tx - 0.5f;
+      sF32 v = (py + 0.5f) / h - ty - 0.5f;
+      sF32 ru = (c * u + s * v) / sx + 0.5f;
+      sF32 rv = (-s * u + c * v) / sy + 0.5f;
+      if (repeat) {
+        ru = ru - floorf(ru);
+        rv = rv - floorf(rv);
+      } else {
+        ru = clamp01(ru);
+        rv = clamp01(rv);
+      }
+      sF32 col[4];
+      sampleRGBA(in, ru, rv, col);
+      Pixel &o = out.Data[py * w + px];
+      o.r = to16(col[0]);
+      o.g = to16(col[1]);
+      o.b = to16(col[2]);
+      o.a = to16(col[3]);
+    }
+  }
+}
