@@ -33,6 +33,9 @@
 // Headless graph evaluation (JSON project -> GenTexture output)
 #include "HeadlessEval.h"
 
+// Material Maker .ptex project import (JSON -> TEXGEN graph JSON)
+#include "PtexImport.h"
+
 // Core node base class and registry (for extending with custom nodes)
 #include "CoreNode.h"
 #include "CoreNodeRegistry.h"

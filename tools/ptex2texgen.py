@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """ptex2texgen — converts Material Maker .ptex projects to TEXGEN JSON.
 
+NOTE: the canonical converter now lives in lib/PtexImport.cpp (used by the
+editor's "Import MM.." button and by texgen_render, which accepts .ptex
+directly). This script is kept for scripting/CI convenience and may lag
+behind the C++ implementation.
+
 Usage: ptex2texgen.py input.ptex output.json [--basename NAME]
 
 Node types without a mapping are reported and skipped (along with their

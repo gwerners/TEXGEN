@@ -220,6 +220,14 @@ void Ide::draw() {
     m_loadDialog.open(m_saveFilename);
   }
 
+  if (ImGui::Button("Import MM..", ImVec2(-1, 0))) {
+    m_importDialog.open("", ".ptex");
+  }
+  if (ImGui::IsItemHovered())
+    ImGui::SetTooltip(
+        "Import a Material Maker .ptex project,\n"
+        "converting its nodes to TEXGEN nodes");
+
   ImGui::Spacing();
   ImGui::Separator();
   ImGui::Spacing();
@@ -257,6 +265,22 @@ void Ide::draw() {
     std::string path = m_loadDialog.getResultPath();
     strncpy(m_saveFilename, path.c_str(), sizeof(m_saveFilename) - 1);
     if (loadProject(m_saveFilename) && g_nodeGraph) {
+      g_nodeGraph->generate();
+      GenTexture* lastOut = g_nodeGraph->getLastOutput();
+      if (lastOut && lastOut->Data) {
+        if (m_hasOutputTexture && m_outputTexture.id != 0) {
+          UnloadTexture(m_outputTexture);
+        }
+        m_outputTexture = LoadTextureFromGenTexture(*lastOut);
+        m_hasOutputTexture = (m_outputTexture.id != 0);
+      }
+    }
+  }
+
+  if (m_importDialog.show("Import Material Maker Project", FileDialog::Load,
+                          ".ptex")) {
+    std::string path = m_importDialog.getResultPath();
+    if (importPtexProject(path) && g_nodeGraph) {
       g_nodeGraph->generate();
       GenTexture* lastOut = g_nodeGraph->getLastOutput();
       if (lastOut && lastOut->Data) {

@@ -1,0 +1,694 @@
+// PtexImport — Material Maker .ptex to TEXGEN graph conversion.
+// See PtexImport.h. Mapping mirrors tools/ptex2texgen.py plus aliases for
+// Material Maker 1.x-era community nodes (fbm2/3/4, blend2, normal_map2,
+// transform2, tones_*, greyscale, blur variants, buffer/reroute).
+#include "PtexImport.h"
+
+#include <algorithm>
+#include <cstdlib>
+#include <map>
+#include <set>
+
+using nlohmann::json;
+
+namespace {
+
+// ---- tolerant readers (community files carry strings like "$size") ----
+
+float numOr(const json &p, const char *key, float def) {
+  if (!p.contains(key))
+    return def;
+  const json &v = p[key];
+  if (v.is_number())
+    return v.get<float>();
+  if (v.is_boolean())
+    return v.get<bool>() ? 1.0f : 0.0f;
+  if (v.is_string()) {
+    const std::string &s = v.get_ref<const std::string &>();
+    char *end = nullptr;
+    float f = strtof(s.c_str(), &end);
+    if (end && end != s.c_str())
+      return f;
+  }
+  return def;
+}
+
+int intOr(const json &p, const char *key, int def) {
+  return (int)(numOr(p, key, (float)def) + 0.5f);
+}
+
+bool boolOr(const json &p, const char *key, bool def) {
+  if (!p.contains(key))
+    return def;
+  const json &v = p[key];
+  if (v.is_boolean())
+    return v.get<bool>();
+  if (v.is_number())
+    return v.get<float>() != 0.0f;
+  return def;
+}
+
+std::string strOr(const json &p, const char *key, const std::string &def) {
+  if (p.contains(key) && p[key].is_string())
+    return p[key].get<std::string>();
+  return def;
+}
+
+// ---- port maps (MM port index -> TEXGEN slot name; "" = unmapped) ----
+
+const std::map<std::string, std::vector<std::string>> &portsIn() {
+  static const std::map<std::string, std::vector<std::string>> m = {
+      {"colorize", {"In"}},
+      {"transform", {"In", "", "", "", "", ""}},
+      {"transform2", {"In", "", "", "", "", ""}},
+      {"shape", {"", ""}},
+      {"blend", {"A", "B", "Mask"}},
+      {"blend2", {"B", "A", "Mask"}}, // b, l0, a0 (extra layers dropped)
+      {"warp", {"In", "Height"}},
+      {"normal_map", {"Height"}},
+      {"normal_map2", {"Height"}},
+      {"material",
+       {"Albedo", "Metallic", "Roughness", "Emission", "Normal", "AO",
+        "Height"}},
+      {"material_tesselated",
+       {"Albedo", "Metallic", "Roughness", "Emission", "Normal", "AO",
+        "Height"}},
+      {"material_unlit", {"Albedo"}},
+      {"combine", {"R", "G", "B", "A"}},
+      {"decompose", {"In"}},
+      {"invert", {"In"}},
+      {"greyscale", {"In"}},
+      {"tones_step", {"In"}},
+      {"tones_map", {"In"}},
+      {"brightness_contrast", {"In"}},
+      {"adjust_hsv", {"In"}},
+      {"alter_hsv", {"In"}},
+      {"gaussian_blur", {"In", ""}},
+      {"fast_blur", {"In", ""}},
+      {"make_tileable", {"In"}},
+      {"emboss", {"In"}},
+      {"quantize", {"In"}},
+  };
+  return m;
+}
+
+const std::map<std::string, std::vector<std::string>> &portsOut() {
+  static const std::map<std::string, std::vector<std::string>> m = {
+      // MM voronoi: 0=Nodes(F1), 1=Borders(Edge), 2=Random color, 3=Fill
+      {"voronoi", {"F1", "Edge", "Color", ""}},
+      {"voronoi2", {"F1", "Edge", ""}},
+      {"decompose", {"R", "G", "B", "A"}},
+  };
+  return m;
+}
+
+// ---- per-type parameter conversion ----
+
+json stopsFromGradient(const json &grad) {
+  json stops = json::array();
+  if (grad.contains("points") && grad["points"].is_array()) {
+    for (auto &pt : grad["points"]) {
+      stops.push_back({numOr(pt, "pos", 0.0f), numOr(pt, "r", 0.0f),
+                       numOr(pt, "g", 0.0f), numOr(pt, "b", 0.0f),
+                       numOr(pt, "a", 1.0f)});
+    }
+  }
+  if (stops.empty())
+    stops = {{0, 0, 0, 0, 1}, {1, 1, 1, 1, 1}};
+  std::vector<json> v = stops.get<std::vector<json>>();
+  std::sort(v.begin(), v.end(), [](const json &a, const json &b) {
+    return a[0].get<float>() < b[0].get<float>();
+  });
+  return json(v);
+}
+
+json grayStops(float pos0, float g0, float pos1, float g1) {
+  return json::array({json::array({pos0, g0, g0, g0, 1.0f}),
+                      json::array({pos1, g1, g1, g1, 1.0f})});
+}
+
+// MM fbm noise variant (string form) -> FBM mode
+int fbmModeFromString(const std::string &s) {
+  static const std::map<std::string, int> m = {
+      {"value", 0},     {"perlin", 1},    {"perlinabs", 2},
+      {"cellular", 3},  {"cellular2", 4}, {"cellular3", 5},
+      {"cellular4", 6}, {"cellular5", 7}, {"cellular6", 8}};
+  auto it = m.find(s);
+  return it != m.end() ? it->second : 1;
+}
+
+// fbm2/3/4 noise enum: Value, Perlin, Simplex, Cellular..Cellular6,
+// Voronoise. Simplex/Voronoise approximated by Perlin/Cellular.
+int fbmModeFromEnum(int e) {
+  if (e <= 1)
+    return e;
+  if (e == 2)
+    return 1; // simplex ~ perlin
+  if (e >= 3 && e <= 8)
+    return e;
+  return 3; // voronoise ~ cellular
+}
+
+// Returns true and fills (typeName, out) if the MM type maps to a node.
+bool convertParams(const std::string &type, const json &p,
+                   const std::string &baseName, std::string &typeName,
+                   json &out) {
+  auto size3 = [] { return json{{"widthIdx", 3}, {"heightIdx", 3}}; };
+
+  if (type == "perlin_color") {
+    // color perlin approximated by grayscale FBM (variation preserved)
+    typeName = "FBM";
+    out = size3();
+    out["mode"] = 0;
+    out["scaleX"] = intOr(p, "scale_x", 4);
+    out["scaleY"] = intOr(p, "scale_y", 4);
+    out["folds"] = 0;
+    out["octaves"] = intOr(p, "iterations", 3);
+    out["persistence"] = numOr(p, "persistence", 0.5f);
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "perlin") {
+    typeName = "FBM";
+    out = size3();
+    out["mode"] = 0;
+    out["scaleX"] = intOr(p, "scale_x", 4);
+    out["scaleY"] = intOr(p, "scale_y", 4);
+    out["folds"] = 0;
+    out["octaves"] = intOr(p, "iterations", 3);
+    out["persistence"] = numOr(p, "persistence", 0.5f);
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "fbm" || type == "fbm2" || type == "fbm3" || type == "fbm4") {
+    typeName = "FBM";
+    out = size3();
+    if (type == "fbm") {
+      out["mode"] = fbmModeFromString(strOr(p, "noise", "perlin"));
+    } else {
+      out["mode"] = fbmModeFromEnum(intOr(p, "noise", 1));
+    }
+    out["scaleX"] = intOr(p, "scale_x", 4);
+    out["scaleY"] = intOr(p, "scale_y", 4);
+    out["folds"] = intOr(p, "folds", 0);
+    out["octaves"] = intOr(p, "iterations", 3);
+    out["persistence"] = numOr(p, "persistence", 0.5f);
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "voronoi" || type == "voronoi2") {
+    typeName = "Voronoi";
+    out = size3();
+    out["scaleX"] = intOr(p, "scale_x", 4);
+    out["scaleY"] = intOr(p, "scale_y", 4);
+    out["stretchX"] = numOr(p, "stretch_x", 1.0f);
+    out["stretchY"] = numOr(p, "stretch_y", 1.0f);
+    out["intensity"] = numOr(p, "intensity", 0.75f);
+    out["randomness"] = numOr(p, "randomness", 1.0f);
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "colorize") {
+    typeName = "Colorize";
+    out = {{"stops", stopsFromGradient(p.value("gradient", json::object()))}};
+    return true;
+  }
+  if (type == "blend" || type == "blend2") {
+    typeName = "Blend";
+    int mode = type == "blend" ? intOr(p, "blend_type", 0)
+                               : intOr(p, "blend_type0", 0);
+    if (mode > 14)
+      mode = 0; // Vivid/Pin/... not ported — fall back to Normal
+    float amount = type == "blend" ? numOr(p, "amount", 1.0f)
+                                   : numOr(p, "amount0", 0.5f);
+    out = {{"mode", mode}, {"opacity", amount}};
+    return true;
+  }
+  if (type == "warp") {
+    typeName = "Warp";
+    out = {{"amount", numOr(p, "amount", 0.1f)},
+           {"epsilon", numOr(p, "eps", 0.005f)}};
+    return true;
+  }
+  if (type == "normal_map" || type == "normal_map2") {
+    typeName = "NormalMap";
+    float amount = type == "normal_map"
+                       ? numOr(p, "param1", 1.0f)
+                       : numOr(p, "amount", numOr(p, "strength", 1.0f));
+    // MM's 'default' format is its own -Z convention; engines expect
+    // OpenGL (+Z), so Default maps to OpenGL here.
+    int fmt = intOr(p, "param2", 0);
+    if (fmt == 0)
+      fmt = 1;
+    out = {{"amount", amount}, {"format", fmt}};
+    return true;
+  }
+  if (type == "uniform") {
+    typeName = "Color";
+    json col = p.value("color", json::object());
+    out = size3();
+    out["r"] = numOr(col, "r", 0.0f);
+    out["g"] = numOr(col, "g", 0.0f);
+    out["b"] = numOr(col, "b", 0.0f);
+    out["a"] = numOr(col, "a", 1.0f);
+    return true;
+  }
+  if (type == "uniform_greyscale") {
+    typeName = "Color";
+    float v = numOr(p, "color", 0.5f);
+    out = size3();
+    out["r"] = v;
+    out["g"] = v;
+    out["b"] = v;
+    out["a"] = 1.0f;
+    return true;
+  }
+  if (type == "bricks" || type == "bricks2") {
+    typeName = "BricksMM";
+    static const std::map<std::string, int> patterns = {
+        {"rb", 0}, {"rb2", 1}, {"hb", 2}, {"bw", 3}, {"sb", 4}};
+    std::string pat = strOr(p, "pattern", "rb");
+    auto it = patterns.find(pat);
+    out = size3();
+    out["pattern"] = it != patterns.end() ? it->second : 0;
+    out["countX"] = intOr(p, "columns", 4);
+    out["countY"] = intOr(p, "rows", 8);
+    out["repeat"] = intOr(p, "repeat", 1);
+    out["offset"] = numOr(p, "row_offset", 0.5f);
+    out["mortar"] = numOr(p, "mortar", 0.1f);
+    out["round"] = numOr(p, "round", 0.1f);
+    out["bevel"] = numOr(p, "bevel", 0.2f);
+    out["colorBalance"] = 0.5f;
+    out["seed"] = 0.0f;
+    return true;
+  }
+  if (type == "transform" || type == "transform2") {
+    typeName = "Transform2D";
+    bool repeat = type == "transform" ? boolOr(p, "repeat", false)
+                                      : (intOr(p, "mode", 0) == 1);
+    out = {{"tx", numOr(p, "translate_x", 0.0f)},
+           {"ty", numOr(p, "translate_y", 0.0f)},
+           {"rot", numOr(p, "rotate", 0.0f)},
+           {"scaleX", numOr(p, "scale_x", 1.0f)},
+           {"scaleY", numOr(p, "scale_y", 1.0f)},
+           {"repeat", repeat}};
+    return true;
+  }
+  if (type == "shape") {
+    typeName = "Shape";
+    out = size3();
+    out["shape"] = intOr(p, "shape", 0);
+    out["sides"] = numOr(p, "sides", 3.0f);
+    out["radius"] = numOr(p, "radius", 1.0f);
+    out["edge"] = numOr(p, "edge", 0.2f);
+    return true;
+  }
+  if (type == "pattern") {
+    typeName = "Pattern";
+    out = size3();
+    out["mix"] = intOr(p, "mix", 0);
+    out["xWave"] = intOr(p, "x_wave", 0);
+    out["xScale"] = numOr(p, "x_scale", 4.0f);
+    out["yWave"] = intOr(p, "y_wave", 0);
+    out["yScale"] = numOr(p, "y_scale", 4.0f);
+    return true;
+  }
+  if (type == "combine") {
+    typeName = "Combine";
+    out = json::object();
+    return true;
+  }
+  if (type == "decompose") {
+    typeName = "Decompose";
+    out = json::object();
+    return true;
+  }
+  if (type == "invert") {
+    typeName = "Invert";
+    out = json::object();
+    return true;
+  }
+  if (type == "greyscale") {
+    typeName = "Colorize";
+    out = {{"stops", grayStops(0.0f, 0.0f, 1.0f, 1.0f)}};
+    return true;
+  }
+  if (type == "tones_step") {
+    // clamp((x - value) * width + 0.5): linear ramp centered at value
+    typeName = "Colorize";
+    float value = numOr(p, "value", 0.5f);
+    float width = numOr(p, "width", 1.0f);
+    if (width < 1e-4f)
+      width = 1e-4f;
+    float lo = value - 0.5f / width, hi = value + 0.5f / width;
+    bool invert = boolOr(p, "invert", false);
+    out = {{"stops", invert ? grayStops(lo, 1.0f, hi, 0.0f)
+                            : grayStops(lo, 0.0f, hi, 1.0f)}};
+    return true;
+  }
+  if (type == "tones_map") {
+    typeName = "Colorize";
+    out = {{"stops", grayStops(numOr(p, "in_min", 0.0f),
+                               numOr(p, "out_min", 0.0f),
+                               numOr(p, "in_max", 1.0f),
+                               numOr(p, "out_max", 1.0f))}};
+    return true;
+  }
+  if (type == "brightness_contrast") {
+    typeName = "HSCB";
+    out = {{"hue", 0.0f},
+           {"sat", 1.0f},
+           {"contrast", numOr(p, "contrast", 1.0f)},
+           {"brightness", 1.0f + numOr(p, "brightness", 0.0f)}};
+    return true;
+  }
+  if (type == "adjust_hsv" || type == "alter_hsv") {
+    typeName = "HSCB";
+    out = {{"hue", numOr(p, "hue", 0.0f)},
+           {"sat", numOr(p, "saturation", 1.0f)},
+           {"contrast", 1.0f},
+           {"brightness", numOr(p, "value", 1.0f)}};
+    return true;
+  }
+  if (type == "gaussian_blur" || type == "fast_blur") {
+    // approximation: sigma in texels -> normalized blur size
+    typeName = "Blur";
+    float sigma = numOr(p, "sigma", numOr(p, "param1", 8.0f));
+    float size = sigma / 256.0f;
+    out = {{"sizex", size}, {"sizey", size}, {"order", 2}, {"mode", 3}};
+    return true;
+  }
+  if (type == "make_tileable") {
+    typeName = "MakeTileable";
+    out = {{"width", numOr(p, "w", 0.1f)}};
+    return true;
+  }
+  if (type == "emboss") {
+    typeName = "Emboss";
+    out = {{"angle", numOr(p, "angle", 0.0f)},
+           {"amount", numOr(p, "amount", 1.0f)},
+           {"width", intOr(p, "width", 1)}};
+    return true;
+  }
+  if (type == "quantize") {
+    typeName = "Quantize";
+    out = {{"steps", intOr(p, "steps", 4)}};
+    return true;
+  }
+  if (type == "material" || type == "material_tesselated" ||
+      type == "material_unlit") {
+    typeName = "Material";
+    out = {{"baseName", baseName}};
+    return true;
+  }
+  return false;
+}
+
+// Types that never affect the output and are dropped silently.
+bool isIgnorable(const std::string &type) {
+  static const std::set<std::string> s = {"remote", "debug", "export",
+                                          "ios"};
+  return s.count(type) > 0;
+}
+
+// Types replaced by a plain wire (single input port 0 -> all consumers).
+// buffer/reroute are lossless plumbing; the tone/sharpen family defaults
+// close to identity and is approximated by a wire.
+bool isPassthrough(const std::string &type) {
+  static const std::set<std::string> s = {
+      "buffer", "reroute", "supersample", "tones",
+      "auto_tones", "tonality", "sharpen", "denoiser"};
+  return s.count(type) > 0;
+}
+
+// Remove passthrough nodes, rewiring their consumers to their source.
+void collapsePassthroughs(json &nodes, json &conns) {
+  std::set<std::string> pass;
+  json keptNodes = json::array();
+  for (auto &n : nodes) {
+    if (isPassthrough(n.value("type", std::string())))
+      pass.insert(n.value("name", std::string()));
+    else
+      keptNodes.push_back(n);
+  }
+  if (pass.empty())
+    return;
+  // source feeding each passthrough's input port 0
+  std::map<std::string, std::pair<std::string, int>> src;
+  for (auto &c : conns) {
+    std::string to = c.value("to", std::string());
+    if (pass.count(to) && c.value("to_port", 0) == 0)
+      src[to] = {c.value("from", std::string()), c.value("from_port", 0)};
+  }
+  auto resolve = [&](std::string from,
+                     int fromPort) -> std::pair<std::string, int> {
+    int guard = 0;
+    while (pass.count(from) && guard++ < 64) {
+      auto it = src.find(from);
+      if (it == src.end())
+        return {std::string(), 0};
+      from = it->second.first;
+      fromPort = it->second.second;
+    }
+    return {from, fromPort};
+  };
+  json keptConns = json::array();
+  for (auto &c : conns) {
+    std::string to = c.value("to", std::string());
+    if (pass.count(to))
+      continue; // feeding a passthrough — replaced by resolution
+    auto r = resolve(c.value("from", std::string()), c.value("from_port", 0));
+    if (r.first.empty())
+      continue;
+    json cj = c;
+    cj["from"] = r.first;
+    cj["from_port"] = r.second;
+    keptConns.push_back(cj);
+  }
+  nodes = keptNodes;
+  conns = keptConns;
+}
+
+struct GraphResult {
+  json nodes = json::array();
+  json conns = json::array();
+  std::map<std::string, std::pair<int, std::string>> byName; // -> id, type
+  // albedo (or fallback) source for the preview Output
+  int previewId = -1;
+  std::string previewSlot;
+  int previewPrio = -1;
+};
+
+json graphToSubgraph(const json &n, const std::string &baseName,
+                     std::vector<std::string> *skipped,
+                     std::vector<std::string> &inPortNames,
+                     std::vector<std::string> &outPortNames);
+
+GraphResult convertGraph(json mmNodes, json mmConns,
+                         const std::string &baseName,
+                         std::vector<std::string> *skipped) {
+  GraphResult res;
+  collapsePassthroughs(mmNodes, mmConns);
+
+  auto &byName = res.byName;
+  std::map<std::string,
+           std::pair<std::vector<std::string>, std::vector<std::string>>>
+      dynPorts; // graph nodes: in/out port names
+  int nextId = 0;
+
+  for (auto &n : mmNodes) {
+    std::string type = n.value("type", std::string());
+    std::string name = n.value("name", std::string());
+    json pos = n.value("node_position", json::object());
+    json params = n.value("parameters", json::object());
+
+    std::string typeName;
+    json p;
+    if (isIgnorable(type))
+      continue;
+    if (type == "comment") {
+      json col = n.value("color", json::object());
+      typeName = "Comment";
+      p = {{"text", n.value("text", std::string())},
+           {"color",
+            {numOr(col, "r", 0.3f), numOr(col, "g", 0.3f),
+             numOr(col, "b", 0.3f)}}};
+    } else if (type == "graph") {
+      std::vector<std::string> ins, outs;
+      p = graphToSubgraph(n, baseName, skipped, ins, outs);
+      typeName = "Subgraph";
+      dynPorts[name] = {ins, outs};
+    } else if (!convertParams(type, params, baseName, typeName, p)) {
+      if (skipped)
+        skipped->push_back(type);
+      continue;
+    }
+
+    int id = nextId++;
+    byName[name] = {id, type};
+    res.nodes.push_back({{"id", id},
+                         {"typeName", typeName},
+                         {"posX", numOr(pos, "x", 0.0f)},
+                         {"posY", numOr(pos, "y", 0.0f)},
+                         {"params", p}});
+  }
+
+  for (auto &c : mmConns) {
+    auto srcIt = byName.find(c.value("from", std::string()));
+    auto dstIt = byName.find(c.value("to", std::string()));
+    if (srcIt == byName.end() || dstIt == byName.end())
+      continue;
+    auto [fromId, fromType] = srcIt->second;
+    auto [toId, toType] = dstIt->second;
+    int fp = c.value("from_port", 0);
+    int tp = c.value("to_port", 0);
+
+    std::vector<std::string> outs = {"Out"};
+    if (fromType == "graph")
+      outs = dynPorts[c.value("from", std::string())].second;
+    else if (portsOut().count(fromType))
+      outs = portsOut().at(fromType);
+
+    std::vector<std::string> ins;
+    if (toType == "graph")
+      ins = dynPorts[c.value("to", std::string())].first;
+    else if (portsIn().count(toType))
+      ins = portsIn().at(toType);
+
+    if (fp >= (int)outs.size() || outs[fp].empty() ||
+        tp >= (int)ins.size() || ins[tp].empty())
+      continue; // unmapped port
+    res.conns.push_back({{"fromId", fromId},
+                         {"fromSlot", outs[fp]},
+                         {"toId", toId},
+                         {"toSlot", ins[tp]}});
+    if (toType == "material" || toType == "material_tesselated" ||
+        toType == "material_unlit") {
+      static const std::map<std::string, int> prio = {
+          {"Albedo", 3}, {"Height", 2}, {"Normal", 1}};
+      auto it = prio.find(ins[tp]);
+      int pr = it != prio.end() ? it->second : 0;
+      if (pr > res.previewPrio) {
+        res.previewPrio = pr;
+        res.previewId = fromId;
+        res.previewSlot = outs[fp];
+      }
+    }
+  }
+  return res;
+}
+
+json graphToSubgraph(const json &n, const std::string &baseName,
+                     std::vector<std::string> *skipped,
+                     std::vector<std::string> &inPortNames,
+                     std::vector<std::string> &outPortNames) {
+  json innerNodes = json::array();
+  json genIn, genOut;
+  for (auto &x : n.value("nodes", json::array())) {
+    std::string nm = x.value("name", std::string());
+    if (nm == "gen_inputs")
+      genIn = x;
+    else if (nm == "gen_outputs")
+      genOut = x;
+    else if (x.value("type", std::string()) != "ios")
+      innerNodes.push_back(x);
+  }
+  int k = 0;
+  for (auto &pt : genIn.value("ports", json::array()))
+    inPortNames.push_back(pt.value("name", "in" + std::to_string(k++)));
+  k = 0;
+  for (auto &pt : genOut.value("ports", json::array()))
+    outPortNames.push_back(pt.value("name", "out" + std::to_string(k++)));
+
+  json innerConns = json::array();
+  json boundary = json::array();
+  for (auto &c : n.value("connections", json::array())) {
+    std::string from = c.value("from", std::string());
+    std::string to = c.value("to", std::string());
+    if (from == "gen_inputs" || to == "gen_outputs")
+      boundary.push_back(c);
+    else
+      innerConns.push_back(c);
+  }
+
+  GraphResult inner = convertGraph(innerNodes, innerConns, baseName, skipped);
+  std::map<std::string, int> nameToId;
+  for (auto &kv : inner.byName)
+    nameToId[kv.first] = kv.second.first;
+
+  json inputs = json::array();
+  for (auto &pn : inPortNames)
+    inputs.push_back({{"name", pn}, {"targets", json::array()}});
+  json outputs = json::array();
+  for (auto &pn : outPortNames)
+    outputs.push_back({{"name", pn}, {"id", -1}, {"slot", "Out"}});
+
+  for (auto &c : boundary) {
+    if (c.value("from", std::string()) == "gen_inputs") {
+      int kp = c.value("from_port", 0);
+      auto dst = nameToId.find(c.value("to", std::string()));
+      if (kp >= (int)inputs.size() || dst == nameToId.end())
+        continue;
+      std::string toType;
+      for (auto &x : innerNodes)
+        if (x.value("name", std::string()) == c.value("to", std::string()))
+          toType = x.value("type", std::string());
+      std::vector<std::string> ins;
+      if (portsIn().count(toType))
+        ins = portsIn().at(toType);
+      int tp = c.value("to_port", 0);
+      if (tp < (int)ins.size() && !ins[tp].empty())
+        inputs[kp]["targets"].push_back({dst->second, ins[tp]});
+    } else if (c.value("to", std::string()) == "gen_outputs") {
+      int kp = c.value("to_port", 0);
+      auto src = nameToId.find(c.value("from", std::string()));
+      if (kp >= (int)outputs.size() || src == nameToId.end())
+        continue;
+      std::string fromType;
+      for (auto &x : innerNodes)
+        if (x.value("name", std::string()) == c.value("from", std::string()))
+          fromType = x.value("type", std::string());
+      std::vector<std::string> outs = {"Out"};
+      if (portsOut().count(fromType))
+        outs = portsOut().at(fromType);
+      int fp = c.value("from_port", 0);
+      if (fp < (int)outs.size() && !outs[fp].empty()) {
+        outputs[kp]["id"] = src->second;
+        outputs[kp]["slot"] = outs[fp];
+      }
+    }
+  }
+
+  return {{"title", n.value("label", std::string("Subgraph"))},
+          {"graph", {{"nodes", inner.nodes}, {"connections", inner.conns}}},
+          {"inputs", inputs},
+          {"outputs", outputs}};
+}
+
+} // namespace
+
+json ptexToTexgen(const json &ptex, const std::string &baseName,
+                  std::vector<std::string> *skippedTypes) {
+  GraphResult res =
+      convertGraph(ptex.value("nodes", json::array()),
+                   ptex.value("connections", json::array()), baseName,
+                   skippedTypes);
+
+  if (res.previewId >= 0) {
+    int outId = 0;
+    for (auto &n : res.nodes)
+      outId = std::max(outId, n["id"].get<int>() + 1);
+    res.nodes.push_back(
+        {{"id", outId},
+         {"typeName", "Output"},
+         {"posX", 1200.0f},
+         {"posY", 0.0f},
+         {"params", {{"filename", baseName + "_preview.png"}}}});
+    res.conns.push_back({{"fromId", res.previewId},
+                         {"fromSlot", res.previewSlot},
+                         {"toId", outId},
+                         {"toSlot", "In"}});
+  }
+
+  return {{"nodes", res.nodes}, {"connections", res.conns}};
+}

@@ -1,5 +1,6 @@
-// CLI tool: reads a TEXGEN project .json and renders to TGA.
-// Usage: texgen_render <project.json> [output.tga]
+// CLI tool: reads a TEXGEN project .json (or a Material Maker .ptex,
+// converted on the fly) and renders to TGA/PNG.
+// Usage: texgen_render <project.json|project.ptex> [output.tga]
 // No UI dependencies.
 #include "HeadlessEval.h"
 #include "texgen.h"
@@ -26,6 +27,23 @@ int main(int argc, char *argv[]) {
   } catch (const std::exception& e) {
     fprintf(stderr, "Error: invalid JSON in %s: %s\n", argv[1], e.what());
     return 1;
+  }
+
+  // Material Maker projects are converted to TEXGEN graphs on the fly
+  std::string inFile = argv[1];
+  if (inFile.size() > 5 &&
+      inFile.compare(inFile.size() - 5, 5, ".ptex") == 0) {
+    std::string base = inFile;
+    size_t slash = base.find_last_of("/\\");
+    if (slash != std::string::npos)
+      base = base.substr(slash + 1);
+    base = base.substr(0, base.size() - 5);
+    std::vector<std::string> skipped;
+    j = ptexToTexgen(j, base, &skipped);
+    if (!skipped.empty()) {
+      fprintf(stderr, "note: %zu unsupported node(s) skipped\n",
+              skipped.size());
+    }
   }
 
   GenTexture output;

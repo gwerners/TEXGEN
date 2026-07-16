@@ -39,6 +39,7 @@ class Ide {
   bool m_hasOutputTexture;
   FileDialog m_saveDialog;
   FileDialog m_loadDialog;
+  FileDialog m_importDialog;
   int m_lastChangeCount = -1;
 };
 
