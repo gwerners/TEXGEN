@@ -1158,8 +1158,6 @@ void NodeGraph::draw() {
     if (ImGui::MenuItem("Reset Zoom"))
       ImNodes::GetCurrentCanvas()->Zoom = 1;
 
-    if (ImGui::IsAnyMouseDown() && !ImGui::IsWindowHovered())
-      ImGui::CloseCurrentPopup();
     ImGui::EndPopup();
   }
 
