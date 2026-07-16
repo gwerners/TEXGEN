@@ -103,6 +103,9 @@ class NodeGraph {
   // Change counter — increments whenever the graph output changes
   int changeCount() const { return m_changeCount; }
 
+  // Contextual hint for the status bar (hovered node, shortcuts...)
+  const std::string& hintText() const { return m_hintText; }
+
   nlohmann::json save() const;
   void load(const nlohmann::json& j);
   void clear();
@@ -134,6 +137,7 @@ class NodeGraph {
   GenTexture m_lastOutput;
   bool m_hasOutput = false;
   int m_changeCount = 0;
+  std::string m_hintText;
 
   void syncParamHashes();
   GraphNode* findNodeByPtr(void* ptr);

@@ -8,8 +8,22 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 using CoreNodeFactory = std::function<std::unique_ptr<CoreNode>()>;
+
+// Static per-type metadata, the single source for creation menus,
+// tooltips and hint bars (GUI and any future tooling).
+struct NodeMeta {
+  const char *category;    // e.g. "Generator", "Filter"
+  const char *description; // one-line summary
+};
+
+// Metadata for a node type, or nullptr if the type is unknown.
+const NodeMeta *getNodeMeta(const std::string &typeName);
+
+// Categories in menu display order.
+const std::vector<const char *> &nodeCategoryOrder();
 
 class CoreNodeRegistry {
 public:

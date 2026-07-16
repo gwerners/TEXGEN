@@ -1,6 +1,7 @@
 #include "Nodes.h"
 #include "AggNodes.h"
 #include "AllNodes.h"
+#include "CoreNodeRegistry.h"
 #include "MMNodes.h"
 #include "StructNodes.h"
 #include "Utils.h"
@@ -10,6 +11,7 @@
 #include <raylib.h>
 
 #include <algorithm>
+#include <cctype>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -924,6 +926,7 @@ void NodeGraph::draw() {
 
   ImVec2 mousePos = ImGui::GetMousePos();
   GraphNode* bringToFront = nullptr;
+  GraphNode* hoveredNode = nullptr;
 
   for (int idx = 0; idx < (int)m_nodes.size(); idx++) {
     GraphNode* gn = m_nodes[idx];
@@ -943,6 +946,9 @@ void NodeGraph::draw() {
       }
     }
 
+    if (thisCovers && !blocked)
+      hoveredNode = gn;
+
     if (blocked)
       ImGui::BeginDisabled();
 
@@ -959,6 +965,34 @@ void NodeGraph::draw() {
 
     if (blocked)
       ImGui::EndDisabled();
+  }
+
+  // Contextual hint for the status bar
+  {
+    int selCount = 0;
+    for (auto* gn : m_nodes)
+      if (gn->isSelected())
+        selCount++;
+
+    if (hoveredNode) {
+      TextureNode* tn = hoveredNode->texNode();
+      const NodeMeta* meta = getNodeMeta(tn->typeName());
+      m_hintText = tn->displayTitle();
+      if (meta) {
+        m_hintText += "  [";
+        m_hintText += meta->category;
+        m_hintText += "]  ";
+        m_hintText += meta->description;
+      }
+    } else if (selCount > 0) {
+      m_hintText = std::to_string(selCount) +
+                   " selected  |  Ctrl+C/V copy/paste  |  Del delete  |  "
+                   "RMB group/ungroup";
+    } else {
+      m_hintText =
+          "RMB add node  |  Ctrl+Z/Y undo/redo  |  drag slots to connect  |  "
+          + std::to_string(m_nodes.size()) + " nodes";
+    }
   }
 
   // Undo/Redo shortcuts
@@ -1005,14 +1039,98 @@ void NodeGraph::draw() {
   }
 
   if (ImGui::BeginPopup("NodeGraphContextMenu")) {
-    for (auto& kv : m_registry) {
-      if (ImGui::MenuItem(kv.first.c_str())) {
-        pushUndo();
-        auto texNode = kv.second();
-        int newId = m_nextId++;
-        GraphNode* gn = new GraphNode(std::move(texNode), newId);
-        m_nodes.push_back(gn);
-        ImNodes::AutoPositionNode(m_nodes.back());
+    static char nodeSearch[64] = "";
+    if (ImGui::IsWindowAppearing()) {
+      nodeSearch[0] = '\0';
+      ImGui::SetKeyboardFocusHere();
+    }
+    ImGui::SetNextItemWidth(200.0f);
+    bool searchAccepted = ImGui::InputTextWithHint(
+        "##node_search", "Search nodes...", nodeSearch, sizeof(nodeSearch),
+        ImGuiInputTextFlags_EnterReturnsTrue);
+
+    auto containsCI = [](const char* hay, const char* needle) {
+      if (!hay)
+        return false;
+      size_t nlen = strlen(needle);
+      for (const char* p = hay; *p; p++) {
+        size_t i = 0;
+        while (i < nlen && p[i] && tolower(p[i]) == tolower(needle[i]))
+          i++;
+        if (i == nlen)
+          return true;
+      }
+      return false;
+    };
+
+    auto addNode = [&](const std::string& type) {
+      pushUndo();
+      auto texNode = m_registry[type]();
+      int newId = m_nextId++;
+      GraphNode* gn = new GraphNode(std::move(texNode), newId);
+      m_nodes.push_back(gn);
+      ImNodes::AutoPositionNode(m_nodes.back());
+    };
+
+    auto menuEntry = [&](const std::string& type, const NodeMeta* meta,
+                         bool isFirstMatch) {
+      if (ImGui::MenuItem(type.c_str(), isFirstMatch ? "Enter" : nullptr))
+        addNode(type);
+      if (meta && ImGui::IsItemHovered())
+        ImGui::SetTooltip("[%s] %s", meta->category, meta->description);
+    };
+
+    if (nodeSearch[0] == '\0') {
+      // Category submenus
+      for (const char* cat : nodeCategoryOrder()) {
+        std::vector<std::pair<std::string, const NodeMeta*>> entries;
+        for (auto& kv : m_registry) {
+          const NodeMeta* meta = getNodeMeta(kv.first);
+          if (meta && strcmp(meta->category, cat) == 0)
+            entries.push_back({kv.first, meta});
+        }
+        if (entries.empty())
+          continue;
+        if (ImGui::BeginMenu(cat)) {
+          for (auto& e : entries)
+            menuEntry(e.first, e.second, false);
+          ImGui::EndMenu();
+        }
+      }
+      // Types missing from the catalog still need to be reachable
+      {
+        std::vector<std::string> other;
+        for (auto& kv : m_registry)
+          if (!getNodeMeta(kv.first))
+            other.push_back(kv.first);
+        if (!other.empty() && ImGui::BeginMenu("Other")) {
+          for (auto& t : other)
+            menuEntry(t, nullptr, false);
+          ImGui::EndMenu();
+        }
+      }
+    } else {
+      // Flat list filtered by name, category or description; name matches
+      // rank above the rest so Enter picks the intuitive node
+      std::vector<std::pair<std::string, const NodeMeta*>> matches;
+      size_t nameMatches = 0;
+      for (auto& kv : m_registry) {
+        const NodeMeta* meta = getNodeMeta(kv.first);
+        if (containsCI(kv.first.c_str(), nodeSearch)) {
+          matches.insert(matches.begin() + nameMatches, {kv.first, meta});
+          nameMatches++;
+        } else if (meta && (containsCI(meta->category, nodeSearch) ||
+                            containsCI(meta->description, nodeSearch))) {
+          matches.push_back({kv.first, meta});
+        }
+      }
+      for (size_t i = 0; i < matches.size(); i++)
+        menuEntry(matches[i].first, matches[i].second, i == 0);
+      if (matches.empty())
+        ImGui::TextDisabled("No match");
+      else if (searchAccepted) {
+        addNode(matches[0].first);
+        ImGui::CloseCurrentPopup();
       }
     }
 

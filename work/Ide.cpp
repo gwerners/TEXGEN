@@ -110,9 +110,11 @@ void Ide::unLoadTextures() {
 void Ide::draw() {
   ImGui::PushFont(m_firaCodeRegular);
 
-  // Create a full-screen docking space
+  // Create a full-screen docking space (minus the hint bar at the bottom)
   ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
-  ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+  ImVec2 fullSize = ImGui::GetIO().DisplaySize;
+  float hintBarH = ImGui::GetFontSize() + 10.0f;
+  ImVec2 displaySize(fullSize.x, fullSize.y - hintBarH);
   ImGui::SetNextWindowPos(ImVec2(0, 0));
   ImGui::SetNextWindowSize(displaySize);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -362,6 +364,23 @@ void Ide::draw() {
   createNodeCanvas();
 
   ImGui::End();
+
+  // ------------------------------------------------------------------
+  // Hint bar - contextual help at the bottom of the screen
+  // ------------------------------------------------------------------
+  ImGui::SetNextWindowPos(ImVec2(0, fullSize.y - hintBarH));
+  ImGui::SetNextWindowSize(ImVec2(fullSize.x, hintBarH));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 4.0f));
+  ImGui::Begin("##hintbar", nullptr,
+               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+                   ImGuiWindowFlags_NoDocking |
+                   ImGuiWindowFlags_NoFocusOnAppearing |
+                   ImGuiWindowFlags_NoNav);
+  ImGui::TextUnformatted(g_nodeGraph ? g_nodeGraph->hintText().c_str() : "");
+  ImGui::End();
+  ImGui::PopStyleVar(2);
 
   ImGui::PopFont();
 }
