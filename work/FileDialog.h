@@ -41,8 +41,10 @@ class FileDialog {
 
       ImGui::Separator();
 
-      // File list
+      // File list. Navigation is deferred to after the loop: scanDir()
+      // repopulates m_entries and must never run while iterating it.
       ImVec2 listSize(0, -60);
+      std::string navTarget;
       if (ImGui::BeginChild("##filelist", listSize, true)) {
         for (auto& entry : m_entries) {
           bool isDir = entry.isDir;
@@ -51,8 +53,7 @@ class FileDialog {
 
           if (ImGui::Selectable(label.c_str(), entry.name == m_selected)) {
             if (isDir) {
-              navigateTo((fs::path(m_currentDir) / entry.name).string());
-              scanDir(m_extension.empty() ? extension : m_extension.c_str());
+              navTarget = entry.name;
             } else {
               m_selected = entry.name;
               strncpy(m_filename, entry.name.c_str(), sizeof(m_filename) - 1);
@@ -61,6 +62,11 @@ class FileDialog {
         }
       }
       ImGui::EndChild();
+
+      if (!navTarget.empty()) {
+        navigateTo((fs::path(m_currentDir) / navTarget).string());
+        scanDir(m_extension.empty() ? extension : m_extension.c_str());
+      }
 
       // Filename input
       ImGui::PushItemWidth(-120);
@@ -130,7 +136,7 @@ class FileDialog {
         e.name = p.path().filename().string();
         e.isDir = p.is_directory();
 
-        if (e.name[0] == '.' && e.name != "..")
+        if (!e.name.empty() && e.name[0] == '.' && e.name != "..")
           continue;
 
         if (!e.isDir && !exts.empty()) {
