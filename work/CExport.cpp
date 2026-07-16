@@ -987,10 +987,10 @@ static void emitNode(std::ostringstream& ss,
     } else {
       ss << "    " << v << "_R.Init(" << in << ".XRes, " << in << ".YRes); "
          << v << "_G.Init(" << in << ".XRes, " << in << ".YRes); " << v
-         << "_B.Init(" << in << ".XRes, " << in << ".YRes); " << v
-         << "_A.Init(" << in << ".XRes, " << in << ".YRes);\n";
-      ss << "    MMDecompose(" << v << "_R, " << v << "_G, " << v << "_B, "
-         << v << "_A, " << in << ");\n";
+         << "_B.Init(" << in << ".XRes, " << in << ".YRes); " << v << "_A.Init("
+         << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMDecompose(" << v << "_R, " << v << "_G, " << v << "_B, " << v
+         << "_A, " << in << ");\n";
     }
   }
 

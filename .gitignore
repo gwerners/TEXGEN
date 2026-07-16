@@ -16,3 +16,13 @@ imgui-docking
 agg
 imgui
 my_texture.h
+# local Material Maker collections and generated material maps
+/MaterialMaker/
+/*_preview.png
+/*_albedo.png
+/*_normal.png
+/*_roughness.png
+/*_metallic.png
+/*_height.png
+/*_ao.png
+/*_emission.png

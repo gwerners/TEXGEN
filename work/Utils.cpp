@@ -33,12 +33,6 @@ std::string readFile(bool debug, const std::string& filename) {
   return ret;
 }
 
-
-
-
-
-
-
 Texture2D LoadTextureFromGenTexture(GenTexture tex) {
   Texture2D texture = {0};
   PixelFormat format = PixelFormat::PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;

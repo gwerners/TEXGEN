@@ -32,8 +32,6 @@ int timeEndPeriod(unsigned int period);
 bool exists(const std::string& filename);
 std::string readFile(bool debug, const std::string& filename);
 
-
-
 Texture2D LoadTextureFromGenTexture(GenTexture tex);
 
 #endif  // UTILS_H
