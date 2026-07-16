@@ -1,0 +1,213 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Voronoi",
+      "posX": -543.5,
+      "posY": -11.5,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "scaleX": 32,
+        "scaleY": 32,
+        "stretchX": 1.0,
+        "stretchY": 1.0,
+        "intensity": 1.0,
+        "randomness": 1.0,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "NormalMap",
+      "posX": -260.5,
+      "posY": 128.5,
+      "params": {
+        "amount": 0.99,
+        "format": 0
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "Material",
+      "posX": 30.0,
+      "posY": -44.0,
+      "params": {
+        "baseName": "mm_mosaic"
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Colorize",
+      "posX": -490.5,
+      "posY": 135.5,
+      "params": {
+        "stops": [
+          [
+            0.054546,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.127273,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Colorize",
+      "posX": -317.5,
+      "posY": -169.5,
+      "params": {
+        "stops": [
+          [
+            0.063636,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0.072727,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Color",
+      "posX": -127.5,
+      "posY": -3.5,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "r": 0.109375,
+        "g": 0.109375,
+        "b": 0.109375,
+        "a": 1.0
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Colorize",
+      "posX": -306.5,
+      "posY": 39.5,
+      "params": {
+        "stops": [
+          [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0.236364,
+            0.109375,
+            0.109375,
+            0.109375,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Blend",
+      "posX": -294.5,
+      "posY": -94.5,
+      "params": {
+        "mode": 3,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_mosaic_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Color",
+      "toId": 7,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Edge",
+      "toId": 4,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Edge",
+      "toId": 3,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 1,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "Metallic"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Edge",
+      "toId": 6,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "Roughness"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "In"
+    }
+  ]
+}

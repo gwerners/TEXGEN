@@ -140,6 +140,23 @@ Structural nodes:
 - In the editor, select nodes and right-click → *Group Selected* /
   *Ungroup Selected*
 
+### mm_* — Material Maker ports
+**Files:** `mm_wood.json`, `mm_lava.json`, `mm_rusted_metal.json`,
+`mm_dry_earth.json`, `mm_crocodile_skin.json`, `mm_floor2.json`,
+`mm_grass_with_flowers.json`, `mm_mosaic.json`, `mm_rock.json`
+
+Nine complete PBR materials converted from Material Maker's example
+projects with `tools/ptex2texgen.py`:
+
+```
+python3 tools/ptex2texgen.py wood.ptex examples/mm_wood.json
+```
+
+Each renders a preview PNG plus the full set of PBR maps via its
+**Material** node. Unmapped MM node types are reported by the converter
+and double as the porting backlog (top entries: graph, transform,
+shape, pattern).
+
 ---
 
 ## Node Reference

@@ -1,0 +1,314 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Material",
+      "posX": 956.0,
+      "posY": 271.0,
+      "params": {
+        "baseName": "mm_lava"
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "Colorize",
+      "posX": 666.0,
+      "posY": 27.0,
+      "params": {
+        "stops": [
+          [
+            0.045455,
+            0.479167,
+            0.479167,
+            0.479167,
+            1
+          ],
+          [
+            0.3,
+            0.875,
+            0.875,
+            0.875,
+            1
+          ],
+          [
+            0.518182,
+            0.442708,
+            0.442708,
+            0.442708,
+            1
+          ],
+          [
+            0.818182,
+            0.069093,
+            0.069093,
+            0.069093,
+            1
+          ],
+          [
+            1,
+            0.40625,
+            0.40625,
+            0.40625,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "Colorize",
+      "posX": 653.0,
+      "posY": 140.5,
+      "params": {
+        "stops": [
+          [
+            0.272727,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0.563636,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Colorize",
+      "posX": 646.0,
+      "posY": 223.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            1,
+            0.765625,
+            0,
+            1
+          ],
+          [
+            0.154545,
+            1,
+            0,
+            0,
+            1
+          ],
+          [
+            0.245455,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "NormalMap",
+      "posX": 658.0,
+      "posY": 309.5,
+      "params": {
+        "amount": 0.99,
+        "format": 0
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Colorize",
+      "posX": 658.0,
+      "posY": 404.25,
+      "params": {
+        "stops": [
+          [
+            0,
+            0.345455,
+            0.345455,
+            0.345455,
+            1
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Blend",
+      "posX": 475.0,
+      "posY": -30.0,
+      "params": {
+        "mode": 0,
+        "opacity": 0.83125
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Warp",
+      "posX": 338.0,
+      "posY": 196.0,
+      "params": {
+        "amount": 0.3,
+        "epsilon": 0.045
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Voronoi",
+      "posX": 130.0,
+      "posY": 299.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "scaleX": 6,
+        "scaleY": 6,
+        "stretchX": 1.0,
+        "stretchY": 1.0,
+        "intensity": 0.55,
+        "randomness": 1.0,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "FBM",
+      "posX": 190.0,
+      "posY": -14.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 4,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 8,
+        "persistence": 0.75,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 10,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_lava_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 1,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "F1",
+      "toId": 7,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Roughness"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Emission"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Metallic"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "AO"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "In"
+    }
+  ]
+}

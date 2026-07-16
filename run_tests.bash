@@ -55,6 +55,15 @@ EXAMPLES=(
   "12_pbr_material:pbr_material"
   "13_sdf_badge:sdf_badge"
   "14_subgraph_remote:subgraph_remote"
+  "mm_wood:mm_wood"
+  "mm_rusted_metal:mm_rusted_metal"
+  "mm_lava:mm_lava"
+  "mm_dry_earth:mm_dry_earth"
+  "mm_crocodile_skin:mm_crocodile_skin"
+  "mm_floor2:mm_floor2"
+  "mm_grass_with_flowers:mm_grass_with_flowers"
+  "mm_mosaic:mm_mosaic"
+  "mm_rock:mm_rock"
 )
 
 PASS=0

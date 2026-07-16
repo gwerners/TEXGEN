@@ -1,0 +1,315 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "FBM",
+      "posX": -312.0,
+      "posY": 2.5,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 32,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 6,
+        "persistence": 1.0,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "FBM",
+      "posX": -635.0,
+      "posY": 341.5,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 4,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 3,
+        "persistence": 0.5,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "FBM",
+      "posX": -635.0,
+      "posY": 210.5,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 32,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 3,
+        "persistence": 0.5,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Warp",
+      "posX": -311.0,
+      "posY": 280.5,
+      "params": {
+        "amount": 0.1,
+        "epsilon": 0.05
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Colorize",
+      "posX": -340.0,
+      "posY": 402.5,
+      "params": {
+        "stops": [
+          [
+            0,
+            0.432292,
+            0.432292,
+            0.432292,
+            1
+          ],
+          [
+            0.345455,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Warp",
+      "posX": -89.0,
+      "posY": 325.5,
+      "params": {
+        "amount": 0.1,
+        "epsilon": 0.045
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Voronoi",
+      "posX": -648.0,
+      "posY": 482.5,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "scaleX": 5,
+        "scaleY": 4,
+        "stretchX": 1.0,
+        "stretchY": 1.0,
+        "intensity": 1.0,
+        "randomness": 1.0,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Blend",
+      "posX": 101.0,
+      "posY": 250.5,
+      "params": {
+        "mode": 2,
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Material",
+      "posX": 687.0,
+      "posY": 172.0,
+      "params": {
+        "baseName": "mm_wood"
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "Colorize",
+      "posX": 407.35144,
+      "posY": 127.181824,
+      "params": {
+        "stops": [
+          [
+            0.120364,
+            0.59375,
+            0.34877,
+            0.071126,
+            1
+          ],
+          [
+            0.263636,
+            0.3125,
+            0.144043,
+            0.013021,
+            1
+          ],
+          [
+            0.402182,
+            0.59375,
+            0.34877,
+            0.071126,
+            1
+          ],
+          [
+            0.663636,
+            0.59375,
+            0.34877,
+            0.071126,
+            1
+          ],
+          [
+            0.893091,
+            0.3125,
+            0.144043,
+            0.013021,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "typeName": "NormalMap",
+      "posX": 431.0,
+      "posY": 423.5,
+      "params": {
+        "amount": 0.99,
+        "format": 0
+      }
+    },
+    {
+      "id": 11,
+      "typeName": "Colorize",
+      "posX": 423.0,
+      "posY": 306.5,
+      "params": {
+        "stops": [
+          [
+            0,
+            0.53125,
+            0.53125,
+            0.53125,
+            1
+          ],
+          [
+            1,
+            0.708333,
+            0.708333,
+            0.708333,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_wood_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 10,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 11,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 11,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "Roughness"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "Metallic"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "F1",
+      "toId": 4,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 12,
+      "toSlot": "In"
+    }
+  ]
+}

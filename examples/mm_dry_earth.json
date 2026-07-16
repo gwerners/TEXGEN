@@ -1,0 +1,337 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "Voronoi",
+      "posX": -165.0,
+      "posY": -96.75,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "scaleX": 4,
+        "scaleY": 4,
+        "stretchX": 1.0,
+        "stretchY": 1.0,
+        "intensity": 0.6,
+        "randomness": 1.0,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "Colorize",
+      "posX": 93.0,
+      "posY": -117.75,
+      "params": {
+        "stops": [
+          [
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.063636,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "FBM",
+      "posX": -144.0,
+      "posY": 50.25,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 4,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 3,
+        "persistence": 0.5,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Colorize",
+      "posX": 338.0,
+      "posY": -237.75,
+      "params": {
+        "stops": [
+          [
+            0.245455,
+            0.557292,
+            0.378784,
+            0.200277,
+            1
+          ],
+          [
+            0.645455,
+            0.25,
+            0.150513,
+            0.03776,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "FBM",
+      "posX": 56.0,
+      "posY": -361.75,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 2,
+        "scaleY": 2,
+        "folds": 0,
+        "octaves": 10,
+        "persistence": 0.9,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Material",
+      "posX": 944.0,
+      "posY": -30.0,
+      "params": {
+        "baseName": "mm_dry_earth"
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Colorize",
+      "posX": 465.0,
+      "posY": 33.25,
+      "params": {
+        "stops": [
+          [
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0.520833,
+            0.520833,
+            0.520833,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Blend",
+      "posX": 541.0,
+      "posY": -82.75,
+      "params": {
+        "mode": 2,
+        "opacity": 0.4
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Warp",
+      "posX": 264.0,
+      "posY": -13.75,
+      "params": {
+        "amount": 0.4,
+        "epsilon": 0.045
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "Blend",
+      "posX": 442.0,
+      "posY": 175.25,
+      "params": {
+        "mode": 0,
+        "opacity": 0.5
+      }
+    },
+    {
+      "id": 10,
+      "typeName": "NormalMap",
+      "posX": 706.0,
+      "posY": 95.25,
+      "params": {
+        "amount": 0.99,
+        "format": 0
+      }
+    },
+    {
+      "id": 11,
+      "typeName": "Colorize",
+      "posX": 252.0,
+      "posY": 178.25,
+      "params": {
+        "stops": [
+          [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "typeName": "Colorize",
+      "posX": 717.815796,
+      "posY": 200.5625,
+      "params": {
+        "stops": [
+          [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_dry_earth_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Edge",
+      "toId": 1,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "Metallic"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "Out",
+      "toId": 11,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 10,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 11,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 12,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 12,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 13,
+      "toSlot": "In"
+    }
+  ]
+}

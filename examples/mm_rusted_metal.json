@@ -1,0 +1,299 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "typeName": "FBM",
+      "posX": 86.0,
+      "posY": 301.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 4,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 8,
+        "persistence": 0.7,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 1,
+      "typeName": "FBM",
+      "posX": 86.0,
+      "posY": 147.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 4,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 8,
+        "persistence": 0.8,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 2,
+      "typeName": "FBM",
+      "posX": 89.0,
+      "posY": -6.0,
+      "params": {
+        "widthIdx": 3,
+        "heightIdx": 3,
+        "mode": 0,
+        "scaleX": 4,
+        "scaleY": 4,
+        "folds": 0,
+        "octaves": 8,
+        "persistence": 0.9,
+        "seed": 0.0
+      }
+    },
+    {
+      "id": 3,
+      "typeName": "Colorize",
+      "posX": 365.0,
+      "posY": -41.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            0.335938,
+            0.335938,
+            0.335938,
+            1
+          ],
+          [
+            1,
+            0.695313,
+            0.695313,
+            0.695313,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "typeName": "Colorize",
+      "posX": 363.0,
+      "posY": 337.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            0.354545,
+            0.354545,
+            0.354545,
+            1
+          ],
+          [
+            1,
+            0.745455,
+            0.745455,
+            0.745455,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "typeName": "Colorize",
+      "posX": 371.0,
+      "posY": 47.0,
+      "params": {
+        "stops": [
+          [
+            0.445455,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0.445456,
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "typeName": "Colorize",
+      "posX": 371.0,
+      "posY": 214.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            0.208333,
+            0.091146,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            0.1875,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "typeName": "Colorize",
+      "posX": 480.0,
+      "posY": 141.0,
+      "params": {
+        "stops": [
+          [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "typeName": "Material",
+      "posX": 837.0,
+      "posY": 123.0,
+      "params": {
+        "baseName": "mm_rusted_metal"
+      }
+    },
+    {
+      "id": 9,
+      "typeName": "Blend",
+      "posX": 566.0,
+      "posY": 253.0,
+      "params": {
+        "mode": 4,
+        "opacity": 0.5
+      }
+    },
+    {
+      "id": 10,
+      "typeName": "Blend",
+      "posX": 562.0,
+      "posY": -23.0,
+      "params": {
+        "mode": 0,
+        "opacity": 0.800781
+      }
+    },
+    {
+      "id": 11,
+      "typeName": "Output",
+      "posX": 1200.0,
+      "posY": 0.0,
+      "params": {
+        "filename": "mm_rusted_metal_preview.png"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 0,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 5,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 10,
+      "toSlot": "Mask"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "B"
+    },
+    {
+      "fromId": 10,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "Metallic"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "Roughness"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "A"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 10,
+      "fromSlot": "Out",
+      "toId": 11,
+      "toSlot": "In"
+    }
+  ]
+}
