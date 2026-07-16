@@ -89,6 +89,18 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   registry["FillToColor"] = []() {
     return std::make_unique<FillToColorNode>();
   };
+  registry["Remap"] = []() { return std::make_unique<RemapNode>(); };
+  registry["Tile2x2"] = []() { return std::make_unique<Tile2x2Node>(); };
+  registry["NormalConvert"] = []() {
+    return std::make_unique<NormalConvertNode>();
+  };
+  registry["CustomUV"] = []() { return std::make_unique<CustomUVNode>(); };
+  registry["SmoothCurvature"] = []() {
+    return std::make_unique<SmoothCurvatureNode>();
+  };
+  registry["AmbientOcclusion"] = []() {
+    return std::make_unique<AmbientOcclusionNode>();
+  };
   // Structural
   registry["Subgraph"] = []() { return std::make_unique<SubgraphNode>(); };
   registry["Remote"] = []() { return std::make_unique<RemoteNode>(); };

@@ -798,9 +798,12 @@ std::vector<ImNodes::Ez::SlotInfo> DotNoiseNode::outputSlotInfos() const {
 }
 
 void DotNoiseNode::renderParams() {
+  static const char* dnModes = "Dots\0Raw random\0";
   ImGui::PushItemWidth(120);
   ImGui::Combo("W##dn", &m_core.m_widthIdx, s_sizesStr);
   ImGui::Combo("H##dn", &m_core.m_heightIdx, s_sizesStr);
+  ImGui::Combo("Mode##dn", &m_core.m_mode, dnModes);
+  Hint("Dots thresholds against density; Raw outputs the cell value");
   ImGui::SliderInt("Grid##dn", &m_core.m_grid, 2, 2048);
   Hint("Number of random cells per axis");
   SliderFloatW("Density##dn", &m_core.m_density, 0.0f, 1.0f);
@@ -982,5 +985,126 @@ void FillToColorNode::renderParams() {
   ImGui::PushItemWidth(120);
   ImGui::ColorEdit4("Edge##ftc", m_core.m_edge, ImGuiColorEditFlags_NoInputs);
   Hint("Color used for the edges between regions");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// RemapNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> RemapNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> RemapNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void RemapNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Min##rmp", &m_core.m_min, -1.0f, 1.0f);
+  SliderFloatW("Max##rmp", &m_core.m_max, -1.0f, 2.0f);
+  Hint("Output range for input 0..1");
+  SliderFloatW("Step##rmp", &m_core.m_step, 0.0f, 0.5f);
+  Hint("Quantization step (0 = continuous)");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// Tile2x2Node
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> Tile2x2Node::inputSlotInfos() const {
+  return {{"In1", 1}, {"In2", 1}, {"In3", 1}, {"In4", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> Tile2x2Node::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+// ============================================================
+// NormalConvertNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> NormalConvertNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> NormalConvertNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void NormalConvertNode::renderParams() {
+  static const char* ops = "From/To OpenGL\0From/To DirectX\0";
+  ImGui::PushItemWidth(140);
+  ImGui::Combo("Op##nmc", &m_core.m_op, ops);
+  Hint("Flips normal map channels between conventions");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// CustomUVNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> CustomUVNode::inputSlotInfos() const {
+  return {{"In", 1}, {"Map", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> CustomUVNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void CustomUVNode::renderParams() {
+  static const char* tilesets = "1\0002x2\0004x4\0";
+  ImGui::PushItemWidth(120);
+  int tsIdx = m_core.m_inputs == 4 ? 2 : (m_core.m_inputs == 2 ? 1 : 0);
+  if (ImGui::Combo("Tileset##cuv", &tsIdx, tilesets))
+    m_core.m_inputs = tsIdx == 2 ? 4 : (tsIdx == 1 ? 2 : 1);
+  SliderFloatW("Scale X##cuv", &m_core.m_sx, 0.1f, 4.0f);
+  SliderFloatW("Scale Y##cuv", &m_core.m_sy, 0.1f, 4.0f);
+  SliderFloatW("Rotate##cuv", &m_core.m_rotate, 0.0f, 180.0f);
+  Hint("Random rotation range per region");
+  SliderFloatW("Scale jitter##cuv", &m_core.m_scale, 0.0f, 1.0f);
+  SliderFloatW("Seed##cuv", &m_core.m_seed, 0.0f, 64.0f);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// SmoothCurvatureNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> SmoothCurvatureNode::inputSlotInfos()
+    const {
+  return {{"Height", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> SmoothCurvatureNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void SmoothCurvatureNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Quality##sc", &m_core.m_quality, 1.0f, 8.0f);
+  Hint("Samples per axis (quality^2 taps)");
+  SliderFloatW("Strength##sc", &m_core.m_strength, 0.0f, 4.0f);
+  SliderFloatW("Radius##sc", &m_core.m_radius, 0.1f, 4.0f);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// AmbientOcclusionNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> AmbientOcclusionNode::inputSlotInfos()
+    const {
+  return {{"Height", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> AmbientOcclusionNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void AmbientOcclusionNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Radius##ao", &m_core.m_radius, 0.01f, 0.25f);
+  Hint("Blur radius as a fraction of the texture width");
+  SliderFloatW("Strength##ao", &m_core.m_strength, 0.0f, 4.0f);
   ImGui::PopItemWidth();
 }

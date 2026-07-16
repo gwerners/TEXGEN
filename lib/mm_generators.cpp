@@ -939,7 +939,7 @@ void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
 
 // Dot noise (noise.mmg).
 void MMDotNoise(GenTexture &out, sInt gridSize, sF32 density,
-                const GenTexture *densityIn, sF32 seed) {
+                const GenTexture *densityIn, sF32 seed, sInt mode) {
   if (!out.Data)
     return;
   const sInt w = out.XRes, h = out.YRes;
@@ -955,7 +955,7 @@ void MMDotNoise(GenTexture &out, sInt gridSize, sF32 density,
       if (densityIn && densityIn->Data)
         d = sampleGrayBilinearWrap(*densityIn, cu, cv);
       const sF32 r = mmRand(cu + seed, cv + seed);
-      gray16(out.Data[py * w + px], r < d ? 1.0f : 0.0f);
+      gray16(out.Data[py * w + px], mode == 1 ? r : (r < d ? 1.0f : 0.0f));
     }
   }
 }

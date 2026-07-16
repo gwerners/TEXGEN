@@ -131,8 +131,9 @@ void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
 
 // Dot noise (noise.mmg): per-cell random threshold against a density.
 // densityIn (optional, grayscale) modulates the density per cell.
+// mode 1 (noise_white.mmg) outputs the raw random value instead.
 void MMDotNoise(GenTexture &out, sInt gridSize, sF32 density,
-                const GenTexture *densityIn, sF32 seed);
+                const GenTexture *densityIn, sF32 seed, sInt mode = 0);
 
 // Scratches generator (scratches.mmg): layered random line scratches.
 void MMScratches(GenTexture &out, sInt layers, sF32 length, sF32 width,

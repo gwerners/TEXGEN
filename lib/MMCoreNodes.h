@@ -473,6 +473,110 @@ class MultiWarpCoreNode : public CoreNode {
 };
 
 // ============================================================
+// RemapCoreNode — linear remap + quantization (remap.mmg)
+// ============================================================
+class RemapCoreNode : public CoreNode {
+ public:
+  RemapCoreNode() {}
+  std::string typeName() const override { return "Remap"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_min = 0.0f, m_max = 1.0f, m_step = 0.0f;
+};
+
+// ============================================================
+// Tile2x2CoreNode — quadrant packing (tile2x2.mmg)
+// ============================================================
+class Tile2x2CoreNode : public CoreNode {
+ public:
+  Tile2x2CoreNode() {}
+  std::string typeName() const override { return "Tile2x2"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+};
+
+// ============================================================
+// NormalConvertCoreNode — normal convention flip
+// ============================================================
+class NormalConvertCoreNode : public CoreNode {
+ public:
+  NormalConvertCoreNode() {}
+  std::string typeName() const override { return "NormalConvert"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_op = 1;  // 0 OpenGL flip, 1 DirectX flip
+};
+
+// ============================================================
+// CustomUVCoreNode — per-region UV scatter (custom_uv.mmg)
+// ============================================================
+class CustomUVCoreNode : public CoreNode {
+ public:
+  CustomUVCoreNode() {}
+  std::string typeName() const override { return "CustomUV"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_inputs = 1;
+  float m_sx = 1.0f, m_sy = 1.0f;
+  float m_rotate = 0.0f, m_scale = 0.5f;
+  float m_seed = 0.0f;
+};
+
+// ============================================================
+// SmoothCurvatureCoreNode — heightmap curvature
+// ============================================================
+class SmoothCurvatureCoreNode : public CoreNode {
+ public:
+  SmoothCurvatureCoreNode() {}
+  std::string typeName() const override { return "SmoothCurvature"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_quality = 4.0f;
+  float m_strength = 1.0f;
+  float m_radius = 1.0f;
+};
+
+// ============================================================
+// AmbientOcclusionCoreNode — blur-based AO from height
+// ============================================================
+class AmbientOcclusionCoreNode : public CoreNode {
+ public:
+  AmbientOcclusionCoreNode() {}
+  std::string typeName() const override { return "AmbientOcclusion"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_radius = 0.05f;  // blur radius as a fraction of the width
+  float m_strength = 1.0f;
+};
+
+// ============================================================
 // FillCoreNode — region detection into a fill map (fill.mmg)
 // ============================================================
 class FillCoreNode : public CoreNode {
@@ -571,6 +675,7 @@ class DotNoiseCoreNode : public CoreNode {
   int m_grid = 256;  // cells per axis
   float m_density = 0.5f;
   float m_seed = 0.0f;
+  int m_mode = 0;  // 0 = threshold dots, 1 = raw random value
 };
 
 // ============================================================

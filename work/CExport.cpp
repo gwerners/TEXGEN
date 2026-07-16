@@ -1163,6 +1163,91 @@ static void emitNode(std::ostringstream& ss,
     }
   }
 
+  else if (type == "Remap") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMRemap(" << v << ", " << in << ", " << pf(p, "min", 0.0f)
+         << ", " << pf(p, "max", 1.0f) << ", " << pf(p, "step", 0.0f)
+         << ");\n";
+    }
+  }
+
+  else if (type == "Tile2x2") {
+    std::string srcs[4], sizeRef;
+    static const char* ins[4] = {"In1", "In2", "In3", "In4"};
+    for (int i = 0; i < 4; i++) {
+      srcs[i] = srcVar(conns, id, ins[i]);
+      if (sizeRef.empty() && !srcs[i].empty())
+        sizeRef = srcs[i];
+    }
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init("
+       << (sizeRef.empty() ? "256, 256"
+                           : sizeRef + ".XRes, " + sizeRef + ".YRes")
+       << ");\n";
+    ss << "    MMTile2x2(" << v;
+    for (int i = 0; i < 4; i++)
+      ss << ", " << (srcs[i].empty() ? "nullptr" : "&" + srcs[i]);
+    ss << ");\n";
+  }
+
+  else if (type == "NormalConvert") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMNormalConvert(" << v << ", " << in << ", "
+         << p.value("op", 1) << ");\n";
+    }
+  }
+
+  else if (type == "CustomUV") {
+    std::string in = srcVar(conns, id, "In");
+    std::string map = srcVar(conns, id, "Map");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty() || map.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << map << ".XRes, " << map << ".YRes);\n";
+      ss << "    MMCustomUV(" << v << ", " << in << ", " << map << ", "
+         << p.value("inputs", 1) << ", " << pf(p, "sx", 1.0f) << ", "
+         << pf(p, "sy", 1.0f) << ", " << pf(p, "rotate", 0.0f) << ", "
+         << pf(p, "scale", 0.5f) << ", " << pf(p, "seed", 0.0f) << ");\n";
+    }
+  }
+
+  else if (type == "SmoothCurvature") {
+    std::string in = srcVar(conns, id, "Height");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMSmoothCurvature(" << v << ", " << in << ", "
+         << pf(p, "quality", 4.0f) << ", " << pf(p, "strength", 1.0f) << ", "
+         << pf(p, "radius", 1.0f) << ");\n";
+    }
+  }
+
+  else if (type == "AmbientOcclusion") {
+    std::string in = srcVar(conns, id, "Height");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMAmbientOcclusion(" << v << ", " << in << ", "
+         << pf(p, "radius", 0.05f) << ", " << pf(p, "strength", 1.0f)
+         << ");\n";
+    }
+  }
+
   else if (type == "SdfShape") {
     int w = sizeFromIdx(p.value("widthIdx", 3));
     int h = sizeFromIdx(p.value("heightIdx", 3));

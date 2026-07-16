@@ -112,6 +112,16 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
        {"Filter", "Random color per detected region"}},
       {"FillToColor",
        {"Filter", "Samples a map at each region's center"}},
+      {"Remap", {"Filter", "Linear remap to [min, max] with quantization"}},
+      {"Tile2x2", {"Combine", "Packs four inputs into quadrants"}},
+      {"NormalConvert",
+       {"Filter", "Converts normal map conventions (OpenGL/DirectX)"}},
+      {"CustomUV",
+       {"Filter", "Samples the input through a custom UV map"}},
+      {"SmoothCurvature",
+       {"Filter", "Smooth curvature of a heightmap"}},
+      {"AmbientOcclusion",
+       {"Filter", "Ambient occlusion approximated from a heightmap"}},
       {"Tiler",
        {"Filter", "Scatters jittered copies of the input in a grid"}},
       // Combiners
@@ -231,6 +241,12 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<FillToRandomGrayCoreNode>(r);
     registerType<FillToRandomColorCoreNode>(r);
     registerType<FillToColorCoreNode>(r);
+    registerType<RemapCoreNode>(r);
+    registerType<Tile2x2CoreNode>(r);
+    registerType<NormalConvertCoreNode>(r);
+    registerType<CustomUVCoreNode>(r);
+    registerType<SmoothCurvatureCoreNode>(r);
+    registerType<AmbientOcclusionCoreNode>(r);
     // Structural
     registerType<SubgraphCoreNode>(r);
     registerType<RemoteCoreNode>(r);

@@ -116,6 +116,18 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"fill_to_random_color3", {"Fill"}},
       {"fill_to_color", {"Fill", "Map"}},
       {"fill_to_color2", {"Fill", "Map"}},
+      {"remap", {"In"}},
+      {"tile2x2", {"In1", "In2", "In3", "In4"}},
+      {"normal_map_convert", {"In"}},
+      {"custom_uv", {"In", "Map"}},
+      {"smooth_curvature", {"Height"}},
+      {"smooth_curvature2", {"Height"}},
+      {"occlusion2", {"Height"}},
+      {"hbao", {"Height"}},
+      {"rotate", {"In"}},
+      {"tones_range", {"In"}},
+      {"math_v3", {"A", "B"}},
+      {"bricks3", {"", "", ""}}, // mortar/bevel/round maps unsupported
   };
   return m;
 }
@@ -437,12 +449,55 @@ bool convertParams(const std::string &type, const json &p,
     out = {{"baseName", baseName}};
     return true;
   }
-  if (type == "math") {
+  if (type == "math" || type == "math_v3") {
+    // math_v3 shares the first 20 ops (vector ops 20+ fall back to add)
     typeName = "MathOp";
-    out = {{"op", intOr(p, "op", 0)},
-           {"def1", numOr(p, "default_in1", 0.0f)},
-           {"def2", numOr(p, "default_in2", 0.0f)},
+    int op = intOr(p, "op", 0);
+    if (op > 19)
+      op = 0;
+    out = {{"op", op},
+           {"def1", numOr(p, "default_in1", numOr(p, "d_in1_x", 0.0f))},
+           {"def2", numOr(p, "default_in2", numOr(p, "d_in2_x", 0.0f))},
            {"clamp", boolOr(p, "clamp", false)}};
+    return true;
+  }
+  if (type == "noise_white") {
+    typeName = "DotNoise";
+    int gridExp = intOr(p, "size", 11);
+    out = size3();
+    out["grid"] = 1 << (gridExp < 1 ? 1 : (gridExp > 12 ? 12 : gridExp));
+    out["density"] = 0.5f;
+    out["seed"] = numOr(p, "seed", 0.0f);
+    out["mode"] = 1;
+    return true;
+  }
+  if (type == "clouds_noise") {
+    // 60-node MM macro with inner custom shaders; approximated by a
+    // perlin FBM with matching scale
+    typeName = "FBM";
+    out = size3();
+    out["mode"] = 1;
+    out["scaleX"] = intOr(p, "n_scale", 4);
+    out["scaleY"] = intOr(p, "n_scale", 4);
+    out["folds"] = 0;
+    out["octaves"] = 5;
+    out["persistence"] = 0.5f;
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "bricks3") {
+    typeName = "BricksMM";
+    out = size3();
+    out["pattern"] = intOr(p, "pattern", 2);
+    out["countX"] = intOr(p, "columns", 3);
+    out["countY"] = intOr(p, "rows", 6);
+    out["repeat"] = intOr(p, "repeat", 1);
+    out["offset"] = numOr(p, "row_offset", 0.5f);
+    out["mortar"] = numOr(p, "mortar", 0.1f);
+    out["round"] = numOr(p, "round", 0.0f);
+    out["bevel"] = numOr(p, "bevel", 0.1f);
+    out["colorBalance"] = 0.5f;
+    out["seed"] = numOr(p, "seed", 0.0f);
     return true;
   }
   if (type == "gradient") {
@@ -563,6 +618,82 @@ bool convertParams(const std::string &type, const json &p,
     out = {{"edge",
             {numOr(ec, "r", 1.0f), numOr(ec, "g", 1.0f), numOr(ec, "b", 1.0f),
              numOr(ec, "a", 1.0f)}}};
+    return true;
+  }
+  if (type == "remap") {
+    typeName = "Remap";
+    out = {{"min", numOr(p, "min", 0.0f)},
+           {"max", numOr(p, "max", 1.0f)},
+           {"step", numOr(p, "step", 0.0f)}};
+    return true;
+  }
+  if (type == "tile2x2") {
+    typeName = "Tile2x2";
+    out = json::object();
+    return true;
+  }
+  if (type == "normal_map_convert") {
+    typeName = "NormalConvert";
+    out = {{"op", intOr(p, "op", 1)}};
+    return true;
+  }
+  if (type == "custom_uv") {
+    typeName = "CustomUV";
+    int tsIdx = intOr(p, "inputs", 0);
+    out = {{"inputs", tsIdx == 2 ? 4 : (tsIdx == 1 ? 2 : 1)},
+           {"sx", numOr(p, "sx", 1.0f)},
+           {"sy", numOr(p, "sy", 1.0f)},
+           {"rotate", numOr(p, "rotate", 0.0f)},
+           {"scale", numOr(p, "scale", 0.5f)},
+           {"seed", numOr(p, "seed", 0.0f)}};
+    return true;
+  }
+  if (type == "smooth_curvature" || type == "smooth_curvature2") {
+    // graph macro: param1=quality, param2=strength, param3=radius
+    typeName = "SmoothCurvature";
+    out = {{"quality", numOr(p, "param1", 4.0f)},
+           {"strength", numOr(p, "param2", 1.0f)},
+           {"radius", numOr(p, "param3", 1.0f)}};
+    return true;
+  }
+  if (type == "occlusion2" || type == "hbao") {
+    // both are shader-based AO from height; approximated by blur AO
+    typeName = "AmbientOcclusion";
+    out = {{"radius", 0.05f}, {"strength", numOr(p, "param2", 1.0f)}};
+    return true;
+  }
+  if (type == "rotate") {
+    // rotation around (0.5+cx, 0.5+cy); the center offset is dropped
+    typeName = "Transform2D";
+    out = {{"tx", 0.0f},
+           {"ty", 0.0f},
+           {"rot", numOr(p, "rotate", 0.0f)},
+           {"scaleX", 1.0f},
+           {"scaleY", 1.0f},
+           {"repeat", true}};
+    return true;
+  }
+  if (type == "tones_range") {
+    // tent curve peaked at 'value': expressible as Colorize stops
+    typeName = "Colorize";
+    float value = numOr(p, "value", 0.5f);
+    float width = numOr(p, "width", 0.25f);
+    if (width < 1e-4f)
+      width = 1e-4f;
+    float contrast = numOr(p, "contrast", 0.5f);
+    if (contrast > 0.999f)
+      contrast = 0.999f;
+    if (contrast < 0.0f)
+      contrast = 0.0f;
+    bool invert = boolOr(p, "invert", false);
+    const float lo = invert ? 1.0f : 0.0f;
+    const float hi = invert ? 0.0f : 1.0f;
+    json stops = json::array();
+    stops.push_back({value - 0.5f * width, lo, lo, lo, 1.0f});
+    stops.push_back({value - 0.5f * width * contrast, hi, hi, hi, 1.0f});
+    stops.push_back({value + 0.5f * width * contrast, hi, hi, hi, 1.0f});
+    stops.push_back({value + 0.5f * width, lo, lo, lo, 1.0f});
+    out = {{"stops", stops}};
     return true;
   }
   if (type == "slope_blur") {
@@ -843,7 +974,10 @@ GraphResult convertGraph(json mmNodes, json mmConns,
         "fill_to_uv2",  "fill_to_random_grey",
         "fill_to_random_grey2", "fill_to_random_color",
         "fill_to_random_color2", "fill_to_random_color3",
-        "fill_to_color", "fill_to_color2"};
+        "fill_to_color", "fill_to_color2",
+        "remap", "tile2x2", "normal_map_convert", "custom_uv",
+        "smooth_curvature", "smooth_curvature2", "occlusion2", "hbao",
+        "rotate", "tones_range", "math_v3"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));

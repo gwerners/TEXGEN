@@ -83,3 +83,33 @@ void MMMirror(GenTexture &out, const GenTexture &in, sInt direction,
 // 1/size texel steps, 'width' rings, thresholded to a hard mask.
 void MMEdgeDetect(GenTexture &out, const GenTexture &in, sF32 size,
                   sInt width, sF32 threshold);
+
+// Linear remap with optional quantization (remap.mmg):
+// out = min + q(in * (max - min)), q quantizes to 'step' when > 0.
+void MMRemap(GenTexture &out, const GenTexture &in, sF32 minV, sF32 maxV,
+             sF32 step);
+
+// Packs four inputs into quadrants (tile2x2.mmg); null inputs = black.
+void MMTile2x2(GenTexture &out, const GenTexture *in1, const GenTexture *in2,
+               const GenTexture *in3, const GenTexture *in4);
+
+// Normal map convention conversion (normal_map_convert.mmg):
+// op 0 = from/to OpenGL (flip R and B), 1 = from/to DirectX (flip all).
+void MMNormalConvert(GenTexture &out, const GenTexture &in, sInt op);
+
+// Per-region UV scatter (custom_uv.mmg): samples 'in' at map.xy
+// transformed by a random rotation/scale seeded from map.z (typically
+// a FillToUV output). inputs = tileset subdivision (1, 2 or 4).
+void MMCustomUV(GenTexture &out, const GenTexture &in, const GenTexture &map,
+                sInt inputs, sF32 sx, sF32 sy, sF32 rotateDeg,
+                sF32 scaleJitter, sF32 seed);
+
+// Smooth curvature of a heightmap (smooth_curvature2.mmg): quality^2
+// laplacian samples weighted by distance inside 0.05*radius.
+void MMSmoothCurvature(GenTexture &out, const GenTexture &height,
+                       sF32 quality, sF32 strength, sF32 radius);
+
+// Ambient occlusion approximation from a heightmap (occlusion2.mmg /
+// hbao.mmg are shader-based; this uses the blur-minus-height trick).
+void MMAmbientOcclusion(GenTexture &out, const GenTexture &height,
+                        sF32 radius, sF32 strength);

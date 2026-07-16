@@ -2,6 +2,7 @@
 #include "mm_filters.h"
 
 #include <cmath>
+#include <vector>
 
 namespace {
 
@@ -669,6 +670,239 @@ void MMEdgeDetect(GenTexture &out, const GenTexture &in, sF32 size,
       sF32 o = 100.0f * (rv - threshold);
       const sU16 g = to16(o);
       Pixel &p = out.Data[py * w + px];
+      p.r = p.g = p.b = g;
+      p.a = 65535;
+    }
+  }
+}
+
+// Linear remap with optional quantization (remap.mmg).
+void MMRemap(GenTexture &out, const GenTexture &in, sF32 minV, sF32 maxV,
+             sF32 step) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 st = step > 0.00000001f ? step : 0.00000001f;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 c[4];
+      sampleRGBA(in, u, v, c);
+      const sF32 x = ((c[0] + c[1] + c[2]) / 3.0f) * (maxV - minV);
+      const sF32 r = minV + x - (x - st * floorf(x / st));
+      const sU16 g = to16(step > 0.00000001f ? r : minV + x);
+      Pixel &p = out.Data[py * w + px];
+      p.r = p.g = p.b = g;
+      p.a = 65535;
+    }
+  }
+}
+
+// Quadrant packing (tile2x2.mmg).
+void MMTile2x2(GenTexture &out, const GenTexture *in1, const GenTexture *in2,
+               const GenTexture *in3, const GenTexture *in4) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      const GenTexture *src;
+      sF32 su, sv;
+      if (v < 0.5f) {
+        src = u < 0.5f ? in1 : in2;
+        su = 2.0f * u - (u < 0.5f ? 0.0f : 1.0f);
+        sv = 2.0f * v;
+      } else {
+        src = u < 0.5f ? in3 : in4;
+        su = 2.0f * u - (u < 0.5f ? 0.0f : 1.0f);
+        sv = 2.0f * v - 1.0f;
+      }
+      Pixel &p = out.Data[py * w + px];
+      if (src && src->Data) {
+        sF32 c[4];
+        sampleRGBA(*src, su, sv, c);
+        p.r = to16(c[0]);
+        p.g = to16(c[1]);
+        p.b = to16(c[2]);
+        p.a = to16(c[3]);
+      } else {
+        p.r = p.g = p.b = 0;
+        p.a = 65535;
+      }
+    }
+  }
+}
+
+// Normal map convention conversion (normal_map_convert.mmg).
+void MMNormalConvert(GenTexture &out, const GenTexture &in, sInt op) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 c[4];
+      sampleRGBA(in, u, v, c);
+      Pixel &p = out.Data[py * w + px];
+      if (op == 0) { // from/to OpenGL: flip R and B
+        p.r = to16(1.0f - c[0]);
+        p.g = to16(c[1]);
+        p.b = to16(1.0f - c[2]);
+      } else { // from/to DirectX: flip all
+        p.r = to16(1.0f - c[0]);
+        p.g = to16(1.0f - c[1]);
+        p.b = to16(1.0f - c[2]);
+      }
+      p.a = to16(c[3]);
+    }
+  }
+}
+
+// Per-region UV scatter (custom_uv.mmg).
+void MMCustomUV(GenTexture &out, const GenTexture &in, const GenTexture &map,
+                sInt inputs, sF32 sx, sF32 sy, sF32 rotateDeg,
+                sF32 scaleJitter, sF32 seed) {
+  if (!out.Data || !in.Data || !map.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (inputs < 1)
+    inputs = 1;
+  if (fabsf(sx) < 1e-6f)
+    sx = 1e-6f;
+  if (fabsf(sy) < 1e-6f)
+    sy = 1e-6f;
+  const sF32 rotRad = rotateDeg * 0.01745329251f;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 m[4];
+      sampleRGBA(map, u, v, m);
+
+      // old_custom_uv_transform(map.xy, (sx,sy), rot, scale,
+      //                         (map.z, seed))
+      sF32 sd[2];
+      tilerRand2(m[2], seed, sd);
+      sF32 cu = m[0] - 0.5f, cv = m[1] - 0.5f;
+      const sF32 angle = (sd[0] * 2.0f - 1.0f) * rotRad;
+      const sF32 ca = cosf(angle), sa = sinf(angle);
+      sF32 ru = ca * cu + sa * cv;
+      sF32 rv = -sa * cu + ca * cv;
+      const sF32 sj = (sd[1] - 0.5f) * 2.0f * scaleJitter + 1.0f;
+      ru = ru * sj / sx + 0.5f;
+      rv = rv * sj / sy + 0.5f;
+
+      // get_from_tileset(inputs, seed + map.z, uv)
+      sF32 su = ru, sv = rv;
+      if (inputs > 1) {
+        sF32 pick[2];
+        tilerRand2(seed + m[2], seed + m[2], pick);
+        su = clamp01((ru + floorf(pick[0] * inputs)) / inputs);
+        sv = clamp01((rv + floorf(pick[1] * inputs)) / inputs);
+      }
+
+      sF32 c[4];
+      sampleRGBA(in, su, sv, c);
+      Pixel &p = out.Data[py * w + px];
+      p.r = to16(c[0]);
+      p.g = to16(c[1]);
+      p.b = to16(c[2]);
+      p.a = to16(c[3]);
+    }
+  }
+}
+
+// Smooth curvature (smooth_curvature2.mmg inner shader).
+void MMSmoothCurvature(GenTexture &out, const GenTexture &height,
+                       sF32 quality, sF32 strength, sF32 radius) {
+  if (!out.Data || !height.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (quality < 1.0f)
+    quality = 1.0f;
+  if (radius < 1e-4f)
+    radius = 1e-4f;
+  const sF32 r = 0.05f * radius;
+  const sF32 s = r / quality;
+
+  auto heightAt = [&](sF32 u, sF32 v) -> sF32 {
+    sF32 c[4];
+    sampleRGBA(height, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v0 = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u0 = (px + 0.5f) / w;
+      const sF32 H = heightAt(u0, v0) * 4.0f;
+      sF32 acc = 0.0f;
+      for (sF32 oy = 0.0f; oy < quality; oy += 1.0f) {
+        for (sF32 ox = 0.0f; ox < quality; ox += 1.0f) {
+          const sF32 dx = ox * s, dy = oy * s;
+          const sF32 curve = -heightAt(u0 + dx, v0 + dy) -
+                             heightAt(u0 - dx, v0 - dy) -
+                             heightAt(u0 + dx, v0 - dy) -
+                             heightAt(u0 - dx, v0 + dy);
+          const sF32 dist = sqrtf(dx * dx + dy * dy);
+          acc += (H + curve) * ((r - dist) / r);
+        }
+      }
+      const sF32 c = (acc / (quality * quality)) * strength / radius;
+      const sU16 g = to16(0.5f + c);
+      Pixel &p = out.Data[py * w + px];
+      p.r = p.g = p.b = g;
+      p.a = 65535;
+    }
+  }
+}
+
+// Blur-based ambient occlusion approximation.
+void MMAmbientOcclusion(GenTexture &out, const GenTexture &height,
+                        sF32 radius, sF32 strength) {
+  if (!out.Data || !height.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  sInt rad = (sInt)(radius * height.XRes);
+  if (rad < 1)
+    rad = 1;
+
+  // separable box blur of the height grayscale
+  const sInt hw = height.XRes, hh = height.YRes;
+  std::vector<sF32> gray((size_t)hw * hh), tmp((size_t)hw * hh),
+      blur((size_t)hw * hh);
+  const sF32 sc = 1.0f / (3.0f * 65535.0f);
+  for (sInt i = 0; i < hw * hh; i++) {
+    const Pixel &p = height.Data[i];
+    gray[i] = ((sF32)p.r + (sF32)p.g + (sF32)p.b) * sc;
+  }
+  const sF32 norm = 1.0f / (2 * rad + 1);
+  for (sInt y = 0; y < hh; y++)
+    for (sInt x = 0; x < hw; x++) {
+      sF32 acc = 0.0f;
+      for (sInt k = -rad; k <= rad; k++)
+        acc += gray[y * hw + wrapi(x + k, hw)];
+      tmp[y * hw + x] = acc * norm;
+    }
+  for (sInt y = 0; y < hh; y++)
+    for (sInt x = 0; x < hw; x++) {
+      sF32 acc = 0.0f;
+      for (sInt k = -rad; k <= rad; k++)
+        acc += tmp[wrapi(y + k, hh) * hw + x];
+      blur[y * hw + x] = acc * norm;
+    }
+
+  for (sInt py = 0; py < h; py++) {
+    for (sInt px = 0; px < w; px++) {
+      const sInt sx = px * hw / w, sy = py * hh / h;
+      const sF32 d = blur[sy * hw + sx] - gray[sy * hw + sx];
+      const sF32 occ = clamp01(1.0f - strength * (d > 0.0f ? d : 0.0f) * 4.0f);
+      Pixel &p = out.Data[py * w + px];
+      const sU16 g = to16(occ);
       p.r = p.g = p.b = g;
       p.a = 65535;
     }

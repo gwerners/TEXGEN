@@ -1351,7 +1351,7 @@ std::vector<std::string> DotNoiseCoreNode::outputSlotNames() const {
 nlohmann::json DotNoiseCoreNode::saveParams() const {
   return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
           {"grid", m_grid},         {"density", m_density},
-          {"seed", m_seed}};
+          {"seed", m_seed},         {"mode", m_mode}};
 }
 
 void DotNoiseCoreNode::loadParams(const nlohmann::json& j) {
@@ -1365,6 +1365,8 @@ void DotNoiseCoreNode::loadParams(const nlohmann::json& j) {
     m_density = j["density"];
   if (j.contains("seed"))
     m_seed = j["seed"];
+  if (j.contains("mode"))
+    m_mode = j["mode"];
 }
 
 void DotNoiseCoreNode::execute(const std::vector<GenTexture*>& inputs,
@@ -1373,7 +1375,7 @@ void DotNoiseCoreNode::execute(const std::vector<GenTexture*>& inputs,
       (!inputs.empty() && inputs[0] && inputs[0]->Data) ? inputs[0] : nullptr;
   outputs.resize(1);
   outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
-  MMDotNoise(outputs[0], m_grid, m_density, dens, m_seed);
+  MMDotNoise(outputs[0], m_grid, m_density, dens, m_seed, m_mode);
 }
 
 // ============================================================
@@ -1699,4 +1701,194 @@ void FillToColorCoreNode::execute(const std::vector<GenTexture*>& inputs,
   outputs[0].Init(in->XRes, in->YRes);
   MMFillToColor(outputs[0], *in, map, m_edge[0], m_edge[1], m_edge[2],
                 m_edge[3]);
+}
+
+// ============================================================
+// RemapCoreNode
+// ============================================================
+
+std::vector<std::string> RemapCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> RemapCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json RemapCoreNode::saveParams() const {
+  return {{"min", m_min}, {"max", m_max}, {"step", m_step}};
+}
+
+void RemapCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("min"))
+    m_min = j["min"];
+  if (j.contains("max"))
+    m_max = j["max"];
+  if (j.contains("step"))
+    m_step = j["step"];
+}
+
+void RemapCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                            std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMRemap(outputs[0], *in, m_min, m_max, m_step);
+}
+
+// ============================================================
+// Tile2x2CoreNode
+// ============================================================
+
+std::vector<std::string> Tile2x2CoreNode::inputSlotNames() const {
+  return {"In1", "In2", "In3", "In4"};
+}
+std::vector<std::string> Tile2x2CoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void Tile2x2CoreNode::execute(const std::vector<GenTexture*>& inputs,
+                              std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> const GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  const GenTexture* sz = nullptr;
+  for (size_t i = 0; i < 4 && !sz; i++)
+    sz = get(i);
+  outputs.resize(1);
+  outputs[0].Init(sz ? sz->XRes : 256, sz ? sz->YRes : 256);
+  MMTile2x2(outputs[0], get(0), get(1), get(2), get(3));
+}
+
+// ============================================================
+// NormalConvertCoreNode
+// ============================================================
+
+std::vector<std::string> NormalConvertCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> NormalConvertCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json NormalConvertCoreNode::saveParams() const {
+  return {{"op", m_op}};
+}
+
+void NormalConvertCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("op"))
+    m_op = j["op"];
+}
+
+void NormalConvertCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                    std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMNormalConvert(outputs[0], *in, m_op);
+}
+
+// ============================================================
+// CustomUVCoreNode
+// ============================================================
+
+std::vector<std::string> CustomUVCoreNode::inputSlotNames() const {
+  return {"In", "Map"};
+}
+std::vector<std::string> CustomUVCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json CustomUVCoreNode::saveParams() const {
+  return {{"inputs", m_inputs}, {"sx", m_sx},       {"sy", m_sy},
+          {"rotate", m_rotate}, {"scale", m_scale}, {"seed", m_seed}};
+}
+
+void CustomUVCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("inputs"))
+    m_inputs = j["inputs"];
+  if (j.contains("sx"))
+    m_sx = j["sx"];
+  if (j.contains("sy"))
+    m_sy = j["sy"];
+  if (j.contains("rotate"))
+    m_rotate = j["rotate"];
+  if (j.contains("scale"))
+    m_scale = j["scale"];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void CustomUVCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                               std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  GenTexture* map = mmEnsure(inputs.size() > 1 ? inputs[1] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(map->XRes, map->YRes);
+  MMCustomUV(outputs[0], *in, *map, m_inputs, m_sx, m_sy, m_rotate, m_scale,
+             m_seed);
+}
+
+// ============================================================
+// SmoothCurvatureCoreNode
+// ============================================================
+
+std::vector<std::string> SmoothCurvatureCoreNode::inputSlotNames() const {
+  return {"Height"};
+}
+std::vector<std::string> SmoothCurvatureCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json SmoothCurvatureCoreNode::saveParams() const {
+  return {{"quality", m_quality},
+          {"strength", m_strength},
+          {"radius", m_radius}};
+}
+
+void SmoothCurvatureCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("quality"))
+    m_quality = j["quality"];
+  if (j.contains("strength"))
+    m_strength = j["strength"];
+  if (j.contains("radius"))
+    m_radius = j["radius"];
+}
+
+void SmoothCurvatureCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                      std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMSmoothCurvature(outputs[0], *in, m_quality, m_strength, m_radius);
+}
+
+// ============================================================
+// AmbientOcclusionCoreNode
+// ============================================================
+
+std::vector<std::string> AmbientOcclusionCoreNode::inputSlotNames() const {
+  return {"Height"};
+}
+std::vector<std::string> AmbientOcclusionCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json AmbientOcclusionCoreNode::saveParams() const {
+  return {{"radius", m_radius}, {"strength", m_strength}};
+}
+
+void AmbientOcclusionCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("radius"))
+    m_radius = j["radius"];
+  if (j.contains("strength"))
+    m_strength = j["strength"];
+}
+
+void AmbientOcclusionCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                       std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMAmbientOcclusion(outputs[0], *in, m_radius, m_strength);
 }
