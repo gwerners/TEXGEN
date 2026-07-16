@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <cstring>
+#include "mm_fill.h"
 #include "mm_workflow.h"
 #include "texgen_utils.h"
 
@@ -1552,4 +1553,150 @@ void MatMapCoreNode::execute(const std::vector<GenTexture*>& inputs,
     outputs[i].Init(map->XRes, map->YRes);
   MMMatMap(outputs[0], outputs[1], outputs[2], outputs[3], outputs[4], *map,
            get(1), get(2), get(3), get(4));
+}
+
+// ============================================================
+// FillCoreNode
+// ============================================================
+
+std::vector<std::string> FillCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> FillCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void FillCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                           std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMFill(outputs[0], *in);
+}
+
+// ============================================================
+// FillToUVCoreNode
+// ============================================================
+
+std::vector<std::string> FillToUVCoreNode::inputSlotNames() const {
+  return {"Fill"};
+}
+std::vector<std::string> FillToUVCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json FillToUVCoreNode::saveParams() const {
+  return {{"mode", m_mode}, {"seed", m_seed}};
+}
+
+void FillToUVCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("mode"))
+    m_mode = j["mode"];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void FillToUVCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                               std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMFillToUV(outputs[0], *in, m_mode, m_seed);
+}
+
+// ============================================================
+// FillToRandomGrayCoreNode
+// ============================================================
+
+std::vector<std::string> FillToRandomGrayCoreNode::inputSlotNames() const {
+  return {"Fill"};
+}
+std::vector<std::string> FillToRandomGrayCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json FillToRandomGrayCoreNode::saveParams() const {
+  return {{"edgecolor", m_edgecolor}, {"seed", m_seed}};
+}
+
+void FillToRandomGrayCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("edgecolor"))
+    m_edgecolor = j["edgecolor"];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void FillToRandomGrayCoreNode::execute(
+    const std::vector<GenTexture*>& inputs,
+    std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMFillToRandomGray(outputs[0], *in, m_edgecolor, m_seed);
+}
+
+// ============================================================
+// FillToRandomColorCoreNode
+// ============================================================
+
+std::vector<std::string> FillToRandomColorCoreNode::inputSlotNames() const {
+  return {"Fill"};
+}
+std::vector<std::string> FillToRandomColorCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json FillToRandomColorCoreNode::saveParams() const {
+  return {{"edge", {m_edge[0], m_edge[1], m_edge[2]}}, {"seed", m_seed}};
+}
+
+void FillToRandomColorCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("edge") && j["edge"].is_array() && j["edge"].size() >= 3)
+    for (int i = 0; i < 3; i++)
+      m_edge[i] = j["edge"][i];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void FillToRandomColorCoreNode::execute(
+    const std::vector<GenTexture*>& inputs,
+    std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMFillToRandomColor(outputs[0], *in, m_edge[0], m_edge[1], m_edge[2],
+                      m_seed);
+}
+
+// ============================================================
+// FillToColorCoreNode
+// ============================================================
+
+std::vector<std::string> FillToColorCoreNode::inputSlotNames() const {
+  return {"Fill", "Map"};
+}
+std::vector<std::string> FillToColorCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json FillToColorCoreNode::saveParams() const {
+  return {{"edge", {m_edge[0], m_edge[1], m_edge[2], m_edge[3]}}};
+}
+
+void FillToColorCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("edge") && j["edge"].is_array() && j["edge"].size() >= 4)
+    for (int i = 0; i < 4; i++)
+      m_edge[i] = j["edge"][i];
+}
+
+void FillToColorCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                  std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  GenTexture* map =
+      (inputs.size() > 1 && inputs[1] && inputs[1]->Data) ? inputs[1]
+                                                          : nullptr;
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMFillToColor(outputs[0], *in, map, m_edge[0], m_edge[1], m_edge[2],
+                m_edge[3]);
 }

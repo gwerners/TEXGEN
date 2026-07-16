@@ -27,6 +27,9 @@
 // Material Maker ports: layered-material workflow (mwf_*)
 #include "mm_workflow.h"
 
+// Material Maker ports: fill family (region detection + consumers)
+#include "mm_fill.h"
+
 // AGG 2.4 vector drawing bridge (zero-copy rendering into GenTexture)
 #include "agg_gentexture.h"
 

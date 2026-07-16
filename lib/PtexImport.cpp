@@ -105,6 +105,17 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"edge_detect", {"In"}},
       {"mwf_create_map", {"Height", "Offset"}},
       {"mwf_map", {"Map", "C", "ORM", "EM", "NM"}},
+      {"fill", {"In"}},
+      {"fill2", {"In"}},
+      {"fill_to_uv", {"Fill"}},
+      {"fill_to_uv2", {"Fill"}},
+      {"fill_to_random_grey", {"Fill"}},
+      {"fill_to_random_grey2", {"Fill"}},
+      {"fill_to_random_color", {"Fill"}},
+      {"fill_to_random_color2", {"Fill"}},
+      {"fill_to_random_color3", {"Fill"}},
+      {"fill_to_color", {"Fill", "Map"}},
+      {"fill_to_color2", {"Fill", "Map"}},
   };
   return m;
 }
@@ -521,6 +532,39 @@ bool convertParams(const std::string &type, const json &p,
     out = json::object();
     return true;
   }
+  if (type == "fill" || type == "fill2") {
+    typeName = "Fill";
+    out = json::object();
+    return true;
+  }
+  if (type == "fill_to_uv" || type == "fill_to_uv2") {
+    typeName = "FillToUV";
+    out = {{"mode", intOr(p, "mode", 0)}, {"seed", numOr(p, "seed", 0.0f)}};
+    return true;
+  }
+  if (type == "fill_to_random_grey" || type == "fill_to_random_grey2") {
+    typeName = "FillToRandomGray";
+    out = {{"edgecolor", numOr(p, "edgecolor", 1.0f)},
+           {"seed", numOr(p, "seed", 0.0f)}};
+    return true;
+  }
+  if (type == "fill_to_random_color" || type == "fill_to_random_color2" ||
+      type == "fill_to_random_color3") {
+    typeName = "FillToRandomColor";
+    json ec = p.value("edgecolor", json::object());
+    out = {{"edge",
+            {numOr(ec, "r", 1.0f), numOr(ec, "g", 1.0f), numOr(ec, "b", 1.0f)}},
+           {"seed", numOr(p, "seed", 0.0f)}};
+    return true;
+  }
+  if (type == "fill_to_color" || type == "fill_to_color2") {
+    typeName = "FillToColor";
+    json ec = p.value("edgecolor", json::object());
+    out = {{"edge",
+            {numOr(ec, "r", 1.0f), numOr(ec, "g", 1.0f), numOr(ec, "b", 1.0f),
+             numOr(ec, "a", 1.0f)}}};
+    return true;
+  }
   if (type == "slope_blur") {
     // graph macro: param0=size, param1=sigma
     typeName = "SlopeBlur";
@@ -791,8 +835,15 @@ GraphResult convertGraph(json mmNodes, json mmConns,
   // they legitimately run on their defaults (e.g. math).
   {
     static const std::set<std::string> prunable = {
-        "scale", "translate", "tiler",   "splatter",
-        "math",  "slope_blur", "multi_warp"};
+        "scale",        "translate",
+        "tiler",        "splatter",
+        "math",         "slope_blur",
+        "multi_warp",   "fill",
+        "fill2",        "fill_to_uv",
+        "fill_to_uv2",  "fill_to_random_grey",
+        "fill_to_random_grey2", "fill_to_random_color",
+        "fill_to_random_color2", "fill_to_random_color3",
+        "fill_to_color", "fill_to_color2"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));

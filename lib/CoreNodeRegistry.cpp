@@ -103,6 +103,15 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
        {"Filter", "Directional gaussian blur along the heightmap slope"}},
       {"Mirror", {"Filter", "Mirrors the input horizontally or vertically"}},
       {"EdgeDetect", {"Filter", "Detects edges by local color distance"}},
+      {"Fill",
+       {"Filter", "Detects regions and encodes their bounding boxes"}},
+      {"FillToUV", {"Filter", "Local UVs inside each detected region"}},
+      {"FillToRandomGray",
+       {"Filter", "Random grey value per detected region"}},
+      {"FillToRandomColor",
+       {"Filter", "Random color per detected region"}},
+      {"FillToColor",
+       {"Filter", "Samples a map at each region's center"}},
       {"Tiler",
        {"Filter", "Scatters jittered copies of the input in a grid"}},
       // Combiners
@@ -217,6 +226,11 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<EdgeDetectCoreNode>(r);
     registerType<CreateMapCoreNode>(r);
     registerType<MatMapCoreNode>(r);
+    registerType<FillCoreNode>(r);
+    registerType<FillToUVCoreNode>(r);
+    registerType<FillToRandomGrayCoreNode>(r);
+    registerType<FillToRandomColorCoreNode>(r);
+    registerType<FillToColorCoreNode>(r);
     // Structural
     registerType<SubgraphCoreNode>(r);
     registerType<RemoteCoreNode>(r);

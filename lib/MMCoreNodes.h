@@ -473,6 +473,87 @@ class MultiWarpCoreNode : public CoreNode {
 };
 
 // ============================================================
+// FillCoreNode — region detection into a fill map (fill.mmg)
+// ============================================================
+class FillCoreNode : public CoreNode {
+ public:
+  FillCoreNode() {}
+  std::string typeName() const override { return "Fill"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+};
+
+// ============================================================
+// FillToUVCoreNode — per-region local UVs (fill_to_uv.mmg)
+// ============================================================
+class FillToUVCoreNode : public CoreNode {
+ public:
+  FillToUVCoreNode() {}
+  std::string typeName() const override { return "FillToUV"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_mode = 0;  // 0 stretch, 1 square
+  float m_seed = 0.0f;
+};
+
+// ============================================================
+// FillToRandomGrayCoreNode / FillToRandomColorCoreNode
+// ============================================================
+class FillToRandomGrayCoreNode : public CoreNode {
+ public:
+  FillToRandomGrayCoreNode() {}
+  std::string typeName() const override { return "FillToRandomGray"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_edgecolor = 1.0f;
+  float m_seed = 0.0f;
+};
+
+class FillToRandomColorCoreNode : public CoreNode {
+ public:
+  FillToRandomColorCoreNode() {}
+  std::string typeName() const override { return "FillToRandomColor"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_edge[3] = {1.0f, 1.0f, 1.0f};
+  float m_seed = 0.0f;
+};
+
+// ============================================================
+// FillToColorCoreNode — sample a map at region centers
+// ============================================================
+class FillToColorCoreNode : public CoreNode {
+ public:
+  FillToColorCoreNode() {}
+  std::string typeName() const override { return "FillToColor"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_edge[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+};
+
+// ============================================================
 // DotNoiseCoreNode — per-cell random dots (noise.mmg)
 // ============================================================
 class DotNoiseCoreNode : public CoreNode {

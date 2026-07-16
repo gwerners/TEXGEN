@@ -378,8 +378,9 @@ void MMShadePreview(GenTexture &out, const GenTexture *albedo,
       const sF32 u = (px + 0.5f) / w;
       const sInt idx = py * w + px;
 
-      sF32 alb[4];
-      sampleChannel(albedo, 1, u, v, alb);
+      sF32 alb[4] = {1.0f, 1.0f, 1.0f, 1.0f}; // MM default albedo: white
+      if (albedo && albedo->Data)
+        sampleRGBA(*albedo, u, v, alb);
       sF32 nrm[4];
       sampleChannel(nm, 4, u, v, nrm);
       const sF32 rough = clamp01(grayAtOr(roughness, u, v, 1.0f));

@@ -909,3 +909,78 @@ std::vector<ImNodes::Ez::SlotInfo> MatMapNode::inputSlotInfos() const {
 std::vector<ImNodes::Ez::SlotInfo> MatMapNode::outputSlotInfos() const {
   return {{"H", 1}, {"C", 1}, {"ORM", 1}, {"EM", 1}, {"NM", 1}};
 }
+
+// ============================================================
+// Fill family
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> FillNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> FillNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+std::vector<ImNodes::Ez::SlotInfo> FillToUVNode::inputSlotInfos() const {
+  return {{"Fill", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> FillToUVNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void FillToUVNode::renderParams() {
+  static const char* modes = "Stretch\0Square\0";
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("Mode##fuv", &m_core.m_mode, modes);
+  Hint("Square keeps the region aspect ratio; Stretch fills the bbox");
+  SliderFloatW("Seed##fuv", &m_core.m_seed, 0.0f, 64.0f);
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> FillToRandomGrayNode::inputSlotInfos()
+    const {
+  return {{"Fill", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> FillToRandomGrayNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void FillToRandomGrayNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Edge##frg", &m_core.m_edgecolor, 0.0f, 1.0f);
+  Hint("Grey level used for the edges between regions");
+  SliderFloatW("Seed##frg", &m_core.m_seed, 0.0f, 64.0f);
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> FillToRandomColorNode::inputSlotInfos()
+    const {
+  return {{"Fill", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> FillToRandomColorNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void FillToRandomColorNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::ColorEdit3("Edge##frc", m_core.m_edge, ImGuiColorEditFlags_NoInputs);
+  Hint("Color used for the edges between regions");
+  SliderFloatW("Seed##frc", &m_core.m_seed, 0.0f, 64.0f);
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> FillToColorNode::inputSlotInfos() const {
+  return {{"Fill", 1}, {"Map", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> FillToColorNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void FillToColorNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::ColorEdit4("Edge##ftc", m_core.m_edge, ImGuiColorEditFlags_NoInputs);
+  Hint("Color used for the edges between regions");
+  ImGui::PopItemWidth();
+}

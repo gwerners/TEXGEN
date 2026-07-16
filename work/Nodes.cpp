@@ -75,11 +75,20 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   registry["DotNoise"] = []() { return std::make_unique<DotNoiseNode>(); };
   registry["Scratches"] = []() { return std::make_unique<ScratchesNode>(); };
   registry["Mirror"] = []() { return std::make_unique<MirrorNode>(); };
-  registry["EdgeDetect"] = []() {
-    return std::make_unique<EdgeDetectNode>();
-  };
+  registry["EdgeDetect"] = []() { return std::make_unique<EdgeDetectNode>(); };
   registry["CreateMap"] = []() { return std::make_unique<CreateMapNode>(); };
   registry["MatMap"] = []() { return std::make_unique<MatMapNode>(); };
+  registry["Fill"] = []() { return std::make_unique<FillNode>(); };
+  registry["FillToUV"] = []() { return std::make_unique<FillToUVNode>(); };
+  registry["FillToRandomGray"] = []() {
+    return std::make_unique<FillToRandomGrayNode>();
+  };
+  registry["FillToRandomColor"] = []() {
+    return std::make_unique<FillToRandomColorNode>();
+  };
+  registry["FillToColor"] = []() {
+    return std::make_unique<FillToColorNode>();
+  };
   // Structural
   registry["Subgraph"] = []() { return std::make_unique<SubgraphNode>(); };
   registry["Remote"] = []() { return std::make_unique<RemoteNode>(); };

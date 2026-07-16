@@ -12,6 +12,7 @@ set(TEXGEN_LIB_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/mm_sdf.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/mm_filters.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/mm_workflow.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mm_fill.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/MMCoreNodes.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/GraphEval.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/PtexImport.cpp

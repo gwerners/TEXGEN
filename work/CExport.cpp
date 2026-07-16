@@ -254,8 +254,8 @@ static void emitNode(std::ostringstream& ss,
     if (src >= 0) {
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
       ss << "    " << v << ".Blur(" << in << ", " << pf(p, "sizex", 0.01f)
-         << ", " << pf(p, "sizey", 0.01f) << ", " << p.value("order", 2)
-         << ", " << p.value("mode", 0) << ");\n";
+         << ", " << pf(p, "sizey", 0.01f) << ", " << p.value("order", 2) << ", "
+         << p.value("mode", 0) << ");\n";
     } else {
       ss << "    " << v << ".Init(256, 256);\n";
     }
@@ -1016,8 +1016,8 @@ static void emitNode(std::ostringstream& ss,
     ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
     ss << "    MMDotNoise(" << v << ", " << p.value("grid", 256) << ", "
        << pf(p, "density", 0.5f) << ", "
-       << (dens.empty() ? "nullptr" : "&" + dens) << ", "
-       << pf(p, "seed", 0.0f) << ");\n";
+       << (dens.empty() ? "nullptr" : "&" + dens) << ", " << pf(p, "seed", 0.0f)
+       << ");\n";
   }
 
   else if (type == "Scratches") {
@@ -1064,9 +1064,8 @@ static void emitNode(std::ostringstream& ss,
     ss << "    GenTexture " << v << ";\n";
     ss << "    " << v << ".Init("
        << (sz.empty() ? "256, 256" : sz + ".XRes, " + sz + ".YRes") << ");\n";
-    ss << "    MMCreateMap(" << v << ", "
-       << (h.empty() ? "nullptr" : "&" + h) << ", "
-       << (o.empty() ? "nullptr" : "&" + o) << ", "
+    ss << "    MMCreateMap(" << v << ", " << (h.empty() ? "nullptr" : "&" + h)
+       << ", " << (o.empty() ? "nullptr" : "&" + o) << ", "
        << pf(p, "height", 1.0f) << ", " << pf(p, "angle", 0.0f) << ", "
        << pf(p, "seed", 0.0f) << ");\n";
   }
@@ -1094,6 +1093,73 @@ static void emitNode(std::ostringstream& ss,
       for (int i = 0; i < 4; i++)
         ss << ", " << (srcs[i].empty() ? "nullptr" : "&" + srcs[i]);
       ss << ");\n";
+    }
+  }
+
+  else if (type == "Fill") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMFill(" << v << ", " << in << ");\n";
+    }
+  }
+
+  else if (type == "FillToUV") {
+    std::string in = srcVar(conns, id, "Fill");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMFillToUV(" << v << ", " << in << ", " << p.value("mode", 0)
+         << ", " << pf(p, "seed", 0.0f) << ");\n";
+    }
+  }
+
+  else if (type == "FillToRandomGray") {
+    std::string in = srcVar(conns, id, "Fill");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMFillToRandomGray(" << v << ", " << in << ", "
+         << pf(p, "edgecolor", 1.0f) << ", " << pf(p, "seed", 0.0f) << ");\n";
+    }
+  }
+
+  else if (type == "FillToRandomColor") {
+    std::string in = srcVar(conns, id, "Fill");
+    auto edge = p.value("edge", nlohmann::json::array({1.0, 1.0, 1.0}));
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMFillToRandomColor(" << v << ", " << in << ", "
+         << fmtf(edge[0].get<float>()) << ", " << fmtf(edge[1].get<float>())
+         << ", " << fmtf(edge[2].get<float>()) << ", " << pf(p, "seed", 0.0f)
+         << ");\n";
+    }
+  }
+
+  else if (type == "FillToColor") {
+    std::string in = srcVar(conns, id, "Fill");
+    std::string map = srcVar(conns, id, "Map");
+    auto edge = p.value("edge", nlohmann::json::array({1.0, 1.0, 1.0, 1.0}));
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMFillToColor(" << v << ", " << in << ", "
+         << (map.empty() ? "nullptr" : "&" + map) << ", "
+         << fmtf(edge[0].get<float>()) << ", " << fmtf(edge[1].get<float>())
+         << ", " << fmtf(edge[2].get<float>()) << ", "
+         << fmtf(edge[3].get<float>()) << ");\n";
     }
   }
 
