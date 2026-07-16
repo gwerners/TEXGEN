@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <cstring>
+#include "mm_workflow.h"
 #include "texgen_utils.h"
 
 namespace {
@@ -958,4 +959,95 @@ void InvertCoreNode::execute(const std::vector<GenTexture*>& inputs,
   outputs.resize(1);
   outputs[0].Init(in->XRes, in->YRes);
   MMInvert(outputs[0], *in);
+}
+
+// ============================================================
+// LayerMixCoreNode
+// ============================================================
+
+std::vector<std::string> LayerMixCoreNode::inputSlotNames() const {
+  return {"H1", "C1", "ORM1", "EM1", "NM1",
+          "H2", "C2", "ORM2", "EM2", "NM2"};
+}
+std::vector<std::string> LayerMixCoreNode::outputSlotNames() const {
+  return {"H", "C", "ORM", "EM", "NM"};
+}
+
+nlohmann::json LayerMixCoreNode::saveParams() const {
+  return {{"mode", m_mode}, {"width", m_width}};
+}
+
+void LayerMixCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("mode"))
+    m_mode = j["mode"];
+  if (j.contains("width"))
+    m_width = j["width"];
+}
+
+void LayerMixCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                               std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> const GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  int w = 256, h = 256;
+  for (size_t i = 0; i < 10; i++)
+    if (const GenTexture* t = get(i)) {
+      w = t->XRes;
+      h = t->YRes;
+      break;
+    }
+  outputs.resize(5);
+  GenTexture* outs[5];
+  for (int i = 0; i < 5; i++) {
+    outputs[i].Init(w, h);
+    outs[i] = &outputs[i];
+  }
+  const GenTexture* l1[5] = {get(0), get(1), get(2), get(3), get(4)};
+  const GenTexture* l2[5] = {get(5), get(6), get(7), get(8), get(9)};
+  MMLayerMix(outs, l1, l2, m_mode, m_width);
+}
+
+// ============================================================
+// WorkflowOutputCoreNode
+// ============================================================
+
+std::vector<std::string> WorkflowOutputCoreNode::inputSlotNames() const {
+  return {"Height", "Albedo", "ORM", "Emission", "Normal"};
+}
+std::vector<std::string> WorkflowOutputCoreNode::outputSlotNames() const {
+  return {"Albedo",  "Metallic",  "Roughness", "Emission",
+          "Normal",  "Occlusion", "Depth"};
+}
+
+nlohmann::json WorkflowOutputCoreNode::saveParams() const {
+  return {{"matNormal", m_matNormal}, {"occlusion", m_occlusion}};
+}
+
+void WorkflowOutputCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("matNormal"))
+    m_matNormal = j["matNormal"];
+  if (j.contains("occlusion"))
+    m_occlusion = j["occlusion"];
+}
+
+void WorkflowOutputCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                     std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> const GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  int w = 256, h = 256;
+  for (size_t i = 0; i < 5; i++)
+    if (const GenTexture* t = get(i)) {
+      w = t->XRes;
+      h = t->YRes;
+      break;
+    }
+  outputs.resize(7);
+  for (int i = 0; i < 7; i++)
+    outputs[i].Init(w, h);
+  MMWorkflowOutput(outputs[0], outputs[1], outputs[2], outputs[3], outputs[4],
+                   outputs[5], outputs[6], get(0), get(1), get(2), get(3),
+                   get(4), m_matNormal, m_occlusion);
 }

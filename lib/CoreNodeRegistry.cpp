@@ -107,6 +107,10 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
       // Material
       {"Material",
        {"Material", "PBR material: albedo, normal, roughness, metallic..."}},
+      {"LayerMix",
+       {"Material", "Mixes two material layers by height (hard or smooth)"}},
+      {"WorkflowOutput",
+       {"Material", "Unpacks a material bundle into PBR maps"}},
       // Structure
       {"Subgraph",
        {"Structure", "Nested node graph with exposed input/output ports"}},
@@ -183,6 +187,8 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<CombineCoreNode>(r);
     registerType<DecomposeCoreNode>(r);
     registerType<InvertCoreNode>(r);
+    registerType<LayerMixCoreNode>(r);
+    registerType<WorkflowOutputCoreNode>(r);
     // Structural
     registerType<SubgraphCoreNode>(r);
     registerType<RemoteCoreNode>(r);

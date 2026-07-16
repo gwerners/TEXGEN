@@ -824,6 +824,69 @@ static void emitNode(std::ostringstream& ss,
     }
   }
 
+  else if (type == "LayerMix") {
+    static const char* outSlots[5] = {"H", "C", "ORM", "EM", "NM"};
+    static const char* inSlots[10] = {"H1", "C1", "ORM1", "EM1", "NM1",
+                                      "H2", "C2", "ORM2", "EM2", "NM2"};
+    std::string srcs[10], sizeRef;
+    for (int i = 0; i < 10; i++) {
+      srcs[i] = srcVar(conns, id, inSlots[i]);
+      if (sizeRef.empty() && !srcs[i].empty())
+        sizeRef = srcs[i];
+    }
+    std::string dims =
+        sizeRef.empty() ? "256, 256" : sizeRef + ".XRes, " + sizeRef + ".YRes";
+    ss << "    GenTexture";
+    for (int i = 0; i < 5; i++)
+      ss << (i ? "," : "") << " " << v << "_" << outSlots[i];
+    ss << ";\n";
+    for (int i = 0; i < 5; i++)
+      ss << "    " << v << "_" << outSlots[i] << ".Init(" << dims << ");\n";
+    ss << "    { GenTexture* outs[5] = {";
+    for (int i = 0; i < 5; i++)
+      ss << (i ? ", " : "") << "&" << v << "_" << outSlots[i];
+    ss << "};\n";
+    for (int half = 0; half < 2; half++) {
+      ss << "      const GenTexture* l" << (half + 1) << "[5] = {";
+      for (int i = 0; i < 5; i++) {
+        const std::string& s = srcs[half * 5 + i];
+        ss << (i ? ", " : "") << (s.empty() ? "nullptr" : "&" + s);
+      }
+      ss << "};\n";
+    }
+    ss << "      MMLayerMix(outs, l1, l2, " << p.value("mode", 0) << ", "
+       << pf(p, "width", 0.05f) << "); }\n";
+  }
+
+  else if (type == "WorkflowOutput") {
+    static const char* outSlots[7] = {"Albedo",   "Metallic", "Roughness",
+                                      "Emission", "Normal",   "Occlusion",
+                                      "Depth"};
+    static const char* inSlots[5] = {"Height", "Albedo", "ORM", "Emission",
+                                     "Normal"};
+    std::string srcs[5], sizeRef;
+    for (int i = 0; i < 5; i++) {
+      srcs[i] = srcVar(conns, id, inSlots[i]);
+      if (sizeRef.empty() && !srcs[i].empty())
+        sizeRef = srcs[i];
+    }
+    std::string dims =
+        sizeRef.empty() ? "256, 256" : sizeRef + ".XRes, " + sizeRef + ".YRes";
+    ss << "    GenTexture";
+    for (int i = 0; i < 7; i++)
+      ss << (i ? "," : "") << " " << v << "_" << outSlots[i];
+    ss << ";\n";
+    for (int i = 0; i < 7; i++)
+      ss << "    " << v << "_" << outSlots[i] << ".Init(" << dims << ");\n";
+    ss << "    MMWorkflowOutput(";
+    for (int i = 0; i < 7; i++)
+      ss << (i ? ", " : "") << v << "_" << outSlots[i];
+    for (int i = 0; i < 5; i++)
+      ss << ", " << (srcs[i].empty() ? "nullptr" : "&" + srcs[i]);
+    ss << ", " << pf(p, "matNormal", 1.0f) << ", " << pf(p, "occlusion", 1.0f)
+       << ");\n";
+  }
+
   else if (type == "SdfShape") {
     int w = sizeFromIdx(p.value("widthIdx", 3));
     int h = sizeFromIdx(p.value("heightIdx", 3));

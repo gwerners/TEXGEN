@@ -146,3 +146,17 @@ class InvertNode : public UiNode<InvertCoreNode> {
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
 };
+
+class LayerMixNode : public UiNode<LayerMixCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class WorkflowOutputNode : public UiNode<WorkflowOutputCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};

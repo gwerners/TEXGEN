@@ -88,6 +88,11 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"make_tileable", {"In"}},
       {"emboss", {"In"}},
       {"quantize", {"In"}},
+      {"mwf_mix",
+       {"H1", "C1", "ORM1", "EM1", "NM1", "H2", "C2", "ORM2", "EM2", "NM2"}},
+      {"mwf_mix_smooth",
+       {"H1", "C1", "ORM1", "EM1", "NM1", "H2", "C2", "ORM2", "EM2", "NM2"}},
+      {"mwf_output", {"Height", "Albedo", "ORM", "Emission", "Normal"}},
   };
   return m;
 }
@@ -98,6 +103,11 @@ const std::map<std::string, std::vector<std::string>> &portsOut() {
       {"voronoi", {"F1", "Edge", "Color", ""}},
       {"voronoi2", {"F1", "Edge", ""}},
       {"decompose", {"R", "G", "B", "A"}},
+      {"mwf_mix", {"H", "C", "ORM", "EM", "NM"}},
+      {"mwf_mix_smooth", {"H", "C", "ORM", "EM", "NM"}},
+      {"mwf_output",
+       {"Albedo", "Metallic", "Roughness", "Emission", "Normal", "Occlusion",
+        "Depth"}},
   };
   return m;
 }
@@ -399,6 +409,19 @@ bool convertParams(const std::string &type, const json &p,
       type == "material_unlit") {
     typeName = "Material";
     out = {{"baseName", baseName}};
+    return true;
+  }
+  if (type == "mwf_mix" || type == "mwf_mix_smooth") {
+    typeName = "LayerMix";
+    out = {{"mode", type == "mwf_mix" ? 0 : 1},
+           {"width", numOr(p, "width", 0.05f)}};
+    return true;
+  }
+  if (type == "mwf_output") {
+    // param0 = material-normal weight, param2 = occlusion strength
+    typeName = "WorkflowOutput";
+    out = {{"matNormal", numOr(p, "param0", 1.0f)},
+           {"occlusion", numOr(p, "param2", 1.0f)}};
     return true;
   }
   return false;

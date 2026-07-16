@@ -381,3 +381,41 @@ class InvertCoreNode : public CoreNode {
   void execute(const std::vector<GenTexture*>& inputs,
                std::vector<GenTexture>& outputs) override;
 };
+
+// ============================================================
+// LayerMixCoreNode — height-based mix of two material layers
+// (Material Maker mwf_mix / mwf_mix_smooth)
+// ============================================================
+class LayerMixCoreNode : public CoreNode {
+ public:
+  LayerMixCoreNode() {}
+  std::string typeName() const override { return "LayerMix"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_mode = 0; // 0 = hard max-height select, 1 = smooth blend
+  float m_width = 0.05f;
+};
+
+// ============================================================
+// WorkflowOutputCoreNode — material bundle to PBR maps
+// (Material Maker mwf_output)
+// ============================================================
+class WorkflowOutputCoreNode : public CoreNode {
+ public:
+  WorkflowOutputCoreNode() {}
+  std::string typeName() const override { return "WorkflowOutput"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_matNormal = 1.0f;  // weight of the bundle normal
+  float m_occlusion = 1.0f;  // AO strength
+};

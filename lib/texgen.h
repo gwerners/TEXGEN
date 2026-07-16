@@ -24,6 +24,9 @@
 #include "mm_filters.h"
 #include "mm_sdf.h"
 
+// Material Maker ports: layered-material workflow (mwf_*)
+#include "mm_workflow.h"
+
 // AGG 2.4 vector drawing bridge (zero-copy rendering into GenTexture)
 #include "agg_gentexture.h"
 

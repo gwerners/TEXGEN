@@ -563,3 +563,53 @@ std::vector<ImNodes::Ez::SlotInfo> InvertNode::inputSlotInfos() const {
 std::vector<ImNodes::Ez::SlotInfo> InvertNode::outputSlotInfos() const {
   return {{"Out", 1}};
 }
+
+// ============================================================
+// LayerMixNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> LayerMixNode::inputSlotInfos() const {
+  return {{"H1", 1}, {"C1", 1}, {"ORM1", 1}, {"EM1", 1}, {"NM1", 1},
+          {"H2", 1}, {"C2", 1}, {"ORM2", 1}, {"EM2", 1}, {"NM2", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> LayerMixNode::outputSlotInfos() const {
+  return {{"H", 1}, {"C", 1}, {"ORM", 1}, {"EM", 1}, {"NM", 1}};
+}
+
+void LayerMixNode::renderParams() {
+  static const char* modes = "Hard (max height)\0Smooth\0";
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("Mode##lm", &m_core.m_mode, modes);
+  Hint(
+      "Hard picks the layer with the highest height per pixel;\n"
+      "Smooth blends across the height difference");
+  if (m_core.m_mode == 1) {
+    SliderFloatW("Width##lm", &m_core.m_width, 0.001f, 0.5f);
+    Hint("Blend width (height difference range)");
+  }
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// WorkflowOutputNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> WorkflowOutputNode::inputSlotInfos() const {
+  return {
+      {"Height", 1}, {"Albedo", 1}, {"ORM", 1}, {"Emission", 1}, {"Normal", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> WorkflowOutputNode::outputSlotInfos() const {
+  return {{"Albedo", 1}, {"Metallic", 1},  {"Roughness", 1}, {"Emission", 1},
+          {"Normal", 1}, {"Occlusion", 1}, {"Depth", 1}};
+}
+
+void WorkflowOutputNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Mat Normal##wo", &m_core.m_matNormal, 0.0f, 2.0f);
+  Hint(
+      "Weight of the material normals relative to the normal\n"
+      "generated from the height input");
+  SliderFloatW("Occlusion##wo", &m_core.m_occlusion, 0.0f, 4.0f);
+  Hint("Strength of the ambient occlusion approximated from height");
+  ImGui::PopItemWidth();
+}
