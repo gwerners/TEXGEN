@@ -68,12 +68,18 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
     return std::make_unique<WorkflowOutputNode>();
   };
   registry["MathOp"] = []() { return std::make_unique<MathOpNode>(); };
-  registry["GradientMM"] = []() {
-    return std::make_unique<GradientMMNode>();
-  };
+  registry["GradientMM"] = []() { return std::make_unique<GradientMMNode>(); };
   registry["Tiler"] = []() { return std::make_unique<TilerNode>(); };
   registry["MultiWarp"] = []() { return std::make_unique<MultiWarpNode>(); };
   registry["SlopeBlur"] = []() { return std::make_unique<SlopeBlurNode>(); };
+  registry["DotNoise"] = []() { return std::make_unique<DotNoiseNode>(); };
+  registry["Scratches"] = []() { return std::make_unique<ScratchesNode>(); };
+  registry["Mirror"] = []() { return std::make_unique<MirrorNode>(); };
+  registry["EdgeDetect"] = []() {
+    return std::make_unique<EdgeDetectNode>();
+  };
+  registry["CreateMap"] = []() { return std::make_unique<CreateMapNode>(); };
+  registry["MatMap"] = []() { return std::make_unique<MatMapNode>(); };
   // Structural
   registry["Subgraph"] = []() { return std::make_unique<SubgraphNode>(); };
   registry["Remote"] = []() { return std::make_unique<RemoteNode>(); };

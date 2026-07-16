@@ -776,3 +776,127 @@ void SlopeBlurNode::renderParams() {
   Hint("Blur strength, scaled by the local slope");
   ImGui::PopItemWidth();
 }
+
+// ============================================================
+// DotNoiseNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> DotNoiseNode::inputSlotInfos() const {
+  return {{"Density", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> DotNoiseNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void DotNoiseNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##dn", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##dn", &m_core.m_heightIdx, s_sizesStr);
+  ImGui::SliderInt("Grid##dn", &m_core.m_grid, 2, 2048);
+  Hint("Number of random cells per axis");
+  SliderFloatW("Density##dn", &m_core.m_density, 0.0f, 1.0f);
+  Hint("Probability of a cell being white (Density input overrides)");
+  SliderFloatW("Seed##dn", &m_core.m_seed, 0.0f, 64.0f);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// ScratchesNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> ScratchesNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> ScratchesNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void ScratchesNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##scr", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##scr", &m_core.m_heightIdx, s_sizesStr);
+  ImGui::SliderInt("Layers##scr", &m_core.m_layers, 1, 16);
+  Hint("Number of scratch layers (max composited)");
+  SliderFloatW("Length##scr", &m_core.m_length, 0.01f, 1.0f);
+  SliderFloatW("Width##scr", &m_core.m_width, 0.001f, 1.0f);
+  SliderFloatW("Waviness##scr", &m_core.m_waviness, 0.0f, 1.0f);
+  SliderFloatW("Angle##scr", &m_core.m_angle, -180.0f, 180.0f);
+  SliderFloatW("Randomness##scr", &m_core.m_randomness, 0.0f, 1.0f);
+  Hint("Random angle variation per scratch");
+  SliderFloatW("Seed##scr", &m_core.m_seed, 0.0f, 64.0f);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// MirrorNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> MirrorNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> MirrorNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void MirrorNode::renderParams() {
+  static const char* dirs = "Horizontal\0Vertical\0";
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("Direction##mir", &m_core.m_direction, dirs);
+  SliderFloatW("Offset##mir", &m_core.m_offset, -1.0f, 1.0f);
+  Hint("Offset of the mirror axis from the center");
+  ImGui::Checkbox("Flip sides##mir", &m_core.m_flipSides);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// EdgeDetectNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> EdgeDetectNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> EdgeDetectNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void EdgeDetectNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Size##ed", &m_core.m_size, 16.0f, 2048.0f);
+  Hint("Sampling distance (1/size texels)");
+  ImGui::SliderInt("Width##ed", &m_core.m_width, 1, 32);
+  Hint("Edge thickness in rings");
+  SliderFloatW("Threshold##ed", &m_core.m_threshold, 0.0f, 1.0f);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// CreateMapNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> CreateMapNode::inputSlotInfos() const {
+  return {{"Height", 1}, {"Offset", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> CreateMapNode::outputSlotInfos() const {
+  return {{"Map", 1}};
+}
+
+void CreateMapNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Height##cm", &m_core.m_height, 0.0f, 2.0f);
+  Hint("Height scale packed into the map");
+  SliderFloatW("Angle##cm", &m_core.m_angle, -180.0f, 180.0f);
+  Hint("Rotation applied by the MatMap consumer");
+  SliderFloatW("Seed##cm", &m_core.m_seed, 0.0f, 64.0f);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// MatMapNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> MatMapNode::inputSlotInfos() const {
+  return {{"Map", 1}, {"C", 1}, {"ORM", 1}, {"EM", 1}, {"NM", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> MatMapNode::outputSlotInfos() const {
+  return {{"H", 1}, {"C", 1}, {"ORM", 1}, {"EM", 1}, {"NM", 1}};
+}

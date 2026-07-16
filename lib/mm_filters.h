@@ -74,3 +74,12 @@ void MMTiler(GenTexture &out, GenTexture *outColor, const GenTexture &in,
 // direction, with sigma scaled by the local slope strength.
 void MMSlopeBlur(GenTexture &out, const GenTexture &in,
                  const GenTexture &height, sF32 size, sF32 sigma);
+
+// UV mirror (mirror.mmg). direction: 0 horizontal, 1 vertical.
+void MMMirror(GenTexture &out, const GenTexture &in, sInt direction,
+              sF32 offset, bool flipSides);
+
+// Edge detection (edge_detect.mmg): 8-direction color-distance sum at
+// 1/size texel steps, 'width' rings, thresholded to a hard mask.
+void MMEdgeDetect(GenTexture &out, const GenTexture &in, sF32 size,
+                  sInt width, sF32 threshold);

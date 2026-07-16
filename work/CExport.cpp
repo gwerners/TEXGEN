@@ -249,25 +249,31 @@ static void emitNode(std::ostringstream& ss,
 
   else if (type == "Blur") {
     int src = findInputSource(conns, id, "In");
-    std::string in = (src >= 0) ? srcVar(conns, id, "In") : v;
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
     if (src >= 0) {
-      ss << "    GenTexture " << v << ";\n";
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    " << v << ".Blur(" << in << ", " << pf(p, "sizex", 0.01f)
+         << ", " << pf(p, "sizey", 0.01f) << ", " << p.value("order", 2)
+         << ", " << p.value("mode", 0) << ");\n";
+    } else {
+      ss << "    " << v << ".Init(256, 256);\n";
     }
-    ss << "    " << v << ".Blur(" << in << ", " << pf(p, "sizex", 0.01f) << ", "
-       << pf(p, "sizey", 0.01f) << ", " << p.value("order", 2) << ", "
-       << p.value("mode", 0) << ");\n";
   }
 
   else if (type == "BlurKernel") {
     int src = findInputSource(conns, id, "In");
-    std::string in = (src >= 0) ? srcVar(conns, id, "In") : v;
+    std::string in = srcVar(conns, id, "In");
     ss << "    GenTexture " << v << ";\n";
-    if (src >= 0)
+    if (src >= 0) {
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
-    ss << "    BlurKernel(" << v << ", " << in << ", "
-       << pf(p, "radiusX", 0.01f) << ", " << pf(p, "radiusY", 0.01f) << ", "
-       << p.value("kernelType", 2) << ", " << p.value("wrapMode", 0) << ");\n";
+      ss << "    BlurKernel(" << v << ", " << in << ", "
+         << pf(p, "radiusX", 0.01f) << ", " << pf(p, "radiusY", 0.01f) << ", "
+         << p.value("kernelType", 2) << ", " << p.value("wrapMode", 0)
+         << ");\n";
+    } else {
+      ss << "    " << v << ".Init(256, 256);\n";
+    }
   }
 
   else if (type == "HSCB") {
@@ -276,6 +282,8 @@ static void emitNode(std::ostringstream& ss,
     ss << "    GenTexture " << v << ";\n";
     if (src >= 0)
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+    else
+      ss << "    " << v << ".Init(256, 256);\n";
     ss << "    HSCB(" << v << ", " << in << ", " << pf(p, "hue", 0.0f) << ", "
        << pf(p, "sat", 1.0f) << ", " << pf(p, "contrast", 1.0f) << ", "
        << pf(p, "brightness", 1.0f) << ");\n";
@@ -287,6 +295,8 @@ static void emitNode(std::ostringstream& ss,
     ss << "    GenTexture " << v << ";\n";
     if (src >= 0)
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+    else
+      ss << "    " << v << ".Init(256, 256);\n";
     ss << "    " << v << ".Derive(" << in << ", " << p.value("op", 0) << ", "
        << pf(p, "strength", 1.0f) << ");\n";
   }
@@ -297,6 +307,8 @@ static void emitNode(std::ostringstream& ss,
     ss << "    GenTexture " << v << ";\n";
     if (src >= 0)
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+    else
+      ss << "    " << v << ".Init(256, 256);\n";
     ss << "    { Matrix44 m = {";
     for (int i = 0; i < 16; i++) {
       std::string key = "m" + std::to_string(i);
@@ -379,6 +391,8 @@ static void emitNode(std::ostringstream& ss,
     if (s1 >= 0)
       ss << "    " << v << ".Init(" << srcVar(conns, id, "Image1") << ".XRes, "
          << srcVar(conns, id, "Image1") << ".YRes);\n";
+    else
+      ss << "    " << v << ".Init(256, 256);\n";
     std::string i1 = (s1 >= 0) ? srcVar(conns, id, "Image1") : v;
     std::string i2 = (s2 >= 0) ? srcVar(conns, id, "Image2") : v;
     std::string mask = (sm >= 0) ? srcVar(conns, id, "Mask") : v;
@@ -391,6 +405,8 @@ static void emitNode(std::ostringstream& ss,
     ss << "    GenTexture " << v << ";\n";
     if (src >= 0)
       ss << "    " << v << " = " << srcVar(conns, id, "In") << ";\n";
+    else
+      ss << "    " << v << ".Init(256, 256);\n";
     ss << "    Wavelet(" << v << ", " << p.value("mode", 0) << ", "
        << p.value("count", 1) << ");\n";
   }
@@ -895,9 +911,8 @@ static void emitNode(std::ostringstream& ss,
     ss << "    " << v << ".Init("
        << (sz.empty() ? "256, 256" : sz + ".XRes, " + sz + ".YRes") << ");\n";
     ss << "    MMMath(" << v << ", " << (a.empty() ? "nullptr" : "&" + a)
-       << ", " << (b.empty() ? "nullptr" : "&" + b) << ", "
-       << p.value("op", 0) << ", " << pf(p, "def1", 0.0f) << ", "
-       << pf(p, "def2", 0.0f) << ", "
+       << ", " << (b.empty() ? "nullptr" : "&" + b) << ", " << p.value("op", 0)
+       << ", " << pf(p, "def1", 0.0f) << ", " << pf(p, "def2", 0.0f) << ", "
        << (p.value("clamp", false) ? "true" : "false") << ");\n";
   }
 
@@ -931,18 +946,16 @@ static void emitNode(std::ostringstream& ss,
       ss << "    " << v << "_Out.Init(256, 256); " << v
          << "_Color.Init(256, 256);\n";
     } else {
-      ss << "    " << v << "_Out.Init(" << in << ".XRes, " << in
-         << ".YRes); " << v << "_Color.Init(" << in << ".XRes, " << in
-         << ".YRes);\n";
+      ss << "    " << v << "_Out.Init(" << in << ".XRes, " << in << ".YRes); "
+         << v << "_Color.Init(" << in << ".XRes, " << in << ".YRes);\n";
       ss << "    MMTiler(" << v << "_Out, &" << v << "_Color, " << in << ", "
-         << (mask.empty() ? "nullptr" : "&" + mask) << ", "
-         << pf(p, "tx", 4.0f) << ", " << pf(p, "ty", 4.0f) << ", "
-         << p.value("overlap", 1) << ", " << p.value("inputs", 1) << ", "
-         << pf(p, "scaleX", 1.0f) << ", " << pf(p, "scaleY", 1.0f) << ", "
-         << pf(p, "fixedOffset", 0.0f) << ", " << pf(p, "offset", 0.5f)
-         << ", " << pf(p, "rotate", 0.0f) << ", " << pf(p, "scale", 0.0f)
-         << ", " << pf(p, "value", 0.0f) << ", " << pf(p, "seed", 0.0f)
-         << ");\n";
+         << (mask.empty() ? "nullptr" : "&" + mask) << ", " << pf(p, "tx", 4.0f)
+         << ", " << pf(p, "ty", 4.0f) << ", " << p.value("overlap", 1) << ", "
+         << p.value("inputs", 1) << ", " << pf(p, "scaleX", 1.0f) << ", "
+         << pf(p, "scaleY", 1.0f) << ", " << pf(p, "fixedOffset", 0.0f) << ", "
+         << pf(p, "offset", 0.5f) << ", " << pf(p, "rotate", 0.0f) << ", "
+         << pf(p, "scale", 0.0f) << ", " << pf(p, "value", 0.0f) << ", "
+         << pf(p, "seed", 0.0f) << ");\n";
     }
   }
 
@@ -970,6 +983,95 @@ static void emitNode(std::ostringstream& ss,
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
       ss << "    MMSlopeBlur(" << v << ", " << in << ", " << hm << ", "
          << pf(p, "size", 9.0f) << ", " << pf(p, "sigma", 0.5f) << ");\n";
+    }
+  }
+
+  else if (type == "DotNoise") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    std::string dens = srcVar(conns, id, "Density");
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMDotNoise(" << v << ", " << p.value("grid", 256) << ", "
+       << pf(p, "density", 0.5f) << ", "
+       << (dens.empty() ? "nullptr" : "&" + dens) << ", "
+       << pf(p, "seed", 0.0f) << ");\n";
+  }
+
+  else if (type == "Scratches") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMScratches(" << v << ", " << p.value("layers", 4) << ", "
+       << pf(p, "length", 0.25f) << ", " << pf(p, "width", 0.5f) << ", "
+       << pf(p, "waviness", 0.5f) << ", " << pf(p, "angle", 0.0f) << ", "
+       << pf(p, "randomness", 0.5f) << ", " << pf(p, "seed", 0.0f) << ");\n";
+  }
+
+  else if (type == "Mirror") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMMirror(" << v << ", " << in << ", "
+         << p.value("direction", 0) << ", " << pf(p, "offset", 0.0f) << ", "
+         << (p.value("flipSides", false) ? "true" : "false") << ");\n";
+    }
+  }
+
+  else if (type == "EdgeDetect") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMEdgeDetect(" << v << ", " << in << ", "
+         << pf(p, "size", 512.0f) << ", " << p.value("width", 1) << ", "
+         << pf(p, "threshold", 0.5f) << ");\n";
+    }
+  }
+
+  else if (type == "CreateMap") {
+    std::string h = srcVar(conns, id, "Height");
+    std::string o = srcVar(conns, id, "Offset");
+    std::string sz = !h.empty() ? h : o;
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init("
+       << (sz.empty() ? "256, 256" : sz + ".XRes, " + sz + ".YRes") << ");\n";
+    ss << "    MMCreateMap(" << v << ", "
+       << (h.empty() ? "nullptr" : "&" + h) << ", "
+       << (o.empty() ? "nullptr" : "&" + o) << ", "
+       << pf(p, "height", 1.0f) << ", " << pf(p, "angle", 0.0f) << ", "
+       << pf(p, "seed", 0.0f) << ");\n";
+  }
+
+  else if (type == "MatMap") {
+    static const char* outSlots[5] = {"H", "C", "ORM", "EM", "NM"};
+    static const char* inSlots[4] = {"C", "ORM", "EM", "NM"};
+    std::string map = srcVar(conns, id, "Map");
+    std::string srcs[4];
+    for (int i = 0; i < 4; i++)
+      srcs[i] = srcVar(conns, id, inSlots[i]);
+    ss << "    GenTexture";
+    for (int i = 0; i < 5; i++)
+      ss << (i ? "," : "") << " " << v << "_" << outSlots[i];
+    ss << ";\n";
+    std::string dims =
+        map.empty() ? "256, 256" : map + ".XRes, " + map + ".YRes";
+    for (int i = 0; i < 5; i++)
+      ss << "    " << v << "_" << outSlots[i] << ".Init(" << dims << ");\n";
+    if (!map.empty()) {
+      ss << "    MMMatMap(";
+      for (int i = 0; i < 5; i++)
+        ss << (i ? ", " : "") << v << "_" << outSlots[i];
+      ss << ", " << map;
+      for (int i = 0; i < 4; i++)
+        ss << ", " << (srcs[i].empty() ? "nullptr" : "&" + srcs[i]);
+      ss << ");\n";
     }
   }
 

@@ -29,3 +29,17 @@ void MMWorkflowOutput(GenTexture &albedo, GenTexture &metallic,
                       const GenTexture *emissionIn,
                       const GenTexture *normalIn, sF32 matNormal,
                       sF32 occStrength);
+
+// Placement map for the workflow scatter (mwf_create_map.mmg):
+// rgb = (height * h(uv), angle packed into [0,1], rand(seed + o(uv))).
+void MMCreateMap(GenTexture &out, const GenTexture *h, const GenTexture *o,
+                 sF32 height, sF32 angleDeg, sF32 seed);
+
+// Applies a placement map to a material bundle (mwf_map.mmg): each
+// pixel samples the four material channels at a rotated/offset UV
+// driven by the map (y = angle, z = random offset); the normal map is
+// counter-rotated. outH receives the map height (x channel).
+void MMMatMap(GenTexture &outH, GenTexture &outC, GenTexture &outORM,
+              GenTexture &outEM, GenTexture &outNM, const GenTexture &map,
+              const GenTexture *mat1, const GenTexture *mat2,
+              const GenTexture *mat3, const GenTexture *mat4);

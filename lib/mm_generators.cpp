@@ -936,3 +936,86 @@ void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
     }
   }
 }
+
+// Dot noise (noise.mmg).
+void MMDotNoise(GenTexture &out, sInt gridSize, sF32 density,
+                const GenTexture *densityIn, sF32 seed) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (gridSize < 1)
+    gridSize = 1;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      const sF32 cu = floorf(u * gridSize) / gridSize;
+      const sF32 cv = floorf(v * gridSize) / gridSize;
+      sF32 d = density;
+      if (densityIn && densityIn->Data)
+        d = sampleGrayBilinearWrap(*densityIn, cu, cv);
+      const sF32 r = mmRand(cu + seed, cv + seed);
+      gray16(out.Data[py * w + px], r < d ? 1.0f : 0.0f);
+    }
+  }
+}
+
+// One scratch layer (old_scratch in scratches.mmg).
+static sF32 mmScratchLayer(sF32 u, sF32 v, sF32 sizeX, sF32 sizeY,
+                           sF32 waviness, sF32 angle, sF32 randomness,
+                           sF32 seedX, sF32 seedY) {
+  const sF32 subdivide = floorf(1.0f / sizeX);
+  const sF32 cut = sizeX * subdivide;
+  u *= subdivide;
+  v *= subdivide;
+  Vec2 r1 = mmRand2(floorf(u) + seedX, floorf(v) + seedY);
+  Vec2 r2 = mmRand2(r1.x, r1.y);
+  u = glslFract(u);
+  v = glslFract(v);
+  const sF32 bx = 10.0f * (u < 1.0f - u ? u : 1.0f - u);
+  const sF32 by = 10.0f * (v < 1.0f - v ? v : 1.0f - v);
+  u = 2.0f * u - 1.0f;
+  v = 2.0f * v - 1.0f;
+  const sF32 a = 6.28318530718f * (angle + (r1.x - 0.5f) * randomness);
+  const sF32 c = cosf(a), s = sinf(a);
+  sF32 ru = c * u + s * v;
+  sF32 rv = s * u - c * v;
+  rv += 2.0f * r1.y - 1.0f;
+  rv += 0.5f * waviness * cosf(2.0f * ru + 6.28318530718f * r2.y);
+  ru /= cut;
+  rv /= subdivide * sizeY;
+  const sF32 border = bx < by ? bx : by;
+  sF32 fall = 1.0f - 1000.0f * rv * rv;
+  if (fall < 0.0f)
+    fall = 0.0f;
+  return border * (1.0f - ru * ru) * fall;
+}
+
+// Scratches generator (scratches.mmg).
+void MMScratches(GenTexture &out, sInt layers, sF32 length, sF32 width,
+                 sF32 waviness, sF32 angleDeg, sF32 randomness, sF32 seed) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (length < 1e-3f)
+    length = 1e-3f;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 sx = seed, sy = 0.0f;
+      sF32 val = 0.0f;
+      for (sInt i = 0; i < layers; i++) {
+        Vec2 s2 = mmRand2(sx, sy);
+        sx = s2.x;
+        sy = s2.y;
+        const sF32 lv = mmScratchLayer(glslFract(u + sx), glslFract(v + sy),
+                                       length, width, waviness,
+                                       angleDeg / 360.0f, randomness, sx, sy);
+        if (lv > val)
+          val = lv;
+      }
+      gray16(out.Data[py * w + px], val > 1.0f ? 1.0f : val);
+    }
+  }
+}

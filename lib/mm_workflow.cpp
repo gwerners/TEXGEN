@@ -234,3 +234,91 @@ void MMWorkflowOutput(GenTexture &albedo, GenTexture &metallic,
     }
   }
 }
+
+namespace {
+
+// MM common.glsl rand/rand2 (same constants as mm_generators.cpp)
+inline sF32 wfFract(sF32 v) { return v - floorf(v); }
+inline sF32 wfMod(sF32 x, sF32 y) { return x - y * floorf(x / y); }
+inline sF32 wfRand(sF32 x, sF32 y) {
+  return wfFract(cosf(wfMod(x * 13.9898f + y * 8.141f, 3.14f)) * 43758.5f);
+}
+inline void wfRand2(sF32 x, sF32 y, sF32 o[2]) {
+  o[0] = wfFract(cosf(wfMod(x * 13.9898f + y * 8.141f, 3.14f)) * 43758.5f);
+  o[1] = wfFract(cosf(wfMod(x * 3.4562f + y * 17.398f, 3.14f)) * 43758.5f);
+}
+
+} // namespace
+
+// Placement map (mwf_create_map.mmg).
+void MMCreateMap(GenTexture &out, const GenTexture *h, const GenTexture *o,
+                 sF32 height, sF32 angleDeg, sF32 seed) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, hh = out.YRes;
+  const sF32 packedAngle = angleDeg * 0.00277777777f + 0.5f;
+  for (sInt py = 0; py < hh; py++) {
+    const sF32 v = (py + 0.5f) / hh;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 c[4];
+      sampleChannel(h, 0, u, v, c);
+      const sF32 hv = grayOf(c);
+      sampleChannel(o, 0, u, v, c);
+      const sF32 ov = grayOf(c);
+      Pixel &p = out.Data[py * w + px];
+      p.r = to16(height * hv);
+      p.g = to16(packedAngle);
+      p.b = to16(wfRand(seed + ov, seed + ov));
+      p.a = 65535;
+    }
+  }
+}
+
+// Placement map application (mwf_map.mmg).
+void MMMatMap(GenTexture &outH, GenTexture &outC, GenTexture &outORM,
+              GenTexture &outEM, GenTexture &outNM, const GenTexture &map,
+              const GenTexture *mat1, const GenTexture *mat2,
+              const GenTexture *mat3, const GenTexture *mat4) {
+  if (!outH.Data || !map.Data)
+    return;
+  const sInt w = outH.XRes, h = outH.YRes;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      const sInt idx = py * w + px;
+      sF32 m[4];
+      sampleRGBA(map, u, v, m);
+
+      // matmap_uv: rotate around center by angle, offset by rand2(z)
+      const sF32 angle = 6.28318530718f * (m[1] - 0.5f);
+      const sF32 ca = cosf(angle), sa = sinf(angle);
+      const sF32 cu = u - 0.5f, cv = v - 0.5f;
+      sF32 rnd[2];
+      wfRand2(m[2], m[2], rnd);
+      const sF32 mu = (cu * ca + cv * sa) + rnd[0];
+      const sF32 mv = (-cu * sa + cv * ca) + rnd[1];
+      const sF32 fu = mu - floorf(mu);
+      const sF32 fv = mv - floorf(mv);
+
+      writeGray(outH, idx, m[0]);
+
+      sF32 c[4];
+      sampleChannel(mat1, 1, fu, fv, c);
+      writePixel(outC, idx, c);
+      sampleChannel(mat2, 2, fu, fv, c);
+      writePixel(outORM, idx, c);
+      sampleChannel(mat3, 3, fu, fv, c);
+      writePixel(outEM, idx, c);
+
+      // matmap_rotate_nm with -angle
+      sampleChannel(mat4, 4, fu, fv, c);
+      const sF32 nx = c[0] - 0.5f, ny = c[1] - 0.5f;
+      const sF32 cb = cosf(-angle), sb = sinf(-angle);
+      sF32 n[4] = {nx * cb + ny * sb + 0.5f, -nx * sb + ny * cb + 0.5f, c[2],
+                   1.0f};
+      writePixel(outNM, idx, n);
+    }
+  }
+}

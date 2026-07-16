@@ -100,6 +100,11 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"scale", {"In"}},
       {"translate", {"In"}},
       {"splatter", {"In", "Mask"}},
+      {"noise", {"Density"}},
+      {"mirror", {"In"}},
+      {"edge_detect", {"In"}},
+      {"mwf_create_map", {"Height", "Offset"}},
+      {"mwf_map", {"Map", "C", "ORM", "EM", "NM"}},
   };
   return m;
 }
@@ -117,6 +122,7 @@ const std::map<std::string, std::vector<std::string>> &portsOut() {
         "Depth"}},
       {"tiler", {"Out", "Color", ""}},
       {"splatter", {"Out", "Color", ""}},
+      {"mwf_map", {"H", "C", "ORM", "EM", "NM"}},
   };
   return m;
 }
@@ -465,6 +471,56 @@ bool convertParams(const std::string &type, const json &p,
            {"mode", intOr(p, "param3", 2)}};
     return true;
   }
+  if (type == "noise") {
+    // MM 'size' params store the exponent (2^n texels)
+    typeName = "DotNoise";
+    int gridExp = intOr(p, "size", 8);
+    out = size3();
+    out["grid"] = 1 << (gridExp < 1 ? 1 : (gridExp > 12 ? 12 : gridExp));
+    out["density"] = numOr(p, "density", 0.5f);
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "scratches") {
+    typeName = "Scratches";
+    out = size3();
+    out["layers"] = intOr(p, "layers", 4);
+    out["length"] = numOr(p, "length", 0.25f);
+    out["width"] = numOr(p, "width", 0.5f);
+    out["waviness"] = numOr(p, "waviness", 0.5f);
+    out["angle"] = numOr(p, "angle", 0.0f);
+    out["randomness"] = numOr(p, "randomness", 0.5f);
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "mirror") {
+    typeName = "Mirror";
+    out = {{"direction", intOr(p, "direction", 0)},
+           {"offset", numOr(p, "offset", 0.0f)},
+           {"flipSides", boolOr(p, "flip_sides", false)}};
+    return true;
+  }
+  if (type == "edge_detect") {
+    typeName = "EdgeDetect";
+    int sizeExp = intOr(p, "size", 9);
+    out = {{"size", (float)(1 << (sizeExp < 1 ? 1 : (sizeExp > 12 ? 12
+                                                                  : sizeExp)))},
+           {"width", intOr(p, "width", 1)},
+           {"threshold", numOr(p, "threshold", 0.5f)}};
+    return true;
+  }
+  if (type == "mwf_create_map") {
+    typeName = "CreateMap";
+    out = {{"height", numOr(p, "height", 1.0f)},
+           {"angle", numOr(p, "angle", 0.0f)},
+           {"seed", numOr(p, "seed", 0.0f)}};
+    return true;
+  }
+  if (type == "mwf_map") {
+    typeName = "MatMap";
+    out = json::object();
+    return true;
+  }
   if (type == "slope_blur") {
     // graph macro: param0=size, param1=sigma
     typeName = "SlopeBlur";
@@ -549,29 +605,45 @@ bool isPassthrough(const std::string &type) {
 }
 
 // Remove passthrough nodes, rewiring their consumers to their source.
+// Also collapses MM switch nodes: output port o resolves to the input
+// feeding port (source * outputs + o).
 void collapsePassthroughs(json &nodes, json &conns) {
   std::set<std::string> pass;
+  std::map<std::string, std::pair<int, int>> switches; // -> source, outputs
   json keptNodes = json::array();
   for (auto &n : nodes) {
-    if (isPassthrough(n.value("type", std::string())))
-      pass.insert(n.value("name", std::string()));
-    else
+    std::string t = n.value("type", std::string());
+    std::string nm = n.value("name", std::string());
+    if (isPassthrough(t)) {
+      pass.insert(nm);
+    } else if (t == "switch") {
+      pass.insert(nm);
+      json p = n.value("parameters", json::object());
+      int outs = intOr(p, "outputs", 1);
+      switches[nm] = {intOr(p, "source", 0), outs < 1 ? 1 : outs};
+    } else {
       keptNodes.push_back(n);
+    }
   }
   if (pass.empty())
     return;
-  // source feeding each passthrough's input port 0
-  std::map<std::string, std::pair<std::string, int>> src;
+  // source feeding each passthrough's input ports
+  std::map<std::pair<std::string, int>, std::pair<std::string, int>> src;
   for (auto &c : conns) {
     std::string to = c.value("to", std::string());
-    if (pass.count(to) && c.value("to_port", 0) == 0)
-      src[to] = {c.value("from", std::string()), c.value("from_port", 0)};
+    if (pass.count(to))
+      src[{to, c.value("to_port", 0)}] = {c.value("from", std::string()),
+                                          c.value("from_port", 0)};
   }
   auto resolve = [&](std::string from,
                      int fromPort) -> std::pair<std::string, int> {
     int guard = 0;
     while (pass.count(from) && guard++ < 64) {
-      auto it = src.find(from);
+      int wanted = 0;
+      auto sw = switches.find(from);
+      if (sw != switches.end())
+        wanted = sw->second.first * sw->second.second + fromPort;
+      auto it = src.find({from, wanted});
       if (it == src.end())
         return {std::string(), 0};
       from = it->second.first;

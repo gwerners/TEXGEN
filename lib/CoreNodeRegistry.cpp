@@ -53,6 +53,8 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
       {"FBM", {"Generator", "Fractal Brownian Motion noise (octaves)"}},
       {"GradientMM",
        {"Generator", "Rotated repeating gradient with color stops"}},
+      {"DotNoise", {"Generator", "Random dots on a grid (white noise)"}},
+      {"Scratches", {"Generator", "Layered random line scratches"}},
       {"Shape", {"Generator", "Parametric shape (polygon, star, arc...)"}},
       {"Pattern",
        {"Generator", "Procedural wave patterns (sine, triangle, square...)"}},
@@ -99,6 +101,8 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
        {"Filter", "Iterative slope-following warp along a heightmap"}},
       {"SlopeBlur",
        {"Filter", "Directional gaussian blur along the heightmap slope"}},
+      {"Mirror", {"Filter", "Mirrors the input horizontally or vertically"}},
+      {"EdgeDetect", {"Filter", "Detects edges by local color distance"}},
       {"Tiler",
        {"Filter", "Scatters jittered copies of the input in a grid"}},
       // Combiners
@@ -120,6 +124,10 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
        {"Material", "Mixes two material layers by height (hard or smooth)"}},
       {"WorkflowOutput",
        {"Material", "Unpacks a material bundle into PBR maps"}},
+      {"CreateMap",
+       {"Material", "Builds a placement map (height, angle, random)"}},
+      {"MatMap",
+       {"Material", "Scatters a material bundle using a placement map"}},
       // Structure
       {"Subgraph",
        {"Structure", "Nested node graph with exposed input/output ports"}},
@@ -203,6 +211,12 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<TilerCoreNode>(r);
     registerType<MultiWarpCoreNode>(r);
     registerType<SlopeBlurCoreNode>(r);
+    registerType<DotNoiseCoreNode>(r);
+    registerType<ScratchesCoreNode>(r);
+    registerType<MirrorCoreNode>(r);
+    registerType<EdgeDetectCoreNode>(r);
+    registerType<CreateMapCoreNode>(r);
+    registerType<MatMapCoreNode>(r);
     // Structural
     registerType<SubgraphCoreNode>(r);
     registerType<RemoteCoreNode>(r);

@@ -587,3 +587,90 @@ void MMSlopeBlur(GenTexture &out, const GenTexture &in,
     }
   }
 }
+
+// UV mirror (mirror.mmg).
+void MMMirror(GenTexture &out, const GenTexture &in, sInt direction,
+              sF32 offset, bool flipSides) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 flip = flipSides ? -1.0f : 1.0f;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 su = u, sv = v;
+      if (direction == 0) {
+        sF32 m = fabsf(u - 0.5f) - 0.5f * offset;
+        su = flip * (m > 0.0f ? m : 0.0f) + 0.5f;
+      } else {
+        sF32 m = fabsf(v - 0.5f) - 0.5f * offset;
+        sv = flip * (m > 0.0f ? m : 0.0f) + 0.5f;
+      }
+      sF32 c[4];
+      sampleRGBA(in, su, sv, c);
+      Pixel &p = out.Data[py * w + px];
+      p.r = to16(c[0]);
+      p.g = to16(c[1]);
+      p.b = to16(c[2]);
+      p.a = to16(c[3]);
+    }
+  }
+}
+
+// Edge detection (edge_detect.mmg).
+void MMEdgeDetect(GenTexture &out, const GenTexture &in, sF32 size,
+                  sInt width, sF32 threshold) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (size < 1.0f)
+    size = 1.0f;
+  if (width < 1)
+    width = 1;
+  const sF32 ex = 1.0f / size;
+
+  auto colorAt = [&](sF32 u, sF32 v, sF32 c[3]) {
+    sF32 s[4];
+    sampleRGBA(in, u, v, s);
+    c[0] = s[0];
+    c[1] = s[1];
+    c[2] = s[2];
+  };
+  auto dist = [](const sF32 a[3], const sF32 b[3]) {
+    const sF32 dr = a[0] - b[0], dg = a[1] - b[1], db = a[2] - b[2];
+    return sqrtf(dr * dr + dg * dg + db * db);
+  };
+
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 ref[3];
+      colorAt(u, v, ref);
+      sF32 rv = 0.0f;
+      sF32 dx = 0.0f, dy = 0.0f;
+      for (sInt i = 0; i < width; i++) {
+        dx += ex;
+        dy -= ex;
+        sF32 c[3];
+        // e.xy=(dx,dy), e.xx=(dx,dx), e.xz=(dx,0), e.zx=(0,dx)
+        colorAt(u + dx, v + dy, c); rv += dist(c, ref);
+        colorAt(u - dx, v - dy, c); rv += dist(c, ref);
+        colorAt(u + dx, v + dx, c); rv += dist(c, ref);
+        colorAt(u - dx, v - dx, c); rv += dist(c, ref);
+        colorAt(u + dx, v, c); rv += dist(c, ref);
+        colorAt(u - dx, v, c); rv += dist(c, ref);
+        colorAt(u, v + dx, c); rv += dist(c, ref);
+        colorAt(u, v - dx, c); rv += dist(c, ref);
+        rv *= 2.0f;
+      }
+      rv *= powf(2.0f, -(sF32)width);
+      sF32 o = 100.0f * (rv - threshold);
+      const sU16 g = to16(o);
+      Pixel &p = out.Data[py * w + px];
+      p.r = p.g = p.b = g;
+      p.a = 65535;
+    }
+  }
+}

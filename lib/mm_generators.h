@@ -128,3 +128,12 @@ void MMPattern(GenTexture &out, sInt mixMode, sInt xWave, sF32 xScale,
 // and optional mirror, mapped through the color stops.
 void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
                     sInt nStops, sF32 repeat, sF32 rotateDeg, bool mirror);
+
+// Dot noise (noise.mmg): per-cell random threshold against a density.
+// densityIn (optional, grayscale) modulates the density per cell.
+void MMDotNoise(GenTexture &out, sInt gridSize, sF32 density,
+                const GenTexture *densityIn, sF32 seed);
+
+// Scratches generator (scratches.mmg): layered random line scratches.
+void MMScratches(GenTexture &out, sInt layers, sF32 length, sF32 width,
+                 sF32 waviness, sF32 angleDeg, sF32 randomness, sF32 seed);

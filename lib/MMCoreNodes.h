@@ -468,6 +468,120 @@ class MultiWarpCoreNode : public CoreNode {
 };
 
 // ============================================================
+// DotNoiseCoreNode — per-cell random dots (noise.mmg)
+// ============================================================
+class DotNoiseCoreNode : public CoreNode {
+ public:
+  DotNoiseCoreNode() {}
+  std::string typeName() const override { return "DotNoise"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx = 3, m_heightIdx = 3;
+  int m_grid = 256;  // cells per axis
+  float m_density = 0.5f;
+  float m_seed = 0.0f;
+};
+
+// ============================================================
+// ScratchesCoreNode — layered line scratches (scratches.mmg)
+// ============================================================
+class ScratchesCoreNode : public CoreNode {
+ public:
+  ScratchesCoreNode() {}
+  std::string typeName() const override { return "Scratches"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx = 3, m_heightIdx = 3;
+  int m_layers = 4;
+  float m_length = 0.25f;
+  float m_width = 0.5f;
+  float m_waviness = 0.5f;
+  float m_angle = 0.0f;
+  float m_randomness = 0.5f;
+  float m_seed = 0.0f;
+};
+
+// ============================================================
+// MirrorCoreNode — UV mirror (mirror.mmg)
+// ============================================================
+class MirrorCoreNode : public CoreNode {
+ public:
+  MirrorCoreNode() {}
+  std::string typeName() const override { return "Mirror"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_direction = 0;  // 0 horizontal, 1 vertical
+  float m_offset = 0.0f;
+  bool m_flipSides = false;
+};
+
+// ============================================================
+// EdgeDetectCoreNode — color-distance edges (edge_detect.mmg)
+// ============================================================
+class EdgeDetectCoreNode : public CoreNode {
+ public:
+  EdgeDetectCoreNode() {}
+  std::string typeName() const override { return "EdgeDetect"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_size = 512.0f;  // sampling distance = 1/size
+  int m_width = 1;
+  float m_threshold = 0.5f;
+};
+
+// ============================================================
+// CreateMapCoreNode — workflow placement map (mwf_create_map.mmg)
+// ============================================================
+class CreateMapCoreNode : public CoreNode {
+ public:
+  CreateMapCoreNode() {}
+  std::string typeName() const override { return "CreateMap"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_height = 1.0f;
+  float m_angle = 0.0f;
+  float m_seed = 0.0f;
+};
+
+// ============================================================
+// MatMapCoreNode — apply placement map to a bundle (mwf_map.mmg)
+// ============================================================
+class MatMapCoreNode : public CoreNode {
+ public:
+  MatMapCoreNode() {}
+  std::string typeName() const override { return "MatMap"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+};
+
+// ============================================================
 // SlopeBlurCoreNode — directional gaussian along the heightmap
 // slope (slope_blur.mmg)
 // ============================================================

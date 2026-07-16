@@ -1308,3 +1308,221 @@ void SlopeBlurCoreNode::execute(const std::vector<GenTexture*>& inputs,
   else
     outputs[0] = *in;
 }
+
+// ============================================================
+// DotNoiseCoreNode
+// ============================================================
+
+std::vector<std::string> DotNoiseCoreNode::inputSlotNames() const {
+  return {"Density"};
+}
+std::vector<std::string> DotNoiseCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json DotNoiseCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
+          {"grid", m_grid},         {"density", m_density},
+          {"seed", m_seed}};
+}
+
+void DotNoiseCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("grid"))
+    m_grid = j["grid"];
+  if (j.contains("density"))
+    m_density = j["density"];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void DotNoiseCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                               std::vector<GenTexture>& outputs) {
+  GenTexture* dens =
+      (!inputs.empty() && inputs[0] && inputs[0]->Data) ? inputs[0] : nullptr;
+  outputs.resize(1);
+  outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
+  MMDotNoise(outputs[0], m_grid, m_density, dens, m_seed);
+}
+
+// ============================================================
+// ScratchesCoreNode
+// ============================================================
+
+std::vector<std::string> ScratchesCoreNode::inputSlotNames() const {
+  return {};
+}
+std::vector<std::string> ScratchesCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json ScratchesCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
+          {"layers", m_layers},     {"length", m_length},
+          {"width", m_width},       {"waviness", m_waviness},
+          {"angle", m_angle},       {"randomness", m_randomness},
+          {"seed", m_seed}};
+}
+
+void ScratchesCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("layers"))
+    m_layers = j["layers"];
+  if (j.contains("length"))
+    m_length = j["length"];
+  if (j.contains("width"))
+    m_width = j["width"];
+  if (j.contains("waviness"))
+    m_waviness = j["waviness"];
+  if (j.contains("angle"))
+    m_angle = j["angle"];
+  if (j.contains("randomness"))
+    m_randomness = j["randomness"];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void ScratchesCoreNode::execute(const std::vector<GenTexture*>& /*inputs*/,
+                                std::vector<GenTexture>& outputs) {
+  outputs.resize(1);
+  outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
+  MMScratches(outputs[0], m_layers, m_length, m_width, m_waviness, m_angle,
+              m_randomness, m_seed);
+}
+
+// ============================================================
+// MirrorCoreNode
+// ============================================================
+
+std::vector<std::string> MirrorCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> MirrorCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json MirrorCoreNode::saveParams() const {
+  return {{"direction", m_direction},
+          {"offset", m_offset},
+          {"flipSides", m_flipSides}};
+}
+
+void MirrorCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("direction"))
+    m_direction = j["direction"];
+  if (j.contains("offset"))
+    m_offset = j["offset"];
+  if (j.contains("flipSides"))
+    m_flipSides = j["flipSides"];
+}
+
+void MirrorCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                             std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMMirror(outputs[0], *in, m_direction, m_offset, m_flipSides);
+}
+
+// ============================================================
+// EdgeDetectCoreNode
+// ============================================================
+
+std::vector<std::string> EdgeDetectCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> EdgeDetectCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json EdgeDetectCoreNode::saveParams() const {
+  return {{"size", m_size},
+          {"width", m_width},
+          {"threshold", m_threshold}};
+}
+
+void EdgeDetectCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("size"))
+    m_size = j["size"];
+  if (j.contains("width"))
+    m_width = j["width"];
+  if (j.contains("threshold"))
+    m_threshold = j["threshold"];
+}
+
+void EdgeDetectCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                 std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMEdgeDetect(outputs[0], *in, m_size, m_width, m_threshold);
+}
+
+// ============================================================
+// CreateMapCoreNode
+// ============================================================
+
+std::vector<std::string> CreateMapCoreNode::inputSlotNames() const {
+  return {"Height", "Offset"};
+}
+std::vector<std::string> CreateMapCoreNode::outputSlotNames() const {
+  return {"Map"};
+}
+
+nlohmann::json CreateMapCoreNode::saveParams() const {
+  return {{"height", m_height}, {"angle", m_angle}, {"seed", m_seed}};
+}
+
+void CreateMapCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("height"))
+    m_height = j["height"];
+  if (j.contains("angle"))
+    m_angle = j["angle"];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void CreateMapCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> const GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  const GenTexture* h = get(0);
+  const GenTexture* o = get(1);
+  const GenTexture* sz = h ? h : o;
+  outputs.resize(1);
+  outputs[0].Init(sz ? sz->XRes : 256, sz ? sz->YRes : 256);
+  MMCreateMap(outputs[0], h, o, m_height, m_angle, m_seed);
+}
+
+// ============================================================
+// MatMapCoreNode
+// ============================================================
+
+std::vector<std::string> MatMapCoreNode::inputSlotNames() const {
+  return {"Map", "C", "ORM", "EM", "NM"};
+}
+std::vector<std::string> MatMapCoreNode::outputSlotNames() const {
+  return {"H", "C", "ORM", "EM", "NM"};
+}
+
+void MatMapCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                             std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> const GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  GenTexture* map = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(5);
+  for (int i = 0; i < 5; i++)
+    outputs[i].Init(map->XRes, map->YRes);
+  MMMatMap(outputs[0], outputs[1], outputs[2], outputs[3], outputs[4], *map,
+           get(1), get(2), get(3), get(4));
+}

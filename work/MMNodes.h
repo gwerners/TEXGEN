@@ -182,6 +182,47 @@ class SlopeBlurNode : public UiNode<SlopeBlurCoreNode> {
   void renderParams() override;
 };
 
+class DotNoiseNode : public UiNode<DotNoiseCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class ScratchesNode : public UiNode<ScratchesCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class MirrorNode : public UiNode<MirrorCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class EdgeDetectNode : public UiNode<EdgeDetectCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class CreateMapNode : public UiNode<CreateMapCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class MatMapNode : public UiNode<MatMapCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+};
+
 class LayerMixNode : public UiNode<LayerMixCoreNode> {
  public:
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
