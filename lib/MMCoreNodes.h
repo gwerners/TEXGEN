@@ -137,6 +137,11 @@ class MaterialCoreNode : public CoreNode {
   void loadParams(const nlohmann::json& j) override;
 
   char m_baseName[256];
+  // lit-preview light (see MMShadePreview)
+  float m_lightAzimuth = 135.0f;
+  float m_lightElevation = 45.0f;
+  float m_lightIntensity = 1.0f;
+  float m_ambient = 0.25f;
 };
 
 // ============================================================

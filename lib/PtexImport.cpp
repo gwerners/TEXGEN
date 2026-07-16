@@ -933,6 +933,15 @@ json ptexToTexgen(const json &ptex, const std::string &baseName,
                    ptex.value("connections", json::array()), baseName,
                    skippedTypes);
 
+  // Prefer the Material node's lit preview over the raw albedo source
+  for (auto &n : res.nodes) {
+    if (n["typeName"] == "Material") {
+      res.previewId = n["id"].get<int>();
+      res.previewSlot = "Preview";
+      break;
+    }
+  }
+
   if (res.previewId >= 0) {
     int outId = 0;
     for (auto &n : res.nodes)

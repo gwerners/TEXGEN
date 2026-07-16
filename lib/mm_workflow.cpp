@@ -322,3 +322,116 @@ void MMMatMap(GenTexture &outH, GenTexture &outC, GenTexture &outORM,
     }
   }
 }
+
+// Lit material preview (Blinn-Phong, flat plane).
+void MMShadePreview(GenTexture &out, const GenTexture *albedo,
+                    const GenTexture *normal, const GenTexture *roughness,
+                    const GenTexture *metallic, const GenTexture *ao,
+                    const GenTexture *emission, const GenTexture *height,
+                    sF32 lightAzimuthDeg, sF32 lightElevationDeg,
+                    sF32 intensity, sF32 ambient) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+
+  // Normal fallback: derive from the heightmap when not provided
+  GenTexture derivedNormal;
+  const GenTexture *nm = normal;
+  if ((!nm || !nm->Data) && height && height->Data) {
+    derivedNormal.Init(w, h);
+    MMNormalMap(derivedNormal, *height, 1.0f, 1 /*OpenGL*/);
+    nm = &derivedNormal;
+  }
+
+  const sF32 az = lightAzimuthDeg * 0.01745329251f;
+  const sF32 el = lightElevationDeg * 0.01745329251f;
+  // screen space: +x right, +y down; light vector towards the light
+  sF32 lx = cosf(az) * cosf(el);
+  sF32 ly = -sinf(az) * cosf(el);
+  sF32 lz = sinf(el);
+  {
+    const sF32 len = sqrtf(lx * lx + ly * ly + lz * lz);
+    lx /= len;
+    ly /= len;
+    lz /= len;
+  }
+  // half vector with the fixed view direction (0,0,1)
+  sF32 hx = lx, hy = ly, hz = lz + 1.0f;
+  {
+    const sF32 len = sqrtf(hx * hx + hy * hy + hz * hz);
+    hx /= len;
+    hy /= len;
+    hz /= len;
+  }
+
+  auto grayAtOr = [&](const GenTexture *t, sF32 u, sF32 v, sF32 def) {
+    if (!t || !t->Data)
+      return def;
+    sF32 c[4];
+    sampleRGBA(*t, u, v, c);
+    return grayOf(c);
+  };
+
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      const sInt idx = py * w + px;
+
+      sF32 alb[4];
+      sampleChannel(albedo, 1, u, v, alb);
+      sF32 nrm[4];
+      sampleChannel(nm, 4, u, v, nrm);
+      const sF32 rough = clamp01(grayAtOr(roughness, u, v, 1.0f));
+      const sF32 metal = clamp01(grayAtOr(metallic, u, v, 0.0f));
+      const sF32 occ = clamp01(grayAtOr(ao, u, v, 1.0f));
+
+      sF32 nx = nrm[0] * 2.0f - 1.0f;
+      sF32 ny = -(nrm[1] * 2.0f - 1.0f); // +v is down in screen space
+      sF32 nz = nrm[2] * 2.0f - 1.0f;
+      if (nz < 0.05f)
+        nz = 0.05f;
+      const sF32 nlen = sqrtf(nx * nx + ny * ny + nz * nz);
+      nx /= nlen;
+      ny /= nlen;
+      nz /= nlen;
+
+      sF32 ndl = nx * lx + ny * ly + nz * lz;
+      if (ndl < 0.0f)
+        ndl = 0.0f;
+      sF32 ndh = nx * hx + ny * hy + nz * hz;
+      if (ndh < 0.0f)
+        ndh = 0.0f;
+
+      // roughness -> Blinn-Phong exponent; spec color mixes towards
+      // the albedo for metals (F0 0.04 for dielectrics)
+      const sF32 shininess = 2.0f + 253.0f * (1.0f - rough) * (1.0f - rough);
+      const sF32 spec = powf(ndh, shininess) * (1.0f - 0.85f * rough);
+
+      // ambient hits the raw albedo regardless of metallic (cheap
+      // stand-in for environment reflection, keeps metals readable)
+      const sF32 diffScale = intensity * ndl * occ;
+      const sF32 specScale = intensity * spec * occ;
+      const sF32 ambScale = ambient * occ;
+      sF32 rgb[3];
+      for (int k = 0; k < 3; k++) {
+        const sF32 diffCol = alb[k] * (1.0f - metal);
+        const sF32 specCol = 0.04f + (alb[k] - 0.04f) * metal;
+        rgb[k] =
+            alb[k] * ambScale + diffCol * diffScale + specCol * specScale;
+      }
+      if (emission && emission->Data) {
+        sF32 em[4];
+        sampleRGBA(*emission, u, v, em);
+        for (int k = 0; k < 3; k++)
+          rgb[k] += em[k];
+      }
+
+      Pixel &p = out.Data[idx];
+      p.r = to16(rgb[0]);
+      p.g = to16(rgb[1]);
+      p.b = to16(rgb[2]);
+      p.a = 65535;
+    }
+  }
+}

@@ -391,12 +391,11 @@ std::vector<std::string> MaterialCoreNode::inputSlotNames() const {
           "Height", "AO",     "Emission"};
 }
 std::vector<std::string> MaterialCoreNode::outputSlotNames() const {
-  return {};
+  return {"Preview"};
 }
 
 void MaterialCoreNode::execute(const std::vector<GenTexture*>& inputs,
                                std::vector<GenTexture>& outputs) {
-  outputs.resize(0);
   auto slots = inputSlotNames();
   for (size_t i = 0; i < slots.size() && i < inputs.size(); i++) {
     if (!inputs[i] || !inputs[i]->Data)
@@ -407,10 +406,30 @@ void MaterialCoreNode::execute(const std::vector<GenTexture*>& inputs,
     std::string path = std::string(m_baseName) + "_" + channel + ".png";
     SaveImage(*inputs[i], path.c_str());
   }
+
+  // Lit preview from the connected maps
+  auto get = [&](size_t i) -> const GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  // slots: 0 Albedo, 1 Normal, 2 Roughness, 3 Metallic, 4 Height,
+  //        5 AO, 6 Emission
+  const GenTexture* sz = nullptr;
+  for (size_t i = 0; i < 7 && !sz; i++)
+    sz = get(i);
+  outputs.resize(1);
+  outputs[0].Init(sz ? sz->XRes : 256, sz ? sz->YRes : 256);
+  MMShadePreview(outputs[0], get(0), get(1), get(2), get(3), get(5), get(6),
+                 get(4), m_lightAzimuth, m_lightElevation, m_lightIntensity,
+                 m_ambient);
 }
 
 nlohmann::json MaterialCoreNode::saveParams() const {
-  return {{"baseName", m_baseName}};
+  return {{"baseName", m_baseName},
+          {"lightAzimuth", m_lightAzimuth},
+          {"lightElevation", m_lightElevation},
+          {"lightIntensity", m_lightIntensity},
+          {"ambient", m_ambient}};
 }
 
 void MaterialCoreNode::loadParams(const nlohmann::json& j) {
@@ -419,6 +438,14 @@ void MaterialCoreNode::loadParams(const nlohmann::json& j) {
     strncpy(m_baseName, s.c_str(), sizeof(m_baseName) - 1);
     m_baseName[sizeof(m_baseName) - 1] = '\0';
   }
+  if (j.contains("lightAzimuth"))
+    m_lightAzimuth = j["lightAzimuth"];
+  if (j.contains("lightElevation"))
+    m_lightElevation = j["lightElevation"];
+  if (j.contains("lightIntensity"))
+    m_lightIntensity = j["lightIntensity"];
+  if (j.contains("ambient"))
+    m_ambient = j["ambient"];
 }
 
 // ============================================================

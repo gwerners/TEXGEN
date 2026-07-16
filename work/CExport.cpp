@@ -826,6 +826,28 @@ static void emitNode(std::ostringstream& ss,
       ss << "    SaveImage(" << src << ", \"" << base << "_" << lower
          << ".png\");\n";
     }
+    // Lit preview output
+    static const char* previewIns[] = {"Albedo",   "Normal", "Roughness",
+                                       "Metallic", "AO",     "Emission",
+                                       "Height"};
+    std::string srcs[7], sizeRef;
+    for (int i = 0; i < 7; i++) {
+      srcs[i] = srcVar(conns, id, previewIns[i]);
+      if (sizeRef.empty() && !srcs[i].empty())
+        sizeRef = srcs[i];
+    }
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init("
+       << (sizeRef.empty() ? "256, 256"
+                           : sizeRef + ".XRes, " + sizeRef + ".YRes")
+       << ");\n";
+    ss << "    MMShadePreview(" << v;
+    for (int i = 0; i < 7; i++)
+      ss << ", " << (srcs[i].empty() ? "nullptr" : "&" + srcs[i]);
+    ss << ", " << pf(p, "lightAzimuth", 135.0f) << ", "
+       << pf(p, "lightElevation", 45.0f) << ", "
+       << pf(p, "lightIntensity", 1.0f) << ", " << pf(p, "ambient", 0.25f)
+       << ");\n";
   }
 
   else if (type == "NormalMap") {

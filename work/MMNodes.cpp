@@ -255,7 +255,7 @@ std::vector<ImNodes::Ez::SlotInfo> MaterialNode::inputSlotInfos() const {
           {"Height", 1}, {"AO", 1},     {"Emission", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> MaterialNode::outputSlotInfos() const {
-  return {};
+  return {{"Preview", 1}};
 }
 
 void MaterialNode::renderParams() {
@@ -264,6 +264,15 @@ void MaterialNode::renderParams() {
   Hint(
       "Base filename: each connected channel is saved as\n"
       "<base>_<channel>.png (e.g. material_albedo.png)");
+  ImGui::PopItemWidth();
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Light dir##mat", &m_core.m_lightAzimuth, 0.0f, 360.0f);
+  Hint("Preview light azimuth (degrees, counter-clockwise from right)");
+  SliderFloatW("Light height##mat", &m_core.m_lightElevation, 5.0f, 90.0f);
+  Hint("Preview light elevation (90 = overhead)");
+  SliderFloatW("Intensity##mat", &m_core.m_lightIntensity, 0.0f, 3.0f);
+  SliderFloatW("Ambient##mat", &m_core.m_ambient, 0.0f, 1.0f);
+  Hint("Unlit base level of the preview");
   ImGui::PopItemWidth();
 }
 
