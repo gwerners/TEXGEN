@@ -62,6 +62,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/raylib/src
   ${CMAKE_SOURCE_DIR}/rlImGui
   ${CMAKE_SOURCE_DIR}/stb
+  ${CMAKE_SOURCE_DIR}/nanosvg
   ${CMAKE_SOURCE_DIR}/ImNodes
   ${CMAKE_SOURCE_DIR}/work
   ${CMAKE_SOURCE_DIR}/work/ktg
@@ -97,6 +98,7 @@ set(SRC
   Ide.cpp
   Utils.cpp
   Nodes.cpp
+  Icons.cpp
   AllNodes.cpp
   AggNodes.cpp
   MMNodes.cpp
@@ -113,6 +115,7 @@ set(HEADERS
   Ide.h
   Utils.h
   Nodes.h
+  Icons.h
   AllNodes.h
   TextureNode.h
   ProjectIO.h

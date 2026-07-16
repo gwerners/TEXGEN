@@ -2,6 +2,7 @@
 #include "AggNodes.h"
 #include "AllNodes.h"
 #include "CoreNodeRegistry.h"
+#include "Icons.h"
 #include "MMNodes.h"
 #include "StructNodes.h"
 #include "Utils.h"
@@ -990,8 +991,8 @@ void NodeGraph::draw() {
                    "RMB group/ungroup";
     } else {
       m_hintText =
-          "RMB add node  |  Ctrl+Z/Y undo/redo  |  drag slots to connect  |  "
-          + std::to_string(m_nodes.size()) + " nodes";
+          "RMB add node  |  Ctrl+Z/Y undo/redo  |  drag slots to connect  |  " +
+          std::to_string(m_nodes.size()) + " nodes";
     }
   }
 
@@ -1072,8 +1073,18 @@ void NodeGraph::draw() {
       ImNodes::AutoPositionNode(m_nodes.back());
     };
 
+    auto drawIcon = [](const char* category) {
+      float side = ImGui::GetFontSize();
+      if (Texture2D* tex = categoryIcon(category))
+        ImGui::Image(ImTextureID(tex->id), ImVec2(side, side));
+      else
+        ImGui::Dummy(ImVec2(side, side));
+      ImGui::SameLine();
+    };
+
     auto menuEntry = [&](const std::string& type, const NodeMeta* meta,
                          bool isFirstMatch) {
+      drawIcon(meta ? meta->category : "");
       if (ImGui::MenuItem(type.c_str(), isFirstMatch ? "Enter" : nullptr))
         addNode(type);
       if (meta && ImGui::IsItemHovered())
@@ -1091,6 +1102,7 @@ void NodeGraph::draw() {
         }
         if (entries.empty())
           continue;
+        drawIcon(cat);
         if (ImGui::BeginMenu(cat)) {
           for (auto& e : entries)
             menuEntry(e.first, e.second, false);

@@ -10,5 +10,6 @@
   - The Voronoi cell math is based on https://www.shadertoy.com/view/ldl3W8,
     MIT License, Copyright (c) 2013 Inigo Quilez.
 - **stb** (`stb/`) — Sean Barrett, public domain / MIT.
+- **NanoSVG** (`nanosvg/`) — Mikko Mononen, zlib license.
 - **Dear ImGui, ImNodes, raylib, rlImGui, {fmt}, nlohmann/json** — see the
   respective vendored directories for licenses.
