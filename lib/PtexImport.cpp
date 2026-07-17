@@ -129,6 +129,7 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"tones_range", {"In"}},
       {"math_v3", {"A", "B"}},
       {"noise_anisotropic", {}},
+      {"height_to_offset", {"Height"}},
       {"tiler_advanced",
        {"In", "Mask", "Color1", "Color2", "TrX", "TrY", "Rot", "ScX",
         "ScY"}},
@@ -152,6 +153,7 @@ const std::map<std::string, std::vector<std::string>> &portsOut() {
       {"splatter", {"Out", "Color", ""}},
       {"mwf_map", {"H", "C", "ORM", "EM", "NM"}},
       {"tiler_advanced", {"Out", "Color1", "Color2", "UV"}},
+      {"height_to_offset", {"X", "Y"}},
   };
   return m;
 }
@@ -563,6 +565,11 @@ bool convertParams(const std::string &type, const json &p,
            {"intensity", numOr(p, "param1", 0.5f)},
            {"quality", numOr(p, "param2", 50.0f)},
            {"mode", intOr(p, "param3", 2)}};
+    return true;
+  }
+  if (type == "height_to_offset") {
+    typeName = "HeightToOffset";
+    out = {{"target", numOr(p, "target", 0.5f)}};
     return true;
   }
   if (type == "noise_anisotropic") {
@@ -1121,7 +1128,8 @@ GraphResult convertGraph(json mmNodes, json mmConns,
         "fill_to_color", "fill_to_color2",
         "remap", "tile2x2", "normal_map_convert", "custom_uv",
         "smooth_curvature", "smooth_curvature2", "occlusion2", "hbao",
-        "rotate", "tones_range", "math_v3", "tiler_advanced"};
+        "rotate", "tones_range", "math_v3", "tiler_advanced",
+        "height_to_offset"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));

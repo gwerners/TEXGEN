@@ -77,6 +77,9 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   registry["AnisotropicNoise"] = []() {
     return std::make_unique<AnisotropicNoiseNode>();
   };
+  registry["HeightToOffset"] = []() {
+    return std::make_unique<HeightToOffsetNode>();
+  };
   registry["TilerAdvanced"] = []() {
     return std::make_unique<TilerAdvancedNode>();
   };
@@ -1096,9 +1099,8 @@ void NodeGraph::draw() {
                    " selected  |  Ctrl+C/V copy/paste  |  Del delete  |  "
                    "RMB group/ungroup";
     } else {
-      m_hintText =
-          "RMB add node  |  P previews  |  Ctrl+Z/Y undo/redo  |  " +
-          std::to_string(m_nodes.size()) + " nodes";
+      m_hintText = "RMB add node  |  P previews  |  Ctrl+Z/Y undo/redo  |  " +
+                   std::to_string(m_nodes.size()) + " nodes";
     }
     if (m_evaluating)
       m_hintText = "[evaluating...]  " + m_hintText;

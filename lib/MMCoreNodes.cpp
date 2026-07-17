@@ -2109,3 +2109,32 @@ void TilerAdvancedCoreNode::execute(const std::vector<GenTexture*>& inputs,
                   get(3), m_tx, m_ty, m_overlap, m_inputs, m_translateX,
                   m_translateY, m_rotate, m_scaleX, m_scaleY, m_seed);
 }
+
+// ============================================================
+// HeightToOffsetCoreNode
+// ============================================================
+
+std::vector<std::string> HeightToOffsetCoreNode::inputSlotNames() const {
+  return {"Height"};
+}
+std::vector<std::string> HeightToOffsetCoreNode::outputSlotNames() const {
+  return {"X", "Y"};
+}
+
+nlohmann::json HeightToOffsetCoreNode::saveParams() const {
+  return {{"target", m_target}};
+}
+
+void HeightToOffsetCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("target"))
+    m_target = j["target"];
+}
+
+void HeightToOffsetCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                     std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(2);
+  outputs[0].Init(in->XRes, in->YRes);
+  outputs[1].Init(in->XRes, in->YRes);
+  MMHeightToOffset(outputs[0], outputs[1], *in, m_target);
+}

@@ -182,6 +182,13 @@ class SlopeBlurNode : public UiNode<SlopeBlurCoreNode> {
   void renderParams() override;
 };
 
+class HeightToOffsetNode : public UiNode<HeightToOffsetCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
 class AnisotropicNoiseNode : public UiNode<AnisotropicNoiseCoreNode> {
  public:
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;

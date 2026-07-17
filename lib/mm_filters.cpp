@@ -1147,3 +1147,44 @@ void MMTilerAdvanced(GenTexture &out, GenTexture *outColor1,
     }
   }
 }
+
+// Offset toward a height contour (height_to_offset.mmg).
+void MMHeightToOffset(GenTexture &outX, GenTexture &outY,
+                      const GenTexture &in, sF32 target) {
+  if (!outX.Data || !outY.Data || !in.Data)
+    return;
+  const sInt w = outX.XRes, h = outX.YRes;
+  const sF32 eps = 0.001f;
+
+  auto gray = [&](sF32 u, sF32 v) {
+    sF32 c[4];
+    sampleRGBA(in, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      const sF32 start = gray(u, v);
+      sF32 dhx = (gray(u + eps, v) - gray(u - eps, v)) / (2.0f * eps);
+      sF32 dhy = (gray(u, v + eps) - gray(u, v - eps)) / (2.0f * eps);
+      const sF32 dd = dhx * dhx + dhy * dhy;
+      sF32 ox = 0.0f, oy = 0.0f;
+      if (dd > 1e-8f) {
+        const sF32 k = 16.0f * (target - start) / dd;
+        ox = k * dhx;
+        oy = k * dhy;
+      }
+      const sInt idx = py * w + px;
+      Pixel &pX = outX.Data[idx];
+      const sU16 gx = to16(ox);
+      pX.r = pX.g = pX.b = gx;
+      pX.a = 65535;
+      Pixel &pY = outY.Data[idx];
+      const sU16 gy = to16(oy);
+      pY.r = pY.g = pY.b = gy;
+      pY.a = 65535;
+    }
+  }
+}

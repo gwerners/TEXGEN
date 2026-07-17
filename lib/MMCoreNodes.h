@@ -680,6 +680,23 @@ class FillToColorCoreNode : public CoreNode {
 };
 
 // ============================================================
+// HeightToOffsetCoreNode — contour push (height_to_offset.mmg)
+// ============================================================
+class HeightToOffsetCoreNode : public CoreNode {
+ public:
+  HeightToOffsetCoreNode() {}
+  std::string typeName() const override { return "HeightToOffset"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_target = 0.5f;
+};
+
+// ============================================================
 // AnisotropicNoiseCoreNode — stripe noise (noise_anisotropic.mmg)
 // ============================================================
 class AnisotropicNoiseCoreNode : public CoreNode {

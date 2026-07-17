@@ -131,6 +131,8 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
        {"Filter", "Scatters jittered copies of the input in a grid"}},
       {"TilerAdvanced",
        {"Filter", "Grid scatter with per-instance modulation maps"}},
+      {"HeightToOffset",
+       {"Filter", "Offsets toward a height contour (X/Y outputs)"}},
       // Combiners
       {"Blend",
        {"Combine", "Blends two inputs with selectable mode and opacity"}},
@@ -239,6 +241,7 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<SlopeBlurCoreNode>(r);
     registerType<SphereCoreNode>(r);
     registerType<AnisotropicNoiseCoreNode>(r);
+    registerType<HeightToOffsetCoreNode>(r);
     registerType<TilerAdvancedCoreNode>(r);
     registerType<DotNoiseCoreNode>(r);
     registerType<ScratchesCoreNode>(r);

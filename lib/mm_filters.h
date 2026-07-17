@@ -146,3 +146,10 @@ void MMTilerAdvanced(GenTexture &out, GenTexture *outColor1,
                      sInt overlap, sInt inputs, sF32 translateX,
                      sF32 translateY, sF32 rotateDeg, sF32 scaleX,
                      sF32 scaleY, sF32 seed);
+
+// Offset toward a height contour (height_to_offset.mmg): per pixel,
+// offset = 16 * grad(h) / |grad(h)|^2 * (target - h), split into X/Y
+// outputs. MM emits signed floats; this 16-bit pipeline clamps the
+// offsets to [0, 1], so strong pushes saturate.
+void MMHeightToOffset(GenTexture &outX, GenTexture &outY,
+                      const GenTexture &in, sF32 target);

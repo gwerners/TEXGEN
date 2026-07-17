@@ -1007,22 +1007,35 @@ static void emitNode(std::ostringstream& ss,
     }
   }
 
+  else if (type == "HeightToOffset") {
+    std::string in = srcVar(conns, id, "Height");
+    ss << "    GenTexture " << v << "_X, " << v << "_Y;\n";
+    if (in.empty()) {
+      ss << "    " << v << "_X.Init(256, 256); " << v
+         << "_Y.Init(256, 256);\n";
+    } else {
+      ss << "    " << v << "_X.Init(" << in << ".XRes, " << in << ".YRes); "
+         << v << "_Y.Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMHeightToOffset(" << v << "_X, " << v << "_Y, " << in
+         << ", " << pf(p, "target", 0.5f) << ");\n";
+    }
+  }
+
   else if (type == "AnisotropicNoise") {
     int w = sizeFromIdx(p.value("widthIdx", 3));
     int h = sizeFromIdx(p.value("heightIdx", 3));
     ss << "    GenTexture " << v << ";\n";
     ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
     ss << "    MMAnisotropicNoise(" << v << ", " << pf(p, "scaleX", 4.0f)
-       << ", " << pf(p, "scaleY", 256.0f) << ", " << pf(p, "seed", 0.0f)
-       << ", " << pf(p, "smoothness", 1.0f) << ", "
-       << pf(p, "interpolation", 1.0f) << ");\n";
+       << ", " << pf(p, "scaleY", 256.0f) << ", " << pf(p, "seed", 0.0f) << ", "
+       << pf(p, "smoothness", 1.0f) << ", " << pf(p, "interpolation", 1.0f)
+       << ");\n";
   }
 
   else if (type == "TilerAdvanced") {
     static const char* outSlots[4] = {"Out", "Color1", "Color2", "UV"};
-    static const char* inSlots[9] = {"In",  "Mask", "Color1", "Color2",
-                                     "TrX", "TrY",  "Rot",    "ScX",
-                                     "ScY"};
+    static const char* inSlots[9] = {"In",  "Mask", "Color1", "Color2", "TrX",
+                                     "TrY", "Rot",  "ScX",    "ScY"};
     std::string srcs[9];
     for (int i = 0; i < 9; i++)
       srcs[i] = srcVar(conns, id, inSlots[i]);

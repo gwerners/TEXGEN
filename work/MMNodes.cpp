@@ -1191,12 +1191,10 @@ void AnisotropicNoiseNode::renderParams() {
 // ============================================================
 
 std::vector<ImNodes::Ez::SlotInfo> TilerAdvancedNode::inputSlotInfos() const {
-  return {{"In", 1},     {"Mask", 1}, {"Color1", 1},
-          {"Color2", 1}, {"TrX", 1},  {"TrY", 1},
-          {"Rot", 1},    {"ScX", 1},  {"ScY", 1}};
+  return {{"In", 1},  {"Mask", 1}, {"Color1", 1}, {"Color2", 1}, {"TrX", 1},
+          {"TrY", 1}, {"Rot", 1},  {"ScX", 1},    {"ScY", 1}};
 }
-std::vector<ImNodes::Ez::SlotInfo> TilerAdvancedNode::outputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> TilerAdvancedNode::outputSlotInfos() const {
   return {{"Out", 1}, {"Color1", 1}, {"Color2", 1}, {"UV", 1}};
 }
 
@@ -1212,5 +1210,25 @@ void TilerAdvancedNode::renderParams() {
   SliderFloatW("Scale X##tla", &m_core.m_scaleX, 0.1f, 4.0f);
   SliderFloatW("Scale Y##tla", &m_core.m_scaleY, 0.1f, 4.0f);
   SliderFloatW("Seed##tla", &m_core.m_seed, 0.0f, 64.0f);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// HeightToOffsetNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> HeightToOffsetNode::inputSlotInfos()
+    const {
+  return {{"Height", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> HeightToOffsetNode::outputSlotInfos()
+    const {
+  return {{"X", 1}, {"Y", 1}};
+}
+
+void HeightToOffsetNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Target##hto", &m_core.m_target, 0.0f, 1.0f);
+  Hint("Height level the offsets push toward");
   ImGui::PopItemWidth();
 }
