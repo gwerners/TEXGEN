@@ -166,7 +166,20 @@ bool MaterialLibrary::draw(std::string& outPath, bool& outIsPtex) {
                missing == 1 ? "" : "s");
       if (ImGui::SmallButton(label))
         m_buildPos = 0;
+      ImGui::SameLine();
     }
+    // full rebuild: for when the engine's rendering changed and every
+    // cached thumbnail is stale
+    if (ImGui::SmallButton("Rebuild all##libthumbs")) {
+      for (auto& e : m_entries) {
+        std::error_code ec;
+        fs::remove(thumbPath(e.path), ec);
+      }
+      invalidate();
+      m_buildPos = 0;
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Delete every thumbnail and re-render them all");
   } else {
     // advance to the next entry without a thumbnail
     while (m_buildPos < (int)m_entries.size() &&
