@@ -1,10 +1,10 @@
 # TEXGEN
 
-Node-based procedural texture generator for Linux. Connect generator, filter, and vector drawing nodes in a visual graph to create tileable textures, noise patterns, and materials — all in real time.
+Node-based procedural texture and PBR material generator for Linux. Connect generator, filter, and vector drawing nodes in a visual graph to create tileable textures and complete PBR materials — all in real time, with 2D and 3D preview.
 
 Built with C++20, raylib, Dear ImGui, and [AGG 2.4](https://github.com/gwerners/agg) for anti-aliased vector drawing.
 
-Texture generation core based on [gentexture](https://github.com/farbrausch/fr_public) by Fabian Giesen (public domain).
+Texture generation core based on [gentexture](https://github.com/farbrausch/fr_public) by Fabian Giesen (public domain). Many nodes are CPU ports of [Material Maker](https://github.com/RodZill4/material-maker) algorithms (MIT) — see [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## Screenshot
 
@@ -14,15 +14,16 @@ Texture generation core based on [gentexture](https://github.com/farbrausch/fr_p
 
 ## Features
 
-- **32 node types** — generators, filters, combiners, AGG vector drawing, and utility nodes
-- **AGG 2.4 vector nodes** — Line, Circle, Rect (rounded corners), Polygon (stars), Text with anti-aliasing
-- **Real-time preview** — auto-updates when parameters change
-- **Export to C** — generate a standalone `.h` header that reproduces the pipeline with `libtexgen` calls
-- **libtexgen** — core texture generation as a standalone static/shared library (no UI dependencies)
-- **Undo/Redo** — 50 levels, with debounced parameter tracking
-- **Copy/Paste** — duplicate node subgraphs with connections
-- **Minimap** — click-drag navigation in the bottom-right corner
-- **16-bit precision** — per-channel RGBA for high-quality compositing
+- **100+ node types** — generators, filters, combiners, SDF 2D, AGG vector drawing, and structure nodes, all searchable from the in-editor menu with tooltips
+- **PBR materials** — the Material node collects albedo, normal, roughness, metallic, depth, AO, and emission maps, exports them as PNGs, and renders a lit preview
+- **3D preview** — sphere/cube/plane on the GPU with normal mapping, height displacement, specular/Fresnel, and configurable texture tiling
+- **Material Maker import** — open `.ptex` projects directly; the graph is converted automatically (library macros are expanded, unsupported nodes are pruned gracefully)
+- **Material library** — folder browser with thumbnails, built in parallel by background workers with progress reporting
+- **Incremental evaluation** — editing a parameter re-runs only the affected node and its downstream cone, streamed from a worker thread so the UI never blocks
+- **Subgraphs** — group nodes into reusable graphs with exposed parameters
+- **Export to C** — generate a standalone `.h` header that reproduces the pipeline bit-exactly with `libtexgen` calls, deterministic and UI-free (ready for game runtimes)
+- **AGG 2.4 vector nodes** — Line, Circle, Rect, Polygon, Text, Arc, Bezier with anti-aliasing
+- **Undo/Redo, Copy/Paste, minimap, 16-bit RGBA precision**
 
 ## Requirements
 
@@ -41,7 +42,7 @@ Texture generation core based on [gentexture](https://github.com/farbrausch/fr_p
 Clones all dependencies, builds raylib, builds the project, and runs it.
 
 ```bash
-./clean.bash        # remove everything (deps + build)
+./clean.bash        # remove everything (deps + build + generated images)
 ./clean.bash build  # remove build products only
 ```
 
@@ -53,20 +54,29 @@ Export C headers from all example projects, compile, and run them standalone (no
 ./run_tests.bash
 ```
 
+## CLI Tools
+
+Built alongside the editor in `build/tests/`:
+
+| Tool | Description |
+|------|-------------|
+| `texgen_render <p.json\|p.ptex> [out.tga]` | Render a project headless (Material Maker projects are converted on the fly) |
+| `texgen_export <p.json\|p.ptex> <func> <out.h>` | Export a project to a standalone C header |
+| `texgen_debug <p.json\|p.ptex> <dir>` | Dump every node's output as PNG (fidelity debugging) plus the converted graph |
+
 ## Keyboard Shortcuts
 
 ### Canvas
 
 | Shortcut | Action |
 |----------|--------|
-| Right-click | Open context menu (create nodes) |
+| Right-click | Open context menu (create nodes, searchable) |
 | Middle-drag | Pan canvas |
 | Scroll wheel | Zoom in/out |
+| P | Toggle all node previews |
 | Delete | Remove selected nodes |
-| Ctrl+Z | Undo (up to 50 levels) |
-| Ctrl+Y | Redo |
-| Ctrl+C | Copy selected nodes (with connections) |
-| Ctrl+V | Paste copied nodes |
+| Ctrl+Z / Ctrl+Y | Undo / Redo (up to 50 levels) |
+| Ctrl+C / Ctrl+V | Copy / paste nodes with connections |
 
 ### Sliders
 
@@ -78,81 +88,32 @@ Export C headers from all example projects, compile, and run them standalone (no
 
 ## Interface
 
-The interface is split into three panels:
-
-- **Left Panel** — Generate button, project save/load, Export C header
-- **Bottom Panel** — Output image preview with zoom controls (+, -, 1:1). Updates automatically when parameters change
-- **Right Panel** — Node canvas with minimap (bottom-right corner, click-drag to navigate)
+- **Left Panel** — project save/load, Material Maker import, Export C header, material library with thumbnails
+- **Bottom Panel** — output preview with zoom controls, or the 3D material preview (sphere/cube/plane, orbit/zoom/spin, height and tiling sliders)
+- **Canvas** — node graph with minimap; the hint bar at the bottom shows contextual help and background task status
+- **Context menu** — searchable node creation menu organized by category, with tooltips
 
 ## Nodes
 
-### Sources (no inputs)
+Node types by category (the in-editor menu lists all of them with descriptions):
 
-| Node | Description |
-|------|-------------|
-| **Color** | Solid color fill (configurable size and RGBA) |
-| **Image** | Load an image file (PNG, JPG, TGA, BMP, PSD, GIF, HDR) with file browser |
-| **Gradient** | 2-pixel gradient from Color1 to Color2. Used as color ramp for Noise/GlowRect |
+| Category | Examples |
+|----------|----------|
+| **Generator** | Voronoi (F1/edge/color/fill), FBM (perlin/cellular variants), Bricks, Weave, Crystal, Scratches, Shape, Sphere, DotNoise, ColorNoise, WaveletNoise, AnisotropicNoise, Gradient (linear/radial/circular), Pattern |
+| **Vector (AGG)** | Line, Circle, Rect, Polygon, Text, Arc, Bezier, DashLine, Gradient shapes |
+| **SDF** | Shape primitives, boolean/smooth ops, transforms, render |
+| **Filter** | Blur, DirectionalBlur, SlopeBlur, Warp, MultiWarp, Bevel, Dilate, EdgeDetect, Emboss, Colorize, Levels, Transform2D, Tiler, TilerAdvanced, NormalMap, NormalBlend, Fill family (region UVs, random colors, gradients, sizes), AmbientOcclusion, MakeTileable, CustomUV, Mirror, Remap |
+| **Combine** | Blend (15 modes), MathOp (37 ops), SmoothMinMax, Combine/Decompose, Tile2x2, LayerMix |
+| **Material** | Material (PBR multi-map + lit preview), WorkflowOutput |
+| **Structure** | Subgraph, Remote, Comment, Output |
 
-### Generators (procedural patterns)
+## Material Maker Import
 
-| Node | Description |
-|------|-------------|
-| **Noise** | Perlin noise with configurable frequency, octaves, fadeoff, and seed. Accepts optional Gradient input |
-| **Cells** | Voronoi cell pattern. Color mode: Gradient or Random |
-| **Crystal** | Voronoi diagram with near/far coloring |
-| **Bricks** | Brick/tile pattern with configurable size, fuge, and color variation |
-| **Perlin Noise RG2** | Alternative Perlin noise with contrast and start octave controls |
-| **Directional Gradient** | Spatial gradient between two points |
-| **Glow Effect** | Radial glow centered at a point with falloff exponent |
-
-### AGG Vector Drawing
-
-All AGG nodes have an optional **Bg** input for compositing on a background texture.
-
-| Node | Description |
-|------|-------------|
-| **Line** | Line segment with configurable endpoints, thickness, and color |
-| **Circle** | Ellipse with independent fill and stroke (color, thickness) |
-| **Rect** | Rectangle with optional rounded corners, fill and stroke |
-| **Polygon** | Regular N-sided polygon. Inner radius < 1.0 creates star shapes |
-| **Text** | Vector text using AGG's embedded font. Configurable size and thickness |
-
-### Filters (modify input textures)
-
-| Node | Inputs | Description |
-|------|--------|-------------|
-| **Blur** | In | Gaussian blur with configurable radius and order |
-| **Blur Kernel** | In | Kernel blur (Box, Triangle, Gaussian) with wrap modes |
-| **Color Matrix** | In | 4x4 color transform matrix |
-| **Coord Matrix** | In | 4x4 coordinate transform (rotation, scale, tiling) |
-| **Color Remap** | In, MapR, MapG, MapB | Remap each color channel through a lookup texture |
-| **Coord Remap** | In, Remap | Distort coordinates using a displacement map |
-| **Derive** | In | Compute gradient or normal map from input |
-| **HSCB** | In | Hue, Saturation, Contrast, Brightness adjustment |
-| **Color Balance** | In | Shadow/Midtone/Highlight color balance (3-way) |
-| **Wavelet** | In | Wavelet transform (forward/inverse) |
-
-### Combiners (merge multiple textures)
-
-| Node | Inputs | Description |
-|------|--------|-------------|
-| **Paste** | Background, Snippet | Combine with blend op (Add, Sub, Multiply, Screen, etc.) |
-| **Bump** | Surface, Normals, (Specular), (Falloff) | Bump/normal mapping with lighting |
-| **Linear Combine** | Image1-4 | Weighted sum of up to 4 textures with UV shift |
-| **Ternary** | Image1, Image2, Mask | Lerp or select between two textures |
-| **Glow Rect** | Background, Gradient | Draw a glowing rectangle on a background |
-
-### Utility
-
-| Node | Description |
-|------|-------------|
-| **Output** | Save result to TGA file |
-| **Comment** | Visual note for organizing pipelines |
+TEXGEN opens [Material Maker](https://github.com/RodZill4/material-maker) `.ptex` projects via the import button in the toolbar (or by passing them to the CLI tools). The converter maps MM nodes to native TEXGEN nodes, expands library graph macros, collapses passthroughs, and prunes unsupported chains so the rest of the material still renders. Author-written custom `shader` nodes cannot be converted automatically.
 
 ## Export to C
 
-Click **Export C Header** in the left panel to generate a standalone `.h` file. The generated header contains a single function that reproduces the entire node graph:
+Click **Export C Header** in the left panel (or use `texgen_export`) to generate a standalone `.h` file. The generated header contains a single function that reproduces the entire node graph bit-exactly:
 
 ```c
 #include "texgen.h"
@@ -162,37 +123,28 @@ static inline void my_texture_generate(GenTexture* out) {
 }
 ```
 
-The exported code depends only on `libtexgen` (no raylib, no imgui). You can compile and link it against the static library:
+The exported code depends only on `libtexgen` (no raylib, no imgui):
 
 ```bash
 g++ -std=c++17 -I lib -I work -I work/ktg -I agg/agg_lib/include \
-    my_program.cpp -ltexgen -lagg -lm
+    my_program.cpp libtexgen.a libagg.a -lm
 ```
 
 ## libtexgen
 
-The core texture generation engine is available as a standalone library with no UI dependencies:
+The core texture generation engine is a standalone library with no UI dependencies — this is what a game links to generate textures deterministically at runtime:
 
-- `lib/texgen.h` — public header (includes gentexture, extra generators, AGG bridge, utilities)
+- `lib/texgen.h` — public umbrella header
 - `build/lib/libtexgen.a` — static library
 - `build/lib/libtexgen.so` — shared library
 
 ## Example Projects
 
-See [examples/README.md](examples/README.md) for descriptions and a complete node reference.
-
-| Example | Description |
-|---------|-------------|
-| 01_basic_shapes | Rect + Circle + Line composited via Bg inputs |
-| 02_star_polygon | Polygon star + Crystal voronoi blend |
-| 03_text_on_noise | Perlin noise background with AGG text overlay |
-| 04_procedural_brick | Bricks generator + Blur filter |
-| 05_crystal_glow | Crystal voronoi + GlowEffect blend |
-| 06_badge_composition | Multi-layer badge: Circle + Star + Text |
+`examples/` ships 40 projects: classic pipelines (shapes, badges, noise compositions) plus 22 curated Material Maker ports (`mm_*.json`) covering bricks, metals, stones, and organic materials. See [examples/README.md](examples/README.md).
 
 ## Libraries
 
-All libraries are cloned automatically by `run.bash`:
+Cloned automatically by `run.bash`:
 
 | Library | Fork | Upstream |
 |---------|------|----------|
@@ -205,6 +157,8 @@ All libraries are cloned automatically by `run.bash`:
 | rlImGui | [gwerners/rlImGui](https://github.com/gwerners/rlImGui) | [raylib-extras/rlImGui](https://github.com/raylib-extras/rlImGui) |
 | ImNodes | [gwerners/ImNodes](https://github.com/gwerners/ImNodes) | [rokups/ImNodes](https://github.com/rokups/ImNodes) |
 
+Vendored in-tree: [NanoSVG](https://github.com/memononen/nanosvg) (`nanosvg/`, zlib license) for the toolbar/menu icons.
+
 ## Project Structure
 
 ```
@@ -215,32 +169,42 @@ clean.bash              cleanup script
 examples/               example project JSONs + README
 images/                 screenshots
 res/                    fonts (FiraCode)
-ref/                    KTG reference images
-
-work/                   editor application source
-  AggNodes.cpp/h        AGG vector drawing nodes (Line, Circle, Rect, Polygon, Text)
-  AllNodes.cpp/h        procedural/filter/combiner node definitions
-  CExport.cpp/h         C header export from node graph
-  Nodes.cpp/h           node graph logic, undo/redo, copy/paste, minimap
-  TextureNode.h         base class for texture nodes
-  agg_gentexture.h      AGG <-> GenTexture zero-copy bridge
-  Ide.cpp/h             imgui IDE layout, docking panels
-  FileDialog.h          imgui file browser dialog
-  ProjectIO.cpp/h       project save/load (JSON)
-  Utils.cpp/h           utilities (matrix, image I/O)
-  extra_generators.*    custom texture generators (Crystal, Bricks, etc.)
-  ktg/                  gentexture library (Fabian Giesen)
+docs/                   design notes (Material Maker study)
+nanosvg/                vendored NanoSVG (icons)
+tools/                  helper scripts
 
 lib/                    libtexgen standalone library (no UI deps)
   texgen.h              public umbrella header
-  texgen_utils.h/cpp    pure utility functions
-  CMakeLists.txt        builds libtexgen.a + libtexgen.so
+  CoreNodes.*           classic generator/filter core nodes
+  MMCoreNodes.*         Material Maker port core nodes
+  AggCoreNodes.*        AGG vector core nodes
+  GraphCoreNodes.*      subgraph/structure core nodes
+  CoreNodeRegistry.*    node factory + menu metadata (single source)
+  mm_generators.*       MM generator algorithms (CPU ports)
+  mm_filters.*          MM filter algorithms
+  mm_fill.*             MM fill family (exact connected components)
+  mm_sdf.*              SDF 2D
+  mm_workflow.*         MM workflow layers (LayerMix etc.)
+  PtexImport.*          .ptex -> TEXGEN graph converter
+  HeadlessEval.*        UI-free graph evaluation
 
-tests/                  export C test infrastructure
-  texgen_export.cpp     CLI tool: JSON -> C header
+work/                   editor application source
+  Ide.cpp/h             imgui IDE layout, docking panels, hint bar
+  Nodes.cpp/h           node graph logic, undo/redo, copy/paste, minimap
+  AllNodes/MMNodes/AggNodes/StructNodes  UI wrappers over core nodes
+  CExport.cpp/h         C header export from node graph
+  GraphRunner.*         worker-thread incremental evaluation
+  Preview3D.*           GPU 3D material preview
+  Library.*             material library with thumbnail batch
+  ProjectIO.cpp/h       project save/load, MM import
+  Icons.*               SVG icon rasterization
+  ktg/                  gentexture library (Fabian Giesen)
+
+tests/                  CLI tools + test infrastructure
+  texgen_render.cpp     headless render (json/ptex)
+  texgen_export.cpp     CLI: json/ptex -> C header
+  texgen_debug.cpp      per-node output dump
   test_template.cpp.in  test main template
-
-agg/                    AGG 2.4 library (from github.com/gwerners/agg)
 ```
 
 ## License
@@ -251,6 +215,8 @@ TEXGEN is released under the [MIT License](LICENSE).
 feature carry no license restrictions — you may use them for any purpose without
 attribution.
 
-Third-party components carry their own permissive licenses:
+Third-party components carry their own permissive licenses — see [THIRD_PARTY.md](THIRD_PARTY.md):
 - [gentexture](https://github.com/farbrausch/fr_public) (Fabian Giesen) — public domain
 - [AGG 2.4](https://github.com/gwerners/agg) (Maxim Shemanarev) — permissive (copy/use/modify/sell with copyright notice)
+- [Material Maker](https://github.com/RodZill4/material-maker) (Rodolphe Suescun) — MIT (algorithm ports)
+- [NanoSVG](https://github.com/memononen/nanosvg) (Mikko Mononen) — zlib
