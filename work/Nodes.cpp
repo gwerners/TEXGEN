@@ -73,6 +73,7 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   registry["Tiler"] = []() { return std::make_unique<TilerNode>(); };
   registry["MultiWarp"] = []() { return std::make_unique<MultiWarpNode>(); };
   registry["SlopeBlur"] = []() { return std::make_unique<SlopeBlurNode>(); };
+  registry["Sphere"] = []() { return std::make_unique<SphereNode>(); };
   registry["DotNoise"] = []() { return std::make_unique<DotNoiseNode>(); };
   registry["Scratches"] = []() { return std::make_unique<ScratchesNode>(); };
   registry["Mirror"] = []() { return std::make_unique<MirrorNode>(); };
@@ -1290,8 +1291,8 @@ void NodeGraph::draw() {
       snprintf(label, sizeof(label), "Evaluating %d/%d", done, total);
     else
       snprintf(label, sizeof(label), "Evaluating...");
-    dl->AddText(ImVec2(c.x + 15.0f, p0.y + 5.0f),
-                IM_COL32(225, 228, 235, 255), label);
+    dl->AddText(ImVec2(c.x + 15.0f, p0.y + 5.0f), IM_COL32(225, 228, 235, 255),
+                label);
 
     // thin progress bar along the pill bottom
     if (total > 0) {

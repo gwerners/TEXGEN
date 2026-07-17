@@ -680,6 +680,25 @@ class FillToColorCoreNode : public CoreNode {
 };
 
 // ============================================================
+// SphereCoreNode — hemisphere heightmap (sphere.mmg)
+// ============================================================
+class SphereCoreNode : public CoreNode {
+ public:
+  SphereCoreNode() {}
+  std::string typeName() const override { return "Sphere"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx = 3, m_heightIdx = 3;
+  float m_cx = 0.5f, m_cy = 0.5f, m_r = 0.5f;
+  bool m_normalized = false;
+};
+
+// ============================================================
 // DotNoiseCoreNode — per-cell random dots (noise.mmg)
 // ============================================================
 class DotNoiseCoreNode : public CoreNode {

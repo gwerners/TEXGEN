@@ -362,6 +362,37 @@ void MMMath(GenTexture &out, const GenTexture *in1, const GenTexture *in2,
         r = s > 0.0f ? sqrtf(s) : 0.0f;
         break;
       }
+      case 20: { // smoothstep(0, 1, a)
+        sF32 t = clamp01(a);
+        r = t * t * (3.0f - 2.0f * t);
+        break;
+      }
+      case 21: { // ping-pong(a, b)
+        if (b != 0.0f) {
+          sF32 x = (a - b) / (b * 2.0f);
+          r = fabsf((x - floorf(x)) * b * 2.0f - b);
+        } else {
+          r = 0.0f;
+        }
+        break;
+      }
+      case 22: r = a > 0.0f ? 1.0f : (a < 0.0f ? -1.0f : 0.0f); break;
+      case 23: r = b != 0.0f ? a - b * floorf(a / b) : 0.0f; break;
+      case 24: r = atan2f(a, b); break;
+      case 25: r = a >= -1.0f && a <= 1.0f ? asinf(a) : 0.0f; break;
+      case 26: r = a >= -1.0f && a <= 1.0f ? acosf(a) : 0.0f; break;
+      case 27: r = atanf(a); break;
+      case 28: r = sinhf(a); break;
+      case 29: r = coshf(a); break;
+      case 30: r = tanhf(a); break;
+      case 31: r = expf(a); break;
+      case 32: r = b != 0.0f ? floorf(a / b) * b : 0.0f; break; // snap
+      case 33: r = a * 0.01745329251f; break;                   // radians
+      case 34: r = a * 57.2957795131f; break;                   // degrees
+      case 35: // log base b
+        r = (a > 0.0f && b > 0.0f && b != 1.0f) ? logf(a) / logf(b) : 0.0f;
+        break;
+      case 36: r = a > 0.0f ? sqrtf(a) : 0.0f; break;
       }
       if (clampResult)
         r = clamp01(r);

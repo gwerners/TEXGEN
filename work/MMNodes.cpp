@@ -55,7 +55,7 @@ std::vector<ImNodes::Ez::SlotInfo> VoronoiNode::inputSlotInfos() const {
   return {};
 }
 std::vector<ImNodes::Ez::SlotInfo> VoronoiNode::outputSlotInfos() const {
-  return {{"Color", 1}, {"F1", 1}, {"Edge", 1}};
+  return {{"Color", 1}, {"F1", 1}, {"Edge", 1}, {"Fill", 1}};
 }
 
 void VoronoiNode::renderParams() {
@@ -475,8 +475,7 @@ void EmbossNode::renderParams() {
 // ============================================================
 
 std::vector<ImNodes::Ez::SlotInfo> Transform2DNode::inputSlotInfos() const {
-  return {{"In", 1},  {"TX", 1}, {"TY", 1},
-          {"Rot", 1}, {"SX", 1}, {"SY", 1}};
+  return {{"In", 1}, {"TX", 1}, {"TY", 1}, {"Rot", 1}, {"SX", 1}, {"SY", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> Transform2DNode::outputSlotInfos() const {
   return {{"Out", 1}};
@@ -642,7 +641,10 @@ void MathOpNode::renderParams() {
   static const char* ops =
       "A + B\0A - B\0A * B\0A / B\0log(A)\0log2(A)\0pow(A, B)\0abs(A)\0"
       "round(A)\0floor(A)\0ceil(A)\0trunc(A)\0fract(A)\0min(A, B)\0"
-      "max(A, B)\0A < B\0cos(A*B)\0sin(A*B)\0tan(A*B)\0sqrt(1-A*A)\0";
+      "max(A, B)\0A < B\0cos(A*B)\0sin(A*B)\0tan(A*B)\0sqrt(1-A*A)\0"
+      "smoothstep(A)\0ping-pong(A, B)\0sign(A)\0mod(A, B)\0atan2(A, B)\0"
+      "asin(A)\0acos(A)\0atan(A)\0sinh(A)\0cosh(A)\0tanh(A)\0exp(A)\0"
+      "snap(A, B)\0radians(A)\0degrees(A)\0log(A, B)\0sqrt(A)\0";
   ImGui::PushItemWidth(120);
   ImGui::Combo("Op##math", &m_core.m_op, ops);
   Hint("Per-pixel scalar operation on the grayscale inputs");
@@ -1132,5 +1134,28 @@ void LevelsNode::renderParams() {
                     ImGuiColorEditFlags_NoInputs);
   ImGui::ColorEdit4("Out max##lv", m_core.m_outMax,
                     ImGuiColorEditFlags_NoInputs);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// SphereNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> SphereNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> SphereNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void SphereNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##sph", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##sph", &m_core.m_heightIdx, s_sizesStr);
+  SliderFloatW("Center X##sph", &m_core.m_cx, 0.0f, 1.0f);
+  SliderFloatW("Center Y##sph", &m_core.m_cy, 0.0f, 1.0f);
+  SliderFloatW("Radius##sph", &m_core.m_r, 0.01f, 1.0f);
+  ImGui::Checkbox("Normalized##sph", &m_core.m_normalized);
+  Hint("Divide by 2r so the dome top is exactly 1");
   ImGui::PopItemWidth();
 }

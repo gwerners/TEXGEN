@@ -52,7 +52,10 @@ void MMInvert(GenTexture &out, const GenTexture &in);
 //  0 a+b   1 a-b    2 a*b     3 a/b      4 log(a)   5 log2(a)
 //  6 a^b   7 |a|    8 round   9 floor   10 ceil    11 trunc
 // 12 fract 13 min  14 max    15 a<b     16 cos(ab) 17 sin(ab)
-// 18 tan(ab) 19 sqrt(1-a*a)
+// 18 tan(ab) 19 sqrt(1-a*a) 20 smoothstep(0,1,a) 21 pingpong(a,b)
+// 22 sign 23 mod 24 atan2 25 asin 26 acos 27 atan 28 sinh 29 cosh
+// 30 tanh 31 exp 32 snap(a,b) 33 radians 34 degrees 35 log_b(a)
+// 36 sqrt(a)
 // Unconnected inputs (null) use the def1/def2 constants.
 void MMMath(GenTexture &out, const GenTexture *in1, const GenTexture *in2,
             sInt op, sF32 def1, sF32 def2, bool clampResult);

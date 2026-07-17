@@ -54,6 +54,7 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
       {"GradientMM",
        {"Generator", "Rotated repeating gradient with color stops"}},
       {"DotNoise", {"Generator", "Random dots on a grid (white noise)"}},
+      {"Sphere", {"Generator", "Hemisphere heightmap (dome/rivet)"}},
       {"Scratches", {"Generator", "Layered random line scratches"}},
       {"Shape", {"Generator", "Parametric shape (polygon, star, arc...)"}},
       {"Pattern",
@@ -232,6 +233,7 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<TilerCoreNode>(r);
     registerType<MultiWarpCoreNode>(r);
     registerType<SlopeBlurCoreNode>(r);
+    registerType<SphereCoreNode>(r);
     registerType<DotNoiseCoreNode>(r);
     registerType<ScratchesCoreNode>(r);
     registerType<MirrorCoreNode>(r);

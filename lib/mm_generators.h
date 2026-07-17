@@ -16,9 +16,12 @@
 //   outColor - random color per cell
 //   outF1    - grayscale distance to cell centers (scaled by intensity)
 //   outEdge  - grayscale distance to cell borders
+// outFill (optional) receives the per-cell fill map (bounding-box
+// rgba, same convention as MMFill) for fill_to_* consumers.
 void MMVoronoi(GenTexture *outColor, GenTexture *outF1, GenTexture *outEdge,
                sInt scaleX, sInt scaleY, sF32 stretchX, sF32 stretchY,
-               sF32 intensity, sF32 randomness, sF32 seed);
+               sF32 intensity, sF32 randomness, sF32 seed,
+               GenTexture *outFill = nullptr);
 
 // FBM noise variants (all tileable).
 enum MMFbmMode {
@@ -143,3 +146,7 @@ void MMDotNoise(GenTexture &out, sInt gridSize, sF32 density,
 // Scratches generator (scratches.mmg): layered random line scratches.
 void MMScratches(GenTexture &out, sInt layers, sF32 length, sF32 width,
                  sF32 waviness, sF32 angleDeg, sF32 randomness, sF32 seed);
+
+// Sphere heightmap (sphere.mmg): hemisphere height at (cx, cy) with
+// radius r; normalized divides by 2r so the top is exactly 1.
+void MMSphere(GenTexture &out, sF32 cx, sF32 cy, sF32 r, bool normalized);

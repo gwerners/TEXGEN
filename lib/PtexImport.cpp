@@ -136,7 +136,7 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
 const std::map<std::string, std::vector<std::string>> &portsOut() {
   static const std::map<std::string, std::vector<std::string>> m = {
       // MM voronoi: 0=Nodes(F1), 1=Borders(Edge), 2=Random color, 3=Fill
-      {"voronoi", {"F1", "Edge", "Color", ""}},
+      {"voronoi", {"F1", "Edge", "Color", "Fill"}},
       {"voronoi2", {"F1", "Edge", ""}},
       {"decompose", {"R", "G", "B", "A"}},
       {"mwf_mix", {"H", "C", "ORM", "EM", "NM"}},
@@ -558,6 +558,15 @@ bool convertParams(const std::string &type, const json &p,
            {"intensity", numOr(p, "param1", 0.5f)},
            {"quality", numOr(p, "param2", 50.0f)},
            {"mode", intOr(p, "param3", 2)}};
+    return true;
+  }
+  if (type == "sphere") {
+    typeName = "Sphere";
+    out = size3();
+    out["cx"] = numOr(p, "cx", 0.5f);
+    out["cy"] = numOr(p, "cy", 0.5f);
+    out["r"] = numOr(p, "r", 0.5f);
+    out["normalized"] = boolOr(p, "normalized", false);
     return true;
   }
   if (type == "noise") {

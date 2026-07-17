@@ -114,7 +114,8 @@ inline void u32ToF4(sU32 col, sF32 out[4]) {
 
 void MMVoronoi(GenTexture *outColor, GenTexture *outF1, GenTexture *outEdge,
                sInt scaleX, sInt scaleY, sF32 stretchX, sF32 stretchY,
-               sF32 intensity, sF32 randomness, sF32 seed) {
+               sF32 intensity, sF32 randomness, sF32 seed,
+               GenTexture *outFill) {
   GenTexture *ref = outColor ? outColor : (outF1 ? outF1 : outEdge);
   if (!ref || !ref->Data)
     return;
@@ -192,6 +193,15 @@ void MMVoronoi(GenTexture *outColor, GenTexture *outF1, GenTexture *outEdge,
         p.g = to16(rgb[1]);
         p.b = to16(rgb[2]);
         p.a = 65535;
+      }
+      if (outFill && outFill->Data) {
+        // MM: round(vec4(fract((cell-1)/size), 2/size) * 4096) / 4096
+        auto q = [](sF32 v) { return roundf(v * 4096.0f) / 4096.0f; };
+        Pixel &p = outFill->Data[idx];
+        p.r = to16(q(glslFract((cellX - 1.0f) / sizeX)));
+        p.g = to16(q(glslFract((cellY - 1.0f) / sizeY)));
+        p.b = to16(q(2.0f / sizeX));
+        p.a = to16(q(2.0f / sizeY));
       }
     }
   }
@@ -1025,6 +1035,26 @@ void MMScratches(GenTexture &out, sInt layers, sF32 length, sF32 width,
           val = lv;
       }
       gray16(out.Data[py * w + px], val > 1.0f ? 1.0f : val);
+    }
+  }
+}
+
+// Sphere heightmap (sphere.mmg).
+void MMSphere(GenTexture &out, sF32 cx, sF32 cy, sF32 r, bool normalized) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (r < 1e-5f)
+    r = 1e-5f;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = ((py + 0.5f) / h - cy) / r;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = ((px + 0.5f) / w - cx) / r;
+      const sF32 q = 1.0f - (u * u + v * v);
+      sF32 val = q > 0.0f ? 2.0f * r * sqrtf(q) : 0.0f;
+      if (normalized)
+        val /= 2.0f * r;
+      gray16(out.Data[py * w + px], val);
     }
   }
 }

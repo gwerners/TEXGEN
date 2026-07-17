@@ -51,19 +51,21 @@ std::vector<std::string> VoronoiCoreNode::inputSlotNames() const {
   return {};
 }
 std::vector<std::string> VoronoiCoreNode::outputSlotNames() const {
-  return {"Color", "F1", "Edge"};
+  return {"Color", "F1", "Edge", "Fill"};
 }
 
 void VoronoiCoreNode::execute(const std::vector<GenTexture*>& /*inputs*/,
                               std::vector<GenTexture>& outputs) {
   int w = mmSizeFromIdx(m_widthIdx);
   int h = mmSizeFromIdx(m_heightIdx);
-  outputs.resize(3);
+  outputs.resize(4);
   outputs[0].Init(w, h);
   outputs[1].Init(w, h);
   outputs[2].Init(w, h);
+  outputs[3].Init(w, h);
   MMVoronoi(&outputs[0], &outputs[1], &outputs[2], m_scaleX, m_scaleY,
-            m_stretchX, m_stretchY, m_intensity, m_randomness, m_seed);
+            m_stretchX, m_stretchY, m_intensity, m_randomness, m_seed,
+            &outputs[3]);
 }
 
 nlohmann::json VoronoiCoreNode::saveParams() const {
@@ -1948,4 +1950,43 @@ void LevelsCoreNode::execute(const std::vector<GenTexture*>& inputs,
   outputs.resize(1);
   outputs[0].Init(in->XRes, in->YRes);
   MMLevels(outputs[0], *in, m_inMin, m_inMid, m_inMax, m_outMin, m_outMax);
+}
+
+// ============================================================
+// SphereCoreNode
+// ============================================================
+
+std::vector<std::string> SphereCoreNode::inputSlotNames() const {
+  return {};
+}
+std::vector<std::string> SphereCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json SphereCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
+          {"cx", m_cx},             {"cy", m_cy},
+          {"r", m_r},               {"normalized", m_normalized}};
+}
+
+void SphereCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("cx"))
+    m_cx = j["cx"];
+  if (j.contains("cy"))
+    m_cy = j["cy"];
+  if (j.contains("r"))
+    m_r = j["r"];
+  if (j.contains("normalized"))
+    m_normalized = j["normalized"];
+}
+
+void SphereCoreNode::execute(const std::vector<GenTexture*>& /*inputs*/,
+                             std::vector<GenTexture>& outputs) {
+  outputs.resize(1);
+  outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
+  MMSphere(outputs[0], m_cx, m_cy, m_r, m_normalized);
 }

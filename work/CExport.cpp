@@ -714,15 +714,16 @@ static void emitNode(std::ostringstream& ss,
     int w = sizeFromIdx(p.value("widthIdx", 3));
     int h = sizeFromIdx(p.value("heightIdx", 3));
     ss << "    GenTexture " << v << "_Color, " << v << "_F1, " << v
-       << "_Edge;\n";
+       << "_Edge, " << v << "_Fill;\n";
     ss << "    " << v << "_Color.Init(" << w << ", " << h << "); " << v
        << "_F1.Init(" << w << ", " << h << "); " << v << "_Edge.Init(" << w
-       << ", " << h << ");\n";
+       << ", " << h << "); " << v << "_Fill.Init(" << w << ", " << h
+       << ");\n";
     ss << "    MMVoronoi(&" << v << "_Color, &" << v << "_F1, &" << v
        << "_Edge, " << p.value("scaleX", 4) << ", " << p.value("scaleY", 4)
        << ", " << pf(p, "stretchX", 1.0f) << ", " << pf(p, "stretchY", 1.0f)
        << ", " << pf(p, "intensity", 0.75f) << ", " << pf(p, "randomness", 1.0f)
-       << ", " << pf(p, "seed", 0.0f) << ");\n";
+       << ", " << pf(p, "seed", 0.0f) << ", &" << v << "_Fill);\n";
   }
 
   else if (type == "FBM") {
@@ -1005,6 +1006,16 @@ static void emitNode(std::ostringstream& ss,
       ss << "    MMSlopeBlur(" << v << ", " << in << ", " << hm << ", "
          << pf(p, "size", 9.0f) << ", " << pf(p, "sigma", 0.5f) << ");\n";
     }
+  }
+
+  else if (type == "Sphere") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMSphere(" << v << ", " << pf(p, "cx", 0.5f) << ", "
+       << pf(p, "cy", 0.5f) << ", " << pf(p, "r", 0.5f) << ", "
+       << (p.value("normalized", false) ? "true" : "false") << ");\n";
   }
 
   else if (type == "DotNoise") {
