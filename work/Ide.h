@@ -7,6 +7,7 @@
 #include <imgui.h>
 #include <raylib.h>
 #include "FileDialog.h"
+#include "Preview3D.h"
 #include "ProjectIO.h"
 
 class Ide {
@@ -41,6 +42,8 @@ class Ide {
   FileDialog m_loadDialog;
   FileDialog m_importDialog;
   int m_lastChangeCount = -1;
+  Preview3D m_preview3d;
+  bool m_preview3dOn = false;
 };
 
 #endif  // IDE_H

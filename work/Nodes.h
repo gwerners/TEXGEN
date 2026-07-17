@@ -106,6 +106,9 @@ class NodeGraph {
   // Contextual hint for the status bar (hovered node, shortcuts...)
   const std::string& hintText() const { return m_hintText; }
 
+  // All graph nodes (for panels that inspect the graph, e.g. 3D preview)
+  const std::vector<GraphNode*>& nodes() const { return m_nodes; }
+
   nlohmann::json save() const;
   void load(const nlohmann::json& j);
   void clear();

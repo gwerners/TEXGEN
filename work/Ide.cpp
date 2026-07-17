@@ -307,46 +307,59 @@ void Ide::draw() {
 
   TitleBarMaxButton("bottom", m_isBottomFullscreen, m_resetLayout);
 
-  // Zoom controls
-  if (ImGui::Button("+##zin")) {
-    m_zoom += 0.1f;
-    if (m_zoom > m_maxZoom)
-      m_zoom = m_maxZoom;
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("-##zout")) {
-    m_zoom -= 0.1f;
-    if (m_zoom < m_minZoom)
-      m_zoom = m_minZoom;
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("1:1##zreset")) {
-    m_zoom = 1.0f;
-  }
-  ImGui::SameLine();
-  ImGui::Text("%.0f%%", m_zoom * 100.0f);
+  ImGui::Checkbox("3D##previewmode", &m_preview3dOn);
+  if (ImGui::IsItemHovered())
+    ImGui::SetTooltip(
+        "GPU-lit 3D preview of the Material node maps\n"
+        "(drag to orbit, wheel to zoom)");
 
-  // Auto-update output when graph changes
-  if (g_nodeGraph && g_nodeGraph->changeCount() != m_lastChangeCount) {
-    m_lastChangeCount = g_nodeGraph->changeCount();
-    GenTexture* lastOut = g_nodeGraph->getLastOutput();
-    if (lastOut && lastOut->Data) {
-      if (m_hasOutputTexture && m_outputTexture.id != 0)
-        UnloadTexture(m_outputTexture);
-      m_outputTexture = LoadTextureFromGenTexture(*lastOut);
-      m_hasOutputTexture = (m_outputTexture.id != 0);
-    }
-  }
-
-  if (m_hasOutputTexture && m_outputTexture.id != 0) {
-    ImVec2 imageSize = ImVec2(float(m_outputTexture.width * m_zoom),
-                              float(m_outputTexture.height * m_zoom));
-    ImGui::Image(ImTextureID(m_outputTexture.id), imageSize);
+  if (m_preview3dOn) {
+    ImGui::SameLine();
+    m_preview3d.draw(g_nodeGraph);
+    ImGui::End();
   } else {
-    ImGui::TextDisabled("(no output yet - click Generate)");
-  }
+    ImGui::SameLine();
+    // Zoom controls
+    if (ImGui::Button("+##zin")) {
+      m_zoom += 0.1f;
+      if (m_zoom > m_maxZoom)
+        m_zoom = m_maxZoom;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("-##zout")) {
+      m_zoom -= 0.1f;
+      if (m_zoom < m_minZoom)
+        m_zoom = m_minZoom;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("1:1##zreset")) {
+      m_zoom = 1.0f;
+    }
+    ImGui::SameLine();
+    ImGui::Text("%.0f%%", m_zoom * 100.0f);
 
-  ImGui::End();
+    // Auto-update output when graph changes
+    if (g_nodeGraph && g_nodeGraph->changeCount() != m_lastChangeCount) {
+      m_lastChangeCount = g_nodeGraph->changeCount();
+      GenTexture* lastOut = g_nodeGraph->getLastOutput();
+      if (lastOut && lastOut->Data) {
+        if (m_hasOutputTexture && m_outputTexture.id != 0)
+          UnloadTexture(m_outputTexture);
+        m_outputTexture = LoadTextureFromGenTexture(*lastOut);
+        m_hasOutputTexture = (m_outputTexture.id != 0);
+      }
+    }
+
+    if (m_hasOutputTexture && m_outputTexture.id != 0) {
+      ImVec2 imageSize = ImVec2(float(m_outputTexture.width * m_zoom),
+                                float(m_outputTexture.height * m_zoom));
+      ImGui::Image(ImTextureID(m_outputTexture.id), imageSize);
+    } else {
+      ImGui::TextDisabled("(no output yet - click Generate)");
+    }
+
+    ImGui::End();
+  }  // 2D preview branch
 
   // ------------------------------------------------------------------
   // Right Panel - node canvas

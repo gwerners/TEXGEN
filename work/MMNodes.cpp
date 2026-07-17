@@ -1123,13 +1123,10 @@ std::vector<ImNodes::Ez::SlotInfo> LevelsNode::outputSlotInfos() const {
 
 void LevelsNode::renderParams() {
   ImGui::PushItemWidth(120);
-  ImGui::ColorEdit4("In min##lv", m_core.m_inMin,
-                    ImGuiColorEditFlags_NoInputs);
-  ImGui::ColorEdit4("In mid##lv", m_core.m_inMid,
-                    ImGuiColorEditFlags_NoInputs);
+  ImGui::ColorEdit4("In min##lv", m_core.m_inMin, ImGuiColorEditFlags_NoInputs);
+  ImGui::ColorEdit4("In mid##lv", m_core.m_inMid, ImGuiColorEditFlags_NoInputs);
   Hint("Midtone pivot (gamma-like)");
-  ImGui::ColorEdit4("In max##lv", m_core.m_inMax,
-                    ImGuiColorEditFlags_NoInputs);
+  ImGui::ColorEdit4("In max##lv", m_core.m_inMax, ImGuiColorEditFlags_NoInputs);
   ImGui::ColorEdit4("Out min##lv", m_core.m_outMin,
                     ImGuiColorEditFlags_NoInputs);
   ImGui::ColorEdit4("Out max##lv", m_core.m_outMax,

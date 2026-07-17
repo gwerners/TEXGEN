@@ -99,6 +99,7 @@ set(SRC
   Utils.cpp
   Nodes.cpp
   Icons.cpp
+  Preview3D.cpp
   AllNodes.cpp
   AggNodes.cpp
   MMNodes.cpp
@@ -116,6 +117,7 @@ set(HEADERS
   Utils.h
   Nodes.h
   Icons.h
+  Preview3D.h
   AllNodes.h
   TextureNode.h
   ProjectIO.h
