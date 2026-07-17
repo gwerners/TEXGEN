@@ -1025,6 +1025,80 @@ void expandLayeredBlends(json &nodes, json &conns) {
   conns = newConns;
 }
 
+// ---- MM library graph macros (template expansion) ----
+// Macros from MM's node library whose inner nodes convert cleanly are
+// expanded in place into inline "graph" nodes; the normal Subgraph
+// path then converts them (recursively, so nested macros work too).
+// Templates are the verbatim .mmg bodies from
+// addons/material_maker/nodes/<name>.mmg, minified.
+const std::map<std::string, const char *> &graphMacroTemplates() {
+  static const std::map<std::string, const char *> m = {
+      {"crystal",
+       R"mmg({"connections":[{"from":"voronoi","from_port":0,"to":"math_2","to_port":0},{"from":"voronoi_2","from_port":0,"to":"math_3","to_port":0},{"from":"math","from_port":0,"to":"math_5","to_port":1},{"from":"math_4","from_port":0,"to":"math_5","to_port":0},{"from":"math_5","from_port":0,"to":"math_6","to_port":0},{"from":"math_4","from_port":0,"to":"math_6","to_port":1},{"from":"math_2","from_port":0,"to":"math","to_port":0},{"from":"math_2","from_port":0,"to":"math_4","to_port":0},{"from":"math_3","from_port":0,"to":"math_4","to_port":1},{"from":"math_3","from_port":0,"to":"math","to_port":1},{"from":"math_6","from_port":0,"to":"math_7","to_port":0},{"from":"math_7","from_port":0,"to":"gen_outputs","to_port":0}],"label":"Crystal","name":"crystal","nodes":[{"name":"math","node_position":{"x":-1260,"y":200},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":13},"seed_int":0,"type":"math"},{"name":"math_2","node_position":{"x":-1640,"y":200},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":19},"seed_int":0,"type":"math"},{"name":"voronoi","node_position":{"x":-2000,"y":200},"parameters":{"intensity":1,"randomness":1,"scale_x":16,"scale_y":16,"stretch_x":0.85,"stretch_y":0.85},"seed_int":0,"type":"voronoi"},{"name":"voronoi_2","node_position":{"x":-2000,"y":520},"parameters":{"intensity":1,"randomness":1,"scale_x":16,"scale_y":16,"stretch_x":0.85,"stretch_y":0.85},"seed_int":1998774700,"type":"voronoi"},{"name":"math_3","node_position":{"x":-1640,"y":520},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":19},"seed_int":0,"type":"math"},{"name":"math_4","node_position":{"x":-1260,"y":520},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":14},"seed_int":0,"type":"math"},{"name":"math_5","node_position":{"x":-920,"y":360},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":1},"seed_int":0,"type":"math"},{"name":"math_6","node_position":{"x":-660,"y":360},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":3},"seed_int":0,"type":"math"},{"name":"gen_inputs","node_position":{"x":-2200,"y":400},"parameters":{},"ports":[],"seed_int":0,"type":"ios"},{"name":"gen_outputs","node_position":{"x":-120,"y":360},"parameters":{},"ports":[{"group_size":0,"name":"out","shortdesc":"Output","type":"f"}],"seed_int":0,"type":"ios"},{"name":"gen_parameters","node_position":{"x":-1560,"y":-60},"parameters":{"param0":16,"param1":16},"seed_int":0,"type":"remote","widgets":[{"label":"Scale X","linked_widgets":[{"node":"voronoi","widget":"scale_x"},{"node":"voronoi_2","widget":"scale_x"}],"name":"param0","type":"linked_control"},{"label":"Scale Y","linked_widgets":[{"node":"voronoi","widget":"scale_y"},{"node":"voronoi_2","widget":"scale_y"}],"name":"param1","type":"linked_control"}]},{"name":"math_7","node_position":{"x":-400,"y":360},"parameters":{"clamp":false,"default_in1":0,"default_in2":1.45,"op":2},"seed_int":0,"type":"math"}],"parameters":{"param0":16,"param1":16},"type":"graph"})mmg"},
+  };
+  return m;
+}
+
+void expandGraphMacros(json &nodes) {
+  for (auto &n : nodes) {
+    const std::string type = n.value("type", std::string());
+    auto it = graphMacroTemplates().find(type);
+    if (it == graphMacroTemplates().end())
+      continue;
+    json tmpl = json::parse(it->second, nullptr, false);
+    if (tmpl.is_discarded())
+      continue;
+    // widget values: template defaults overridden by the instance
+    json pvals = tmpl.value("parameters", json::object());
+    const json ip = n.value("parameters", json::object());
+    for (auto it2 = ip.begin(); it2 != ip.end(); ++it2)
+      pvals[it2.key()] = it2.value();
+    json tnodes = tmpl.value("nodes", json::array());
+    // push linked widget values into the inner nodes
+    for (auto &gp : tnodes) {
+      if (gp.value("type", std::string()) != "remote")
+        continue;
+      const json widgets = gp.value("widgets", json::array());
+      for (auto &w : widgets) {
+        const std::string pname = w.value("name", std::string());
+        if (!pvals.contains(pname))
+          continue;
+        const json lws = w.value("linked_widgets", json::array());
+        for (auto &lw : lws) {
+          const std::string tgt = lw.value("node", std::string());
+          const std::string widget = lw.value("widget", std::string());
+          for (auto &tn : tnodes)
+            if (tn.value("name", std::string()) == tgt)
+              tn["parameters"][widget] = pvals[pname];
+        }
+      }
+    }
+    // the instance seed offsets every unlocked inner node's own seed
+    double iseed = 0.0;
+    if (n.contains("seed") && n["seed"].is_number())
+      iseed = n["seed"].get<double>();
+    else if (n.contains("seed_int") && n["seed_int"].is_number())
+      iseed = n["seed_int"].get<double>();
+    if (iseed != 0.0)
+      for (auto &tn : tnodes) {
+        const std::string tt = tn.value("type", std::string());
+        if (tt == "ios" || tt == "remote" || tn.value("seed_locked", false))
+          continue;
+        double s = 0.0;
+        if (tn.contains("seed") && tn["seed"].is_number())
+          s = tn["seed"].get<double>();
+        else if (tn.contains("seed_int") && tn["seed_int"].is_number())
+          s = tn["seed_int"].get<double>();
+        tn["seed"] = s + iseed;
+      }
+    n["type"] = "graph";
+    n["nodes"] = tnodes;
+    n["connections"] = tmpl.value("connections", json::array());
+    if (!n.contains("label"))
+      n["label"] = tmpl.value("label", type);
+  }
+}
+
 struct GraphResult {
   json nodes = json::array();
   json conns = json::array();
@@ -1044,6 +1118,7 @@ GraphResult convertGraph(json mmNodes, json mmConns,
                          const std::string &baseName,
                          std::vector<std::string> *skipped) {
   GraphResult res;
+  expandGraphMacros(mmNodes);
   collapsePassthroughs(mmNodes, mmConns);
   expandLayeredBlends(mmNodes, mmConns);
 
