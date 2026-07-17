@@ -327,19 +327,23 @@ void MMMatMap(GenTexture &outH, GenTexture &outC, GenTexture &outORM,
 void MMShadePreview(GenTexture &out, const GenTexture *albedo,
                     const GenTexture *normal, const GenTexture *roughness,
                     const GenTexture *metallic, const GenTexture *ao,
-                    const GenTexture *emission, const GenTexture *height,
+                    const GenTexture *emission, const GenTexture *depth,
                     sF32 lightAzimuthDeg, sF32 lightElevationDeg,
                     sF32 intensity, sF32 ambient) {
   if (!out.Data)
     return;
   const sInt w = out.XRes, h = out.YRes;
 
-  // Normal fallback: derive from the heightmap when not provided
+  // Normal fallback: derive from the depth map when not provided
+  // (MM depth convention: white = recessed, so height = 1 - depth)
   GenTexture derivedNormal;
   const GenTexture *nm = normal;
-  if ((!nm || !nm->Data) && height && height->Data) {
+  if ((!nm || !nm->Data) && depth && depth->Data) {
+    GenTexture heightTex;
+    heightTex.Init(depth->XRes, depth->YRes);
+    MMInvert(heightTex, *depth);
     derivedNormal.Init(w, h);
-    MMNormalMap(derivedNormal, *height, 1.0f, 1 /*OpenGL*/);
+    MMNormalMap(derivedNormal, heightTex, 1.0f, 1 /*OpenGL*/);
     nm = &derivedNormal;
   }
 

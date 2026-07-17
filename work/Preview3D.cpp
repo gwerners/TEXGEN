@@ -32,8 +32,9 @@ void main() {
     fragUV = vertexTexCoord;
     vec3 pos = vertexPosition;
     if (hasHeight == 1) {
-        float h = texture(heightMap, vertexTexCoord * tiling).r;
-        pos += vertexNormal * (h - 0.5) * displace;
+        // depth map (MM convention): white pushes the surface in
+        float d = texture(heightMap, vertexTexCoord * tiling).r;
+        pos += vertexNormal * (0.5 - d) * displace;
     }
     fragPos = vec3(matModel * vec4(pos, 1.0));
     fragNormal = normalize(vec3(matNormal * vec4(vertexNormal, 0.0)));
@@ -78,6 +79,9 @@ void main() {
         vec3 T = normalize(fragTangent.xyz - N * dot(fragTangent.xyz, N));
         vec3 B = cross(N, T) * fragTangent.w;
         vec3 nm = texture(normalMap, uv).rgb * 2.0 - 1.0;
+        // our maps encode +G as image-up while the mesh V axis grows
+        // the other way; flip G to match
+        nm.y = -nm.y;
         N = normalize(mat3(T, B, N) * nm);
     }
     vec3 V = normalize(viewPos - fragPos);
@@ -181,7 +185,7 @@ void Preview3D::setTexture(int slot, Texture2D tex) {
 
 void Preview3D::updateTextures(NodeGraph* graph) {
   // Material core input slots: 0 Albedo, 1 Normal, 2 Roughness,
-  // 3 Metallic, 4 Height, 5 AO, 6 Emission
+  // 3 Metallic, 4 Depth, 5 AO, 6 Emission
   GraphNode* mat = nullptr;
   for (auto* gn : graph->nodes())
     if (gn->texNode()->typeName() == "Material") {

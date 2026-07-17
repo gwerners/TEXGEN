@@ -255,7 +255,7 @@ void MMBricksNode::renderParams() {
 
 std::vector<ImNodes::Ez::SlotInfo> MaterialNode::inputSlotInfos() const {
   return {{"Albedo", 1}, {"Normal", 1}, {"Roughness", 1}, {"Metallic", 1},
-          {"Height", 1}, {"AO", 1},     {"Emission", 1}};
+          {"Depth", 1},  {"AO", 1},     {"Emission", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> MaterialNode::outputSlotInfos() const {
   return {{"Preview", 1}};

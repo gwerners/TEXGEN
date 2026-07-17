@@ -814,7 +814,7 @@ static void emitNode(std::ostringstream& ss,
 
   else if (type == "Material") {
     static const char* channels[] = {"Albedo",   "Normal", "Roughness",
-                                     "Metallic", "Height", "AO",
+                                     "Metallic", "Depth",  "AO",
                                      "Emission"};
     std::string base = p.value("baseName", std::string("material"));
     for (auto& ch : channels) {
@@ -830,7 +830,7 @@ static void emitNode(std::ostringstream& ss,
     // Lit preview output
     static const char* previewIns[] = {"Albedo",   "Normal", "Roughness",
                                        "Metallic", "AO",     "Emission",
-                                       "Height"};
+                                       "Depth"};
     std::string srcs[7], sizeRef;
     for (int i = 0; i < 7; i++) {
       srcs[i] = srcVar(conns, id, previewIns[i]);

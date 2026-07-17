@@ -391,8 +391,9 @@ MaterialCoreNode::MaterialCoreNode() {
 }
 
 std::vector<std::string> MaterialCoreNode::inputSlotNames() const {
+  // Depth follows the MM material convention: white = recessed
   return {"Albedo", "Normal", "Roughness", "Metallic",
-          "Height", "AO",     "Emission"};
+          "Depth",  "AO",     "Emission"};
 }
 std::vector<std::string> MaterialCoreNode::outputSlotNames() const {
   return {"Preview"};
@@ -416,7 +417,7 @@ void MaterialCoreNode::execute(const std::vector<GenTexture*>& inputs,
     return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
                                                                : nullptr;
   };
-  // slots: 0 Albedo, 1 Normal, 2 Roughness, 3 Metallic, 4 Height,
+  // slots: 0 Albedo, 1 Normal, 2 Roughness, 3 Metallic, 4 Depth,
   //        5 AO, 6 Emission
   const GenTexture* sz = nullptr;
   for (size_t i = 0; i < 7 && !sz; i++)

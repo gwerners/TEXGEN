@@ -46,12 +46,13 @@ void MMMatMap(GenTexture &outH, GenTexture &outC, GenTexture &outORM,
 
 // Lit material preview: Blinn-Phong shading of the PBR maps on a flat
 // plane (deterministic, CPU). Missing inputs use sensible defaults
-// (albedo black, normal flat or derived from height, roughness 1,
-// metallic 0, AO white, emission black). Angles in degrees; azimuth 0
-// lights from the right, counter-clockwise; elevation 90 is overhead.
+// (albedo white, normal flat or derived from the depth map — MM
+// convention, white = recessed —, roughness 1, metallic 0, AO white,
+// emission black). Angles in degrees; azimuth 0 lights from the
+// right, counter-clockwise; elevation 90 is overhead.
 void MMShadePreview(GenTexture &out, const GenTexture *albedo,
                     const GenTexture *normal, const GenTexture *roughness,
                     const GenTexture *metallic, const GenTexture *ao,
-                    const GenTexture *emission, const GenTexture *height,
+                    const GenTexture *emission, const GenTexture *depth,
                     sF32 lightAzimuthDeg, sF32 lightElevationDeg,
                     sF32 intensity, sF32 ambient);
