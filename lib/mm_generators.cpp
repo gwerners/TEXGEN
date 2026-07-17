@@ -903,8 +903,37 @@ void MMPattern(GenTexture &out, sInt mixMode, sInt xWave, sF32 xScale,
 }
 
 // Gradient generator (gradient.mmg).
+void MMGradientEval(const MMGradientStop *stops, sInt nStops, sF32 t,
+                    sF32 c[4]) {
+  if (nStops < 1) {
+    c[0] = c[1] = c[2] = 0.0f;
+    c[3] = 1.0f;
+    return;
+  }
+  if (t <= stops[0].pos || nStops == 1) {
+    c[0] = stops[0].r; c[1] = stops[0].g;
+    c[2] = stops[0].b; c[3] = stops[0].a;
+    return;
+  }
+  if (t >= stops[nStops - 1].pos) {
+    c[0] = stops[nStops - 1].r; c[1] = stops[nStops - 1].g;
+    c[2] = stops[nStops - 1].b; c[3] = stops[nStops - 1].a;
+    return;
+  }
+  sInt i = 0;
+  while (i < nStops - 2 && t > stops[i + 1].pos)
+    i++;
+  const sF32 span = stops[i + 1].pos - stops[i].pos;
+  const sF32 f = span > 0.0f ? (t - stops[i].pos) / span : 0.0f;
+  c[0] = stops[i].r + (stops[i + 1].r - stops[i].r) * f;
+  c[1] = stops[i].g + (stops[i + 1].g - stops[i].g) * f;
+  c[2] = stops[i].b + (stops[i + 1].b - stops[i].b) * f;
+  c[3] = stops[i].a + (stops[i + 1].a - stops[i].a) * f;
+}
+
 void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
-                    sInt nStops, sF32 repeat, sF32 rotateDeg, bool mirror) {
+                    sInt nStops, sF32 repeat, sF32 rotateDeg, bool mirror,
+                    sInt shape) {
   if (!out.Data || nStops < 1)
     return;
   const sInt w = out.XRes, h = out.YRes;
@@ -915,38 +944,25 @@ void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
       cosf(fabsf(glslMod(rotateDeg, 90.0f) - 45.0f) * 0.01745329251f) *
       1.41421356237f;
 
-  auto evalStops = [&](sF32 t, sF32 c[4]) {
-    if (t <= stops[0].pos || nStops == 1) {
-      c[0] = stops[0].r; c[1] = stops[0].g;
-      c[2] = stops[0].b; c[3] = stops[0].a;
-      return;
-    }
-    if (t >= stops[nStops - 1].pos) {
-      c[0] = stops[nStops - 1].r; c[1] = stops[nStops - 1].g;
-      c[2] = stops[nStops - 1].b; c[3] = stops[nStops - 1].a;
-      return;
-    }
-    sInt i = 0;
-    while (i < nStops - 2 && t > stops[i + 1].pos)
-      i++;
-    const sF32 span = stops[i + 1].pos - stops[i].pos;
-    const sF32 f = span > 0.0f ? (t - stops[i].pos) / span : 0.0f;
-    c[0] = stops[i].r + (stops[i + 1].r - stops[i].r) * f;
-    c[1] = stops[i].g + (stops[i + 1].g - stops[i].g) * f;
-    c[2] = stops[i].b + (stops[i + 1].b - stops[i].b) * f;
-    c[3] = stops[i].a + (stops[i + 1].a - stops[i].a) * f;
-  };
-
   for (sInt py = 0; py < h; py++) {
     const sF32 v = (py + 0.5f) / h;
     for (sInt px = 0; px < w; px++) {
       const sF32 u = (px + 0.5f) / w;
-      const sF32 r = 0.5f + (cr * (u - 0.5f) + sr * (v - 0.5f)) / norm;
-      sF32 t = glslFract(r * repeat);
+      sF32 t;
+      if (shape == 1) { // radial: distance to the tile center
+        const sF32 dx = glslFract(u) - 0.5f, dy = glslFract(v) - 0.5f;
+        t = glslFract(repeat * 1.41421356237f * sqrtf(dx * dx + dy * dy));
+      } else if (shape == 2) { // circular: angle around the center
+        t = glslFract(repeat * 0.15915494309f *
+                      atan2f(v - 0.5f, u - 0.5f));
+      } else {
+        const sF32 r = 0.5f + (cr * (u - 0.5f) + sr * (v - 0.5f)) / norm;
+        t = glslFract(r * repeat);
+      }
       if (mirror)
         t = 2.0f * (0.5f - fabsf(t - 0.5f));
       sF32 c[4];
-      evalStops(t, c);
+      MMGradientEval(stops, nStops, t, c);
       Pixel &p = out.Data[py * w + px];
       p.r = to16(c[0]);
       p.g = to16(c[1]);
@@ -954,6 +970,79 @@ void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
       p.a = to16(c[3]);
     }
   }
+}
+
+void MMWeave(GenTexture &out, sInt columns, sInt rows, sF32 width,
+             const GenTexture *widthMap) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 PI = 3.1415926f;
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w, v = (py + 0.5f) / h;
+      sF32 wd = width;
+      if (widthMap && widthMap->Data) {
+        sF32 m[4];
+        sampleBilinearWrap(*widthMap, u, v, m);
+        wd *= (m[0] + m[1] + m[2]) / 3.0f;
+      }
+      const sF32 x = u * columns, y = v * rows;
+      sF32 c = (sinf(PI * (x + floorf(y))) * 0.5f + 0.5f) *
+               (fabsf(glslFract(y) - 0.5f) <= wd * 0.5f ? 1.0f : 0.0f);
+      const sF32 c2 = (sinf(PI * (1.0f + y + floorf(x))) * 0.5f + 0.5f) *
+                      (fabsf(glslFract(x) - 0.5f) <= wd * 0.5f ? 1.0f : 0.0f);
+      c = c > c2 ? c : c2;
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = p.g = p.b = to16(c);
+      p.a = 65535;
+    }
+}
+
+void MMWeave2(GenTexture *outPattern, GenTexture *outH, GenTexture *outV,
+              sInt columns, sInt rows, sF32 widthX, sF32 widthY, sF32 stitch,
+              const GenTexture *widthMap) {
+  GenTexture *ref = outPattern ? outPattern : (outH ? outH : outV);
+  if (!ref || !ref->Data)
+    return;
+  const sInt w = ref->XRes, h = ref->YRes;
+  const sF32 PI = 3.1415926f;
+  const sF32 st = stitch < 1.0f ? 1.0f : stitch;
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w, v = (py + 0.5f) / h;
+      sF32 wx = widthX, wy = widthY;
+      if (widthMap && widthMap->Data) {
+        sF32 m[4];
+        sampleBilinearWrap(*widthMap, u, v, m);
+        const sF32 g = (m[0] + m[1] + m[2]) / 3.0f;
+        wx *= g;
+        wy *= g;
+      }
+      const sF32 x = u * st * columns, y = v * st * rows;
+      const sF32 c1 =
+          (sinf(PI / st * (x + floorf(y) - (st - 1.0f))) * 0.25f + 0.75f) *
+          (fabsf(glslFract(y) - 0.5f) <= wx * 0.5f ? 1.0f : 0.0f);
+      const sF32 c2 = (sinf(PI / st * (1.0f + y + floorf(x))) * 0.25f +
+                       0.75f) *
+                      (fabsf(glslFract(x) - 0.5f) <= wy * 0.5f ? 1.0f : 0.0f);
+      const size_t idx = (size_t)py * w + px;
+      if (outPattern && outPattern->Data) {
+        Pixel &p = outPattern->Data[idx];
+        p.r = p.g = p.b = to16(c1 > c2 ? c1 : c2);
+        p.a = 65535;
+      }
+      if (outH && outH->Data) {
+        Pixel &p = outH->Data[idx];
+        p.r = p.g = p.b = to16(c1 <= c2 ? 0.0f : 1.0f);
+        p.a = 65535;
+      }
+      if (outV && outV->Data) {
+        Pixel &p = outV->Data[idx];
+        p.r = p.g = p.b = to16(c2 <= c1 ? 0.0f : 1.0f);
+        p.a = 65535;
+      }
+    }
 }
 
 // Dot noise (noise.mmg).

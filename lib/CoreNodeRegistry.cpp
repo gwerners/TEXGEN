@@ -142,7 +142,17 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
       {"NormalBlend",
        {"Filter", "Blends a detail normal map onto a base normal map "
                   "(reoriented normal mapping)"}},
-      {"ColorNoise", {"Noise", "Random color per grid cell"}},
+      {"ColorNoise", {"Generator", "Random color per grid cell"}},
+      {"Weave", {"Generator", "Woven stripes pattern"}},
+      {"Weave2",
+       {"Generator", "Woven pattern with stitch control and H/V masks"}},
+      {"EdgeDetect2", {"Filter", "Laplacian edge detection"}},
+      {"SmoothMinMax",
+       {"Combine", "Polynomial smooth min/max of two inputs"}},
+      {"FillToGradient",
+       {"Filter", "Draws a gradient across each fill region"}},
+      {"FillToSize",
+       {"Filter", "Region size (area/width/height) as grayscale"}},
       {"DirectionalBlur",
        {"Filter", "One-sided gaussian smear along an angle"}},
       // Combiners
@@ -258,6 +268,12 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<DilateCoreNode>(r);
     registerType<NormalBlendCoreNode>(r);
     registerType<ColorNoiseCoreNode>(r);
+    registerType<WeaveCoreNode>(r);
+    registerType<Weave2CoreNode>(r);
+    registerType<EdgeDetect2CoreNode>(r);
+    registerType<SmoothMinMaxCoreNode>(r);
+    registerType<FillToGradientCoreNode>(r);
+    registerType<FillToSizeCoreNode>(r);
     registerType<DirectionalBlurCoreNode>(r);
     registerType<TilerAdvancedCoreNode>(r);
     registerType<DotNoiseCoreNode>(r);

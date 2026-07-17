@@ -1159,6 +1159,7 @@ nlohmann::json GradientMMCoreNode::saveParams() const {
     stops.push_back({s.pos, s.r, s.g, s.b, s.a});
   return {{"stops", stops},   {"repeat", m_repeat},
           {"rotate", m_rotate}, {"mirror", m_mirror},
+          {"shape", m_shape},
           {"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx}};
 }
 
@@ -1181,6 +1182,8 @@ void GradientMMCoreNode::loadParams(const nlohmann::json& j) {
     m_rotate = j["rotate"];
   if (j.contains("mirror"))
     m_mirror = j["mirror"];
+  if (j.contains("shape"))
+    m_shape = j["shape"];
   if (j.contains("widthIdx"))
     m_widthIdx = j["widthIdx"];
   if (j.contains("heightIdx"))
@@ -1197,7 +1200,7 @@ void GradientMMCoreNode::execute(const std::vector<GenTexture*>& inputs,
     for (size_t k = i; k > 0 && sorted[k].pos < sorted[k - 1].pos; k--)
       std::swap(sorted[k], sorted[k - 1]);
   MMGradientRamp(outputs[0], sorted.data(), (sInt)sorted.size(), m_repeat,
-                 m_rotate, m_mirror);
+                 m_rotate, m_mirror, m_shape);
 }
 
 // ============================================================
@@ -2175,6 +2178,246 @@ void BevelCoreNode::execute(const std::vector<GenTexture*>& inputs,
   outputs.resize(1);
   outputs[0].Init(in->XRes, in->YRes);
   MMBevel(outputs[0], *in, m_distance, m_curve.data(), (int)m_curve.size());
+}
+
+// ============================================================
+// WeaveCoreNode / Weave2CoreNode
+// ============================================================
+
+std::vector<std::string> WeaveCoreNode::inputSlotNames() const {
+  return {"WidthMap"};
+}
+std::vector<std::string> WeaveCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json WeaveCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
+          {"columns", m_columns},   {"rows", m_rows},
+          {"width", m_width}};
+}
+
+void WeaveCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("columns"))
+    m_columns = j["columns"];
+  if (j.contains("rows"))
+    m_rows = j["rows"];
+  if (j.contains("width"))
+    m_width = j["width"];
+}
+
+void WeaveCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                            std::vector<GenTexture>& outputs) {
+  GenTexture* wm = inputs.size() > 0 && inputs[0] && inputs[0]->Data
+                       ? inputs[0]
+                       : nullptr;
+  outputs.resize(1);
+  outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
+  MMWeave(outputs[0], m_columns, m_rows, m_width, wm);
+}
+
+std::vector<std::string> Weave2CoreNode::inputSlotNames() const {
+  return {"WidthMap"};
+}
+std::vector<std::string> Weave2CoreNode::outputSlotNames() const {
+  return {"Out", "Horizontal", "Vertical"};
+}
+
+nlohmann::json Weave2CoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
+          {"columns", m_columns},   {"rows", m_rows},
+          {"widthX", m_widthX},     {"widthY", m_widthY},
+          {"stitch", m_stitch}};
+}
+
+void Weave2CoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("columns"))
+    m_columns = j["columns"];
+  if (j.contains("rows"))
+    m_rows = j["rows"];
+  if (j.contains("widthX"))
+    m_widthX = j["widthX"];
+  if (j.contains("widthY"))
+    m_widthY = j["widthY"];
+  if (j.contains("stitch"))
+    m_stitch = j["stitch"];
+}
+
+void Weave2CoreNode::execute(const std::vector<GenTexture*>& inputs,
+                             std::vector<GenTexture>& outputs) {
+  GenTexture* wm = inputs.size() > 0 && inputs[0] && inputs[0]->Data
+                       ? inputs[0]
+                       : nullptr;
+  outputs.resize(3);
+  const int w = mmSizeFromIdx(m_widthIdx), h = mmSizeFromIdx(m_heightIdx);
+  outputs[0].Init(w, h);
+  outputs[1].Init(w, h);
+  outputs[2].Init(w, h);
+  MMWeave2(&outputs[0], &outputs[1], &outputs[2], m_columns, m_rows,
+           m_widthX, m_widthY, m_stitch, wm);
+}
+
+// ============================================================
+// EdgeDetect2CoreNode
+// ============================================================
+
+std::vector<std::string> EdgeDetect2CoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> EdgeDetect2CoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json EdgeDetect2CoreNode::saveParams() const {
+  return {{"size", m_size}};
+}
+
+void EdgeDetect2CoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("size"))
+    m_size = j["size"];
+}
+
+void EdgeDetect2CoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                  std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMEdgeDetect2(outputs[0], *in, m_size);
+}
+
+// ============================================================
+// SmoothMinMaxCoreNode
+// ============================================================
+
+std::vector<std::string> SmoothMinMaxCoreNode::inputSlotNames() const {
+  return {"A", "B"};
+}
+std::vector<std::string> SmoothMinMaxCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json SmoothMinMaxCoreNode::saveParams() const {
+  return {{"op", m_op}, {"k", m_k}, {"def1", m_def1}, {"def2", m_def2}};
+}
+
+void SmoothMinMaxCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("op"))
+    m_op = j["op"];
+  if (j.contains("k"))
+    m_k = j["k"];
+  if (j.contains("def1"))
+    m_def1 = j["def1"];
+  if (j.contains("def2"))
+    m_def2 = j["def2"];
+}
+
+void SmoothMinMaxCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                   std::vector<GenTexture>& outputs) {
+  GenTexture* a = inputs.size() > 0 && inputs[0] && inputs[0]->Data
+                      ? inputs[0]
+                      : nullptr;
+  GenTexture* b = inputs.size() > 1 && inputs[1] && inputs[1]->Data
+                      ? inputs[1]
+                      : nullptr;
+  const int w = a ? a->XRes : (b ? b->XRes : 256);
+  const int h = a ? a->YRes : (b ? b->YRes : 256);
+  outputs.resize(1);
+  outputs[0].Init(w, h);
+  MMSmoothMinMax(outputs[0], a, b, m_op, m_k, m_def1, m_def2);
+}
+
+// ============================================================
+// FillToGradientCoreNode / FillToSizeCoreNode
+// ============================================================
+
+std::vector<std::string> FillToGradientCoreNode::inputSlotNames() const {
+  return {"Fill"};
+}
+std::vector<std::string> FillToGradientCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json FillToGradientCoreNode::saveParams() const {
+  nlohmann::json stops = nlohmann::json::array();
+  for (auto& s : m_stops)
+    stops.push_back({s.pos, s.r, s.g, s.b, s.a});
+  return {{"stops", stops},       {"mode", m_mode},
+          {"layers", m_layers},   {"rotate", m_rotate},
+          {"rndRotate", m_rndRotate}, {"rndOffset", m_rndOffset},
+          {"seed", m_seed}};
+}
+
+void FillToGradientCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("stops") && j["stops"].is_array()) {
+    m_stops.clear();
+    for (auto& s : j["stops"])
+      if (s.is_array() && s.size() >= 5)
+        m_stops.push_back({s[0].get<float>(), s[1].get<float>(),
+                           s[2].get<float>(), s[3].get<float>(),
+                           s[4].get<float>()});
+  }
+  if (j.contains("mode"))
+    m_mode = j["mode"];
+  if (j.contains("layers"))
+    m_layers = j["layers"];
+  if (j.contains("rotate"))
+    m_rotate = j["rotate"];
+  if (j.contains("rndRotate"))
+    m_rndRotate = j["rndRotate"];
+  if (j.contains("rndOffset"))
+    m_rndOffset = j["rndOffset"];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void FillToGradientCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                     std::vector<GenTexture>& outputs) {
+  GenTexture* fill = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(fill->XRes, fill->YRes);
+  std::vector<MMGradientStop> sorted = m_stops;
+  if (sorted.empty()) {
+    sorted.push_back({0.0f, 0.0f, 0.0f, 0.0f, 1.0f});
+    sorted.push_back({1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+  }
+  for (size_t i = 1; i < sorted.size(); i++)
+    for (size_t k = i; k > 0 && sorted[k].pos < sorted[k - 1].pos; k--)
+      std::swap(sorted[k], sorted[k - 1]);
+  MMFillToGradient(outputs[0], *fill, sorted.data(), (int)sorted.size(),
+                   m_mode, m_layers, m_rotate, m_rndRotate, m_rndOffset,
+                   m_seed);
+}
+
+std::vector<std::string> FillToSizeCoreNode::inputSlotNames() const {
+  return {"Fill"};
+}
+std::vector<std::string> FillToSizeCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json FillToSizeCoreNode::saveParams() const {
+  return {{"formula", m_formula}};
+}
+
+void FillToSizeCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("formula"))
+    m_formula = j["formula"];
+}
+
+void FillToSizeCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                 std::vector<GenTexture>& outputs) {
+  GenTexture* fill = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(fill->XRes, fill->YRes);
+  MMFillToSize(outputs[0], *fill, m_formula);
 }
 
 // ============================================================

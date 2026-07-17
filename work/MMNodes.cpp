@@ -672,10 +672,12 @@ void GradientMMNode::renderParams() {
   ImGui::PushItemWidth(120);
   ImGui::Combo("W##gmm", &m_core.m_widthIdx, s_sizesStr);
   ImGui::Combo("H##gmm", &m_core.m_heightIdx, s_sizesStr);
+  ImGui::Combo("Shape##gmm", &m_core.m_shape, "Linear\0Radial\0Circular\0");
+  Hint("Linear ramp, distance to center, or angle around the center");
   SliderFloatW("Repeat##gmm", &m_core.m_repeat, 0.0f, 16.0f);
   Hint("Number of ramp repetitions across the texture");
   SliderFloatW("Rotate##gmm", &m_core.m_rotate, -180.0f, 180.0f);
-  Hint("Ramp direction in degrees");
+  Hint("Ramp direction in degrees (linear shape only)");
   ImGui::Checkbox("Mirror##gmm", &m_core.m_mirror);
   Hint("Mirror each repetition (triangle wave)");
   ImGui::Text("Gradient stops:");
@@ -1248,6 +1250,116 @@ void BevelNode::renderParams() {
   Hint("Width of the bevel ramp around the mask (UV units)");
   if (!m_core.m_curve.empty())
     ImGui::TextDisabled("curve: %d points", (int)m_core.m_curve.size());
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> WeaveNode::inputSlotInfos() const {
+  return {{"WidthMap", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> WeaveNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void WeaveNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##weave", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##weave", &m_core.m_heightIdx, s_sizesStr);
+  SliderIntW("Columns##weave", &m_core.m_columns, 1, 32);
+  SliderIntW("Rows##weave", &m_core.m_rows, 1, 32);
+  SliderFloatW("Width##weave", &m_core.m_width, 0.0f, 1.0f);
+  Hint("Stripe width (scaled per pixel by the WidthMap input)");
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> Weave2Node::inputSlotInfos() const {
+  return {{"WidthMap", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> Weave2Node::outputSlotInfos() const {
+  return {{"Out", 1}, {"Horizontal", 1}, {"Vertical", 1}};
+}
+
+void Weave2Node::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##weave2", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##weave2", &m_core.m_heightIdx, s_sizesStr);
+  SliderIntW("Columns##weave2", &m_core.m_columns, 1, 32);
+  SliderIntW("Rows##weave2", &m_core.m_rows, 1, 32);
+  SliderFloatW("WidthX##weave2", &m_core.m_widthX, 0.0f, 1.0f);
+  SliderFloatW("WidthY##weave2", &m_core.m_widthY, 0.0f, 1.0f);
+  SliderFloatW("Stitch##weave2", &m_core.m_stitch, 1.0f, 8.0f);
+  Hint("Stitch length of the weave pattern");
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> EdgeDetect2Node::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> EdgeDetect2Node::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void EdgeDetect2Node::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Size##ed2", &m_core.m_size, 16.0f, 2048.0f);
+  Hint("Reference resolution: neighbours sampled 1/size apart");
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> SmoothMinMaxNode::inputSlotInfos() const {
+  return {{"A", 1}, {"B", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> SmoothMinMaxNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void SmoothMinMaxNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("Op##sminmax", &m_core.m_op, "Smooth Min\0Smooth Max\0");
+  SliderFloatW("K##sminmax", &m_core.m_k, 0.0f, 1.0f);
+  Hint("Smoothing amount of the min/max transition");
+  SliderFloatW("Default A##sminmax", &m_core.m_def1, 0.0f, 1.0f);
+  SliderFloatW("Default B##sminmax", &m_core.m_def2, 0.0f, 1.0f);
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> FillToGradientNode::inputSlotInfos()
+    const {
+  return {{"Fill", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> FillToGradientNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void FillToGradientNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("Mode##ftg", &m_core.m_mode, "Stretch\0Square\0");
+  SliderIntW("Layers##ftg", &m_core.m_layers, 1, 8);
+  Hint("Overlapping gradients combined with min()");
+  SliderFloatW("Rotate##ftg", &m_core.m_rotate, -180.0f, 180.0f);
+  SliderFloatW("RndRotate##ftg", &m_core.m_rndRotate, 0.0f, 180.0f);
+  Hint("Random rotation per region");
+  SliderFloatW("RndOffset##ftg", &m_core.m_rndOffset, 0.0f, 1.0f);
+  Hint("Random offset per region");
+  SliderFloatW("Seed##ftg", &m_core.m_seed, 0.0f, 10.0f);
+  if (!m_core.m_stops.empty())
+    ImGui::TextDisabled("gradient: %d stops", (int)m_core.m_stops.size());
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> FillToSizeNode::inputSlotInfos() const {
+  return {{"Fill", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> FillToSizeNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void FillToSizeNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("Formula##fts", &m_core.m_formula,
+               "Area\0Width\0Height\0Max(W, H)\0");
+  Hint("Region size measure written as grayscale");
   ImGui::PopItemWidth();
 }
 

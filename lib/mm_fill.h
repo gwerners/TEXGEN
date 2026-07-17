@@ -32,3 +32,17 @@ void MMFillToRandomColor(GenTexture &out, const GenTexture &fill,
 void MMFillToColor(GenTexture &out, const GenTexture &fill,
                    const GenTexture *map, sF32 edgeR, sF32 edgeG,
                    sF32 edgeB, sF32 edgeA);
+
+// Per-region gradient (fill_to_gradient/fill_to_gradient2.mmg): the
+// stop ramp is drawn across each region's local UVs (mode as in
+// MMFillToUV) with per-region random rotation/offset; 'layers'
+// overlapping gradients are combined with min().
+struct MMGradientStop;
+void MMFillToGradient(GenTexture &out, const GenTexture &fill,
+                      const MMGradientStop *stops, sInt nStops, sInt mode,
+                      sInt layers, sF32 rotate, sF32 rndRotate,
+                      sF32 rndOffset, sF32 seed);
+
+// Region size as grayscale (fill_to_size2.mmg):
+// formula 0 = sqrt(w*h), 1 = width, 2 = height, 3 = max(w, h).
+void MMFillToSize(GenTexture &out, const GenTexture &fill, sInt formula);

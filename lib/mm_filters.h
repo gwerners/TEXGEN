@@ -192,6 +192,17 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
 void MMNormalBlend(GenTexture &out, const GenTexture *fg,
                    const GenTexture *bg, const GenTexture *mask, sF32 amount);
 
+// Edge Detect 2 (edge_detect_2.mmg): 4-neighbour laplacian scaled by
+// size, max of the RGB channels, clamped.
+void MMEdgeDetect2(GenTexture &out, const GenTexture &in, sF32 sizePx);
+
+// Smooth min/max (smooth_minmax.mmg): polynomial smooth min (op 0) or
+// max (op 1) of two grayscale inputs with smoothing k. Missing inputs
+// use def1/def2. (MM's clamp flag is implicit in our 16-bit pipeline.)
+void MMSmoothMinMax(GenTexture &out, const GenTexture *in1,
+                    const GenTexture *in2, sInt op, sF32 k, sF32 def1,
+                    sF32 def2);
+
 // Directional Blur (directional_blur.mmg): one-sided gaussian smear
 // of up to 51 taps along 'angle' (degrees, y flipped like MM), with
 // texel steps of 1/sizePx UV. sigma is in tap units and is modulated

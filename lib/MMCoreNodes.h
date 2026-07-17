@@ -426,6 +426,7 @@ class GradientMMCoreNode : public CoreNode {
   float m_repeat = 1.0f;
   float m_rotate = 0.0f;
   bool m_mirror = false;
+  int m_shape = 0;  // 0 linear, 1 radial, 2 circular
   int m_widthIdx = 3, m_heightIdx = 3;
 };
 
@@ -732,6 +733,113 @@ class DilateCoreNode : public CoreNode {
   float m_length = 0.27f;
   float m_fill = 0.0f;
   int m_metric = 0;  // 0 euclidean, 1 manhattan, 2 chebyshev
+};
+
+// ============================================================
+// WeaveCoreNode / Weave2CoreNode — woven patterns (weave/weave2.mmg)
+// ============================================================
+class WeaveCoreNode : public CoreNode {
+ public:
+  WeaveCoreNode() {}
+  std::string typeName() const override { return "Weave"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx = 3, m_heightIdx = 3;
+  int m_columns = 4, m_rows = 4;
+  float m_width = 0.8f;
+};
+
+class Weave2CoreNode : public CoreNode {
+ public:
+  Weave2CoreNode() {}
+  std::string typeName() const override { return "Weave2"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx = 3, m_heightIdx = 3;
+  int m_columns = 4, m_rows = 4;
+  float m_widthX = 0.8f, m_widthY = 0.8f;
+  float m_stitch = 1.0f;
+};
+
+// ============================================================
+// EdgeDetect2CoreNode — laplacian edges (edge_detect_2.mmg)
+// ============================================================
+class EdgeDetect2CoreNode : public CoreNode {
+ public:
+  EdgeDetect2CoreNode() {}
+  std::string typeName() const override { return "EdgeDetect2"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_size = 512.0f;
+};
+
+// ============================================================
+// SmoothMinMaxCoreNode — polynomial smin/smax (smooth_minmax.mmg)
+// ============================================================
+class SmoothMinMaxCoreNode : public CoreNode {
+ public:
+  SmoothMinMaxCoreNode() {}
+  std::string typeName() const override { return "SmoothMinMax"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_op = 0;  // 0 smin, 1 smax
+  float m_k = 0.1f;
+  float m_def1 = 0.0f, m_def2 = 0.0f;
+};
+
+// ============================================================
+// FillToGradientCoreNode / FillToSizeCoreNode (fill family)
+// ============================================================
+class FillToGradientCoreNode : public CoreNode {
+ public:
+  FillToGradientCoreNode() {}
+  std::string typeName() const override { return "FillToGradient"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  std::vector<MMGradientStop> m_stops;
+  int m_mode = 0;  // 0 stretch, 1 square
+  int m_layers = 1;
+  float m_rotate = 0.0f, m_rndRotate = 0.0f, m_rndOffset = 0.0f;
+  float m_seed = 0.0f;
+};
+
+class FillToSizeCoreNode : public CoreNode {
+ public:
+  FillToSizeCoreNode() {}
+  std::string typeName() const override { return "FillToSize"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_formula = 0;  // 0 area, 1 width, 2 height, 3 max
 };
 
 // ============================================================

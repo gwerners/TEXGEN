@@ -1,5 +1,6 @@
 // mm_fill — fill-family ports. See mm_fill.h.
 #include "mm_fill.h"
+#include "mm_generators.h"
 
 #include <cmath>
 #include <vector>
@@ -308,6 +309,102 @@ void MMFillToColor(GenTexture &out, const GenTexture &fill,
       p.g = to16(rgba[1]);
       p.b = to16(rgba[2]);
       p.a = to16(rgba[3]);
+    }
+  }
+}
+
+namespace {
+// vec2 rand2(vec2 x) — same constants as MM's rand2
+inline void mmRand2v(sF32 x, sF32 y, sF32 o[2]) {
+  o[0] =
+      glslFract(cosf(glslMod(x * 13.9898f + y * 8.141f, 3.14f)) * 43758.5f);
+  o[1] =
+      glslFract(cosf(glslMod(x * 3.4562f + y * 17.398f, 3.14f)) * 43758.5f);
+}
+
+// local region UVs + per-region random key (fill_to_uv_* in MM)
+inline void fillLocalUV(const sF32 bb[4], sF32 u, sF32 v, sInt mode,
+                        sF32 seed, sF32 o[3]) {
+  o[0] = o[1] = o[2] = 0.0f;
+  if (isEdge(bb))
+    return;
+  o[2] = mmRand(seed + bb[0] + bb[2], seed + bb[1] + bb[3]);
+  if (mode == 1) { // square: pad the smaller axis, divide by max
+    if (bb[2] > bb[3]) {
+      o[0] = glslFract(u - bb[0]) / bb[2];
+      o[1] = glslFract(v + (bb[2] - bb[3]) * 0.5f - bb[1]) / bb[2];
+    } else {
+      o[0] = glslFract(u + (bb[3] - bb[2]) * 0.5f - bb[0]) / bb[3];
+      o[1] = glslFract(v - bb[1]) / bb[3];
+    }
+  } else { // stretch
+    o[0] = bb[2] > 0.0f ? glslFract(u - bb[0]) / bb[2] : 0.0f;
+    o[1] = bb[3] > 0.0f ? glslFract(v - bb[1]) / bb[3] : 0.0f;
+  }
+}
+} // namespace
+
+void MMFillToGradient(GenTexture &out, const GenTexture &fill,
+                      const MMGradientStop *stops, sInt nStops, sInt mode,
+                      sInt layers, sF32 rotate, sF32 rndRotate,
+                      sF32 rndOffset, sF32 seed) {
+  if (!out.Data || !fill.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sInt nl = layers < 1 ? 1 : layers;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 bb[4], cuv[3];
+      fillAt(fill, u, v, bb);
+      fillLocalUV(bb, u, v, mode, seed, cuv);
+      sF32 value[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+      for (sInt i = 0; i < nl; i++) {
+        // gradient_uv(): per-region random rotation and offset
+        sF32 s2[2];
+        mmRand2v(cuv[2], seed + (sF32)i, s2);
+        sF32 gu = cuv[0] - 0.5f, gv = cuv[1] - 0.5f;
+        const sF32 angle =
+            (rotate + (s2[0] * 2.0f - 1.0f) * rndRotate) * 0.01745329251f;
+        const sF32 ca = cosf(angle), sa = sinf(angle);
+        sF32 t = ca * gu + sa * gv;
+        t += s2[1] * rndOffset;
+        t = clamp01(t / 1.41421356237f + 0.5f);
+        sF32 c[4];
+        MMGradientEval(stops, nStops, t, c);
+        for (sInt k = 0; k < 4; k++)
+          value[k] = c[k] < value[k] ? c[k] : value[k];
+      }
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = to16(value[0]);
+      p.g = to16(value[1]);
+      p.b = to16(value[2]);
+      p.a = to16(value[3]);
+    }
+  }
+}
+
+void MMFillToSize(GenTexture &out, const GenTexture &fill, sInt formula) {
+  if (!out.Data || !fill.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 bb[4];
+      fillAt(fill, u, v, bb);
+      sF32 s;
+      switch (formula) {
+      case 1: s = bb[2]; break;
+      case 2: s = bb[3]; break;
+      case 3: s = bb[2] > bb[3] ? bb[2] : bb[3]; break;
+      default: s = sqrtf(bb[2] * bb[3]); break;
+      }
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = p.g = p.b = to16(s);
+      p.a = 65535;
     }
   }
 }

@@ -135,10 +135,29 @@ enum MMWaveMix {
 void MMPattern(GenTexture &out, sInt mixMode, sInt xWave, sF32 xScale,
                sInt yWave, sF32 yScale);
 
-// Gradient generator (gradient.mmg): rotated linear ramp with repeat
-// and optional mirror, mapped through the color stops.
+// Evaluate a sorted stop ramp at t (clamped to the end stops).
+void MMGradientEval(const MMGradientStop *stops, sInt nStops, sF32 t,
+                    sF32 c[4]);
+
+// Gradient generator: rotated linear ramp (gradient.mmg), radial
+// (radial_gradient.mmg) or circular/angular (circular_gradient.mmg)
+// with repeat and optional mirror, mapped through the color stops.
+// shape: 0 linear, 1 radial, 2 circular (rotate only applies to 0).
 void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
-                    sInt nStops, sF32 repeat, sF32 rotateDeg, bool mirror);
+                    sInt nStops, sF32 repeat, sF32 rotateDeg, bool mirror,
+                    sInt shape = 0);
+
+// Weave (weave.mmg): woven stripes pattern; widthMap (optional,
+// grayscale) scales the stripe width per pixel.
+void MMWeave(GenTexture &out, sInt columns, sInt rows, sF32 width,
+             const GenTexture *widthMap);
+
+// Weave 2 (weave2.mmg): like Weave with separate x/y widths and a
+// stitch factor; outputs the pattern plus horizontal/vertical masks.
+// Any output pointer may be null.
+void MMWeave2(GenTexture *outPattern, GenTexture *outH, GenTexture *outV,
+              sInt columns, sInt rows, sF32 widthX, sF32 widthY, sF32 stitch,
+              const GenTexture *widthMap);
 
 // Dot noise (noise.mmg): per-cell random threshold against a density.
 // densityIn (optional, grayscale) modulates the density per cell.

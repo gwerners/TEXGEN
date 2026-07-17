@@ -955,7 +955,8 @@ static void emitNode(std::ostringstream& ss,
       ss << "};\n";
       ss << "      MMGradientRamp(" << v << ", stops, " << stops.size() << ", "
          << pf(p, "repeat", 1.0f) << ", " << pf(p, "rotate", 0.0f) << ", "
-         << (p.value("mirror", false) ? "true" : "false") << "); }\n";
+         << (p.value("mirror", false) ? "true" : "false") << ", "
+         << p.value("shape", 0) << "); }\n";
     }
   }
 
@@ -1043,6 +1044,106 @@ static void emitNode(std::ostringstream& ss,
       ss << "      MMBevel(" << v << ", " << in << ", "
          << pf(p, "distance", 0.1f) << ", curve, "
          << (curve.empty() ? 2 : (int)curve.size()) << "); }\n";
+    }
+  }
+
+  else if (type == "Weave") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    std::string wm = srcVar(conns, id, "WidthMap");
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMWeave(" << v << ", " << p.value("columns", 4) << ", "
+       << p.value("rows", 4) << ", " << pf(p, "width", 0.8f) << ", "
+       << (wm.empty() ? std::string("(const GenTexture*)0") : "&" + wm)
+       << ");\n";
+  }
+
+  else if (type == "Weave2") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    std::string wm = srcVar(conns, id, "WidthMap");
+    ss << "    GenTexture " << v << "_Out, " << v << "_Horizontal, " << v
+       << "_Vertical;\n";
+    ss << "    " << v << "_Out.Init(" << w << ", " << h << "); " << v
+       << "_Horizontal.Init(" << w << ", " << h << "); " << v
+       << "_Vertical.Init(" << w << ", " << h << ");\n";
+    ss << "    MMWeave2(&" << v << "_Out, &" << v << "_Horizontal, &" << v
+       << "_Vertical, " << p.value("columns", 4) << ", "
+       << p.value("rows", 4) << ", " << pf(p, "widthX", 0.8f) << ", "
+       << pf(p, "widthY", 0.8f) << ", " << pf(p, "stitch", 1.0f) << ", "
+       << (wm.empty() ? std::string("(const GenTexture*)0") : "&" + wm)
+       << ");\n";
+  }
+
+  else if (type == "EdgeDetect2") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMEdgeDetect2(" << v << ", " << in << ", "
+         << pf(p, "size", 512.0f) << ");\n";
+    }
+  }
+
+  else if (type == "SmoothMinMax") {
+    std::string a = srcVar(conns, id, "A");
+    std::string b = srcVar(conns, id, "B");
+    std::string base = !a.empty() ? a : b;
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init("
+       << (base.empty() ? "256, 256" : base + ".XRes, " + base + ".YRes")
+       << ");\n";
+    auto refm = [](const std::string& s) {
+      return s.empty() ? std::string("(const GenTexture*)0") : "&" + s;
+    };
+    ss << "    MMSmoothMinMax(" << v << ", " << refm(a) << ", " << refm(b)
+       << ", " << p.value("op", 0) << ", " << pf(p, "k", 0.1f) << ", "
+       << pf(p, "def1", 0.0f) << ", " << pf(p, "def2", 0.0f) << ");\n";
+  }
+
+  else if (type == "FillToGradient") {
+    std::string in = srcVar(conns, id, "Fill");
+    auto stops = p.value("stops", nlohmann::json::array());
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    { const MMGradientStop stops[] = {";
+      if (stops.empty())
+        ss << "{0.0f, 0.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f, "
+              "1.0f}";
+      else
+        for (size_t i = 0; i < stops.size(); i++) {
+          auto& s = stops[i];
+          ss << "{" << fmtf(s[0].get<float>()) << ", "
+             << fmtf(s[1].get<float>()) << ", " << fmtf(s[2].get<float>())
+             << ", " << fmtf(s[3].get<float>()) << ", "
+             << fmtf(s[4].get<float>()) << "}"
+             << (i + 1 < stops.size() ? ", " : "");
+        }
+      ss << "};\n";
+      ss << "      MMFillToGradient(" << v << ", " << in << ", stops, "
+         << (stops.empty() ? 2 : (int)stops.size()) << ", "
+         << p.value("mode", 0) << ", " << p.value("layers", 1) << ", "
+         << pf(p, "rotate", 0.0f) << ", " << pf(p, "rndRotate", 0.0f) << ", "
+         << pf(p, "rndOffset", 0.0f) << ", " << pf(p, "seed", 0.0f)
+         << "); }\n";
+    }
+  }
+
+  else if (type == "FillToSize") {
+    std::string in = srcVar(conns, id, "Fill");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMFillToSize(" << v << ", " << in << ", "
+         << p.value("formula", 0) << ");\n";
     }
   }
 

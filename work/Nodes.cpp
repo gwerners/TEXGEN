@@ -86,6 +86,18 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
     return std::make_unique<NormalBlendNode>();
   };
   registry["ColorNoise"] = []() { return std::make_unique<ColorNoiseNode>(); };
+  registry["Weave"] = []() { return std::make_unique<WeaveNode>(); };
+  registry["Weave2"] = []() { return std::make_unique<Weave2Node>(); };
+  registry["EdgeDetect2"] = []() {
+    return std::make_unique<EdgeDetect2Node>();
+  };
+  registry["SmoothMinMax"] = []() {
+    return std::make_unique<SmoothMinMaxNode>();
+  };
+  registry["FillToGradient"] = []() {
+    return std::make_unique<FillToGradientNode>();
+  };
+  registry["FillToSize"] = []() { return std::make_unique<FillToSizeNode>(); };
   registry["DirectionalBlur"] = []() {
     return std::make_unique<DirectionalBlurNode>();
   };

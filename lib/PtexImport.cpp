@@ -125,6 +125,17 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"smooth_curvature2", {"Height"}},
       {"occlusion2", {"Height"}},
       {"hbao", {"Height"}},
+      {"occlusion", {"Height"}},
+      {"noise2", {"Density"}},
+      {"edge_detect_2", {"In"}},
+      {"smooth_minmax", {"A", "B"}},
+      {"weave", {"WidthMap"}},
+      {"weave2", {"WidthMap"}},
+      {"fill_to_gradient", {"Fill"}},
+      {"fill_to_gradient2", {"Fill"}},
+      {"fill_to_size2", {"Fill"}},
+      {"radial_gradient", {}},
+      {"circular_gradient", {}},
       {"rotate", {"In"}},
       {"tones_range", {"In"}},
       {"math_v3", {"A", "B"}},
@@ -158,6 +169,7 @@ const std::map<std::string, std::vector<std::string>> &portsOut() {
       {"mwf_map", {"H", "C", "ORM", "EM", "NM"}},
       {"tiler_advanced", {"Out", "Color1", "Color2", "UV"}},
       {"height_to_offset", {"X", "Y"}},
+      {"weave2", {"Out", "Horizontal", "Vertical"}},
   };
   return m;
 }
@@ -774,10 +786,80 @@ bool convertParams(const std::string &type, const json &p,
            {"radius", numOr(p, "param3", 1.0f)}};
     return true;
   }
-  if (type == "occlusion2" || type == "hbao") {
-    // both are shader-based AO from height; approximated by blur AO
+  if (type == "occlusion2" || type == "hbao" || type == "occlusion") {
+    // all are shader-based AO from height; approximated by blur AO
     typeName = "AmbientOcclusion";
     out = {{"radius", 0.05f}, {"strength", numOr(p, "param2", 1.0f)}};
+    return true;
+  }
+  if (type == "noise2") {
+    // noise.mmg with a density input; same per-cell threshold dots
+    typeName = "DotNoise";
+    int gridExp = intOr(p, "size", 8);
+    out = size3();
+    out["grid"] = 1 << (gridExp < 1 ? 1 : (gridExp > 12 ? 12 : gridExp));
+    out["density"] = numOr(p, "density", 0.5f);
+    out["seed"] = numOr(p, "seed", 0.0f);
+    out["mode"] = 0;
+    return true;
+  }
+  if (type == "edge_detect_2") {
+    typeName = "EdgeDetect2";
+    int szExp = intOr(p, "size", 9);
+    out = {{"size", (float)(1 << (szExp < 4 ? 4 : (szExp > 12 ? 12 : szExp)))}};
+    return true;
+  }
+  if (type == "smooth_minmax") {
+    typeName = "SmoothMinMax";
+    out = {{"op", intOr(p, "op", 0)},
+           {"k", numOr(p, "k", 0.0f)},
+           {"def1", numOr(p, "default_in1", 0.0f)},
+           {"def2", numOr(p, "default_in2", 0.0f)}};
+    return true;
+  }
+  if (type == "weave") {
+    typeName = "Weave";
+    out = size3();
+    out["columns"] = intOr(p, "columns", 4);
+    out["rows"] = intOr(p, "rows", 4);
+    out["width"] = numOr(p, "width", 0.8f);
+    return true;
+  }
+  if (type == "weave2") {
+    typeName = "Weave2";
+    out = size3();
+    out["columns"] = intOr(p, "columns", 4);
+    out["rows"] = intOr(p, "rows", 4);
+    out["widthX"] = numOr(p, "width_x", 0.8f);
+    out["widthY"] = numOr(p, "width_y", 0.8f);
+    out["stitch"] = numOr(p, "stitch", 1.0f);
+    return true;
+  }
+  if (type == "fill_to_gradient" || type == "fill_to_gradient2") {
+    typeName = "FillToGradient";
+    out = {{"stops", stopsFromGradient(p.value("grad", json::object()))},
+           {"mode", intOr(p, "mode", 0)},
+           {"layers", intOr(p, "layers", 1)},
+           {"rotate", numOr(p, "rotate", 0.0f)},
+           {"rndRotate", numOr(p, "r_rotate", 0.0f)},
+           {"rndOffset", numOr(p, "r_offset", 0.0f)},
+           {"seed", numOr(p, "seed", 0.0f)}};
+    return true;
+  }
+  if (type == "fill_to_size2") {
+    typeName = "FillToSize";
+    out = {{"formula", intOr(p, "formula", 0)}};
+    return true;
+  }
+  if (type == "radial_gradient" || type == "circular_gradient") {
+    typeName = "GradientMM";
+    out = {{"stops", stopsFromGradient(p.value("gradient", json::object()))},
+           {"repeat", numOr(p, "repeat", 1.0f)},
+           {"rotate", 0.0f},
+           {"mirror", boolOr(p, "mirror", false)},
+           {"shape", type == "radial_gradient" ? 1 : 2},
+           {"widthIdx", 3},
+           {"heightIdx", 3}};
     return true;
   }
   if (type == "rotate") {
@@ -896,7 +978,7 @@ bool isPassthrough(const std::string &type) {
   static const std::set<std::string> s = {
       "buffer",     "reroute", "supersample",
       "auto_tones", "tonality", "sharpen", "denoiser",
-      "variations_greyscale", "variations_color"};
+      "variations_greyscale", "variations_color", "optional"};
   return s.count(type) > 0;
 }
 
@@ -906,6 +988,36 @@ bool isPassthrough(const std::string &type) {
 void collapsePassthroughs(json &nodes, json &conns) {
   std::set<std::string> pass;
   std::map<std::string, std::pair<int, int>> switches; // -> source, outputs
+  // 'optional' passes its input through, or its default color when
+  // unconnected; 'tile2x2_variations' minus the (impossible) variation
+  // re-seeding is the same input in all four quadrants.
+  {
+    std::set<std::string> fed;
+    for (auto &c : conns)
+      fed.insert(c.value("to", std::string()));
+    json extra = json::array();
+    for (auto &n : nodes) {
+      const std::string t = n.value("type", std::string());
+      if (t == "optional" && !fed.count(n.value("name", std::string()))) {
+        json p = n.value("parameters", json::object());
+        n["type"] = "uniform";
+        n["parameters"] = {{"color", p.value("d", json::object())}};
+      } else if (t == "tile2x2_variations") {
+        n["type"] = "tile2x2";
+        const std::string nm = n.value("name", std::string());
+        for (auto &c : conns)
+          if (c.value("to", std::string()) == nm &&
+              c.value("to_port", 0) == 0)
+            for (int port = 1; port <= 3; port++) {
+              json c2 = c;
+              c2["to_port"] = port;
+              extra.push_back(c2);
+            }
+      }
+    }
+    for (auto &c : extra)
+      conns.push_back(c);
+  }
   json keptNodes = json::array();
   for (auto &n : nodes) {
     std::string t = n.value("type", std::string());
@@ -1257,7 +1369,8 @@ GraphResult convertGraph(json mmNodes, json mmConns,
         "smooth_curvature", "smooth_curvature2", "occlusion2", "hbao",
         "rotate", "tones_range", "math_v3", "tiler_advanced",
         "height_to_offset", "bevel", "dilate", "normal_blend",
-        "directional_blur"};
+        "directional_blur", "occlusion", "edge_detect_2",
+        "fill_to_gradient", "fill_to_gradient2", "fill_to_size2"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));

@@ -1396,6 +1396,66 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
     }
 }
 
+void MMEdgeDetect2(GenTexture &out, const GenTexture &in, sF32 sizePx) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 e = 1.0f / (sizePx > 1.0f ? sizePx : 1.0f);
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      const sF32 su = (px + 0.5f) / w, sv = (py + 0.5f) / h;
+      sF32 c[4], n1[4], n2[4], n3[4], n4[4];
+      sampleRGBA(in, su, sv, c);
+      sampleRGBA(in, su + e, sv, n1);
+      sampleRGBA(in, su - e, sv, n2);
+      sampleRGBA(in, su, sv + e, n3);
+      sampleRGBA(in, su, sv - e, n4);
+      sF32 mx = 0.0f;
+      for (sInt k = 0; k < 3; k++) {
+        const sF32 d =
+            fabsf(4.0f * c[k] - n1[k] - n2[k] - n3[k] - n4[k]) * sizePx;
+        mx = d > mx ? d : mx;
+      }
+      Pixel &o = out.Data[(size_t)py * w + px];
+      o.r = o.g = o.b = to16(clamp01(mx));
+      o.a = 65535;
+    }
+}
+
+void MMSmoothMinMax(GenTexture &out, const GenTexture *in1,
+                    const GenTexture *in2, sInt op, sF32 k, sF32 def1,
+                    sF32 def2) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 kk = k > 1e-6f ? k : 1e-6f;
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      const sF32 su = (px + 0.5f) / w, sv = (py + 0.5f) / h;
+      sF32 a = def1, b = def2;
+      sF32 c[4];
+      if (in1 && in1->Data) {
+        sampleRGBA(*in1, su, sv, c);
+        a = (c[0] + c[1] + c[2]) / 3.0f;
+      }
+      if (in2 && in2->Data) {
+        sampleRGBA(*in2, su, sv, c);
+        b = (c[0] + c[1] + c[2]) / 3.0f;
+      }
+      sF32 hmix, r;
+      if (op == 1) { // smax
+        hmix = clamp01(0.5f - 0.5f * (b - a) / kk);
+        r = b + (a - b) * hmix + kk * hmix * (1.0f - hmix);
+      } else { // smin
+        hmix = clamp01(0.5f + 0.5f * (b - a) / kk);
+        r = b + (a - b) * hmix - kk * hmix * (1.0f - hmix);
+      }
+      Pixel &o = out.Data[(size_t)py * w + px];
+      o.r = o.g = o.b = to16(r);
+      o.a = 65535;
+    }
+}
+
 void MMDirectionalBlur(GenTexture &out, const GenTexture &in,
                        const GenTexture *amountMap, sF32 sizePx, sF32 sigma,
                        sF32 angleDeg, sInt mode) {
