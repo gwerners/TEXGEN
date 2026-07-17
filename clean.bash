@@ -44,6 +44,9 @@ function clean_base {
   safeRM *.ini
   safeRM Simple.json
   safeRM *.tga
+  #imagens de debug/teste geradas na raiz (as do repo ficam em images/)
+  safeRM *.png
+  safeRMDIR tools/__pycache__
   cd ${ROOT}
 }
 function clean {

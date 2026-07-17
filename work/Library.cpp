@@ -11,6 +11,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <thread>
 
 namespace fs = std::filesystem;
 
@@ -69,7 +70,91 @@ void MaterialLibrary::invalidate() {
       UnloadTexture(e.tex);
   m_entries.clear();
   m_scanned = false;
-  m_buildPos = -1;
+  if (m_building)
+    stopBuild();
+}
+
+void MaterialLibrary::startBuild(bool rebuildAll) {
+  if (!m_scanned)
+    scan();
+  if (rebuildAll)
+    for (auto& e : m_entries) {
+      std::error_code ec;
+      fs::remove(thumbPath(e.path), ec);
+      if (e.texTried && e.tex.id != 0)
+        UnloadTexture(e.tex);
+      e.tex = Texture2D{};
+      e.texTried = false;
+    }
+  m_queue.clear();
+  for (auto& e : m_entries)
+    if (!fs::exists(thumbPath(e.path)))
+      m_queue.push_back(e.path);
+  m_total = (int)m_queue.size();
+  m_done = 0;
+  m_building = m_total > 0;
+  m_stopMsg.clear();
+}
+
+void MaterialLibrary::stopBuild() {
+  const int left = (int)(m_queue.size() + m_inflight.size());
+  m_queue.clear();
+  m_building = false;
+  if (left > 0)
+    m_stopMsg = "thumbnails stopped (" + std::to_string(left) + " left)";
+}
+
+void MaterialLibrary::tick() {
+  if (!m_building && m_inflight.empty())
+    return;
+  // reap finished workers
+  for (auto it = m_inflight.begin(); it != m_inflight.end();) {
+    if (it->second.wait_for(std::chrono::seconds(0)) ==
+        std::future_status::ready) {
+      if (!it->second.get()) {
+        // write a placeholder so failures aren't retried forever
+        GenTexture black;
+        black.Init(4, 4);
+        SaveImage(black, thumbPath(it->first).c_str());
+      }
+      m_done++;
+      for (auto& e : m_entries)
+        if (e.path == it->first) {
+          if (e.texTried && e.tex.id != 0)
+            UnloadTexture(e.tex);
+          e.tex = Texture2D{};
+          e.texTried = false;  // reload on the next grid pass
+        }
+      it = m_inflight.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  // keep the worker pool full
+  const unsigned hw = std::thread::hardware_concurrency();
+  const int workers = hw > 4 ? 4 : (hw > 1 ? (int)hw - 1 : 1);
+  while (m_building && (int)m_inflight.size() < workers &&
+         !m_queue.empty()) {
+    std::string path = m_queue.front();
+    m_queue.pop_front();
+    if (fs::exists(thumbPath(path))) {
+      m_done++;
+      continue;
+    }
+    m_inflight.emplace_back(
+        path, std::async(std::launch::async, buildThumbnail, path));
+  }
+  if (m_building && m_queue.empty() && m_inflight.empty()) {
+    m_building = false;
+    m_stopMsg.clear();
+  }
+}
+
+std::string MaterialLibrary::statusText() const {
+  if (m_building || !m_inflight.empty())
+    return "thumbnails " + std::to_string(m_done) + "/" +
+           std::to_string(m_total);
+  return m_stopMsg;
 }
 
 void MaterialLibrary::scan() {
@@ -154,64 +239,49 @@ bool MaterialLibrary::draw(std::string& outPath, bool& outIsPtex) {
     return false;
   }
 
-  // batch thumbnail build: one file per frame so the UI stays alive
-  int missing = 0;
-  for (auto& e : m_entries)
-    if (!fs::exists(thumbPath(e.path)))
-      missing++;
-  if (m_buildPos < 0) {
+  // batch thumbnail build controls (the batch itself advances in
+  // tick(), which the Ide calls every frame — collapsing this section
+  // no longer pauses it)
+  if (m_building || !m_inflight.empty()) {
+    char overlay[64];
+    snprintf(overlay, sizeof(overlay), "%d / %d", m_done, m_total);
+    ImGui::ProgressBar(m_total > 0 ? (float)m_done / m_total : 0.0f,
+                       ImVec2(-56.0f, 0.0f), overlay);
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Stop##libbuild"))
+      stopBuild();
+    if (!m_inflight.empty()) {
+      std::string names;
+      for (auto& f : m_inflight) {
+        std::string n = fs::path(f.first).stem().string();
+        names += (names.empty() ? "" : ", ") + n;
+      }
+      ImGui::TextDisabled("rendering: %s", names.c_str());
+    }
+  } else {
+    int missing = 0;
+    for (auto& e : m_entries)
+      if (!fs::exists(thumbPath(e.path)))
+        missing++;
     if (missing > 0) {
       char label[64];
       snprintf(label, sizeof(label), "Build %d missing thumbnail%s", missing,
                missing == 1 ? "" : "s");
       if (ImGui::SmallButton(label))
-        m_buildPos = 0;
+        startBuild(false);
       ImGui::SameLine();
     }
     // full rebuild: for when the engine's rendering changed and every
     // cached thumbnail is stale
-    if (ImGui::SmallButton("Rebuild all##libthumbs")) {
-      for (auto& e : m_entries) {
-        std::error_code ec;
-        fs::remove(thumbPath(e.path), ec);
-      }
-      invalidate();
-      m_buildPos = 0;
-    }
+    if (ImGui::SmallButton("Rebuild all##libthumbs"))
+      startBuild(true);
     if (ImGui::IsItemHovered())
       ImGui::SetTooltip("Delete every thumbnail and re-render them all");
-  } else {
-    // advance to the next entry without a thumbnail
-    while (m_buildPos < (int)m_entries.size() &&
-           fs::exists(thumbPath(m_entries[m_buildPos].path)))
-      m_buildPos++;
-    if (m_buildPos >= (int)m_entries.size()) {
-      if (!m_buildInFlight)
-        m_buildPos = -1;
-    }
-    if (m_buildPos >= 0 && m_buildPos < (int)m_entries.size()) {
-      Entry& e = m_entries[m_buildPos];
-      ImGui::Text("Rendering %s...", e.name.c_str());
+    if (!m_stopMsg.empty()) {
+      ImGui::TextDisabled("%s", m_stopMsg.c_str());
       ImGui::SameLine();
-      if (ImGui::SmallButton("Stop##libbuild") && !m_buildInFlight) {
-        m_buildPos = -1;
-      } else if (!m_buildInFlight) {
-        // evaluate on a worker so the UI never blocks
-        std::string path = e.path;
-        m_buildFuture = std::async(std::launch::async, buildThumbnail, path);
-        m_buildInFlight = true;
-      } else if (m_buildFuture.wait_for(std::chrono::seconds(0)) ==
-                 std::future_status::ready) {
-        if (!m_buildFuture.get()) {
-          // write a placeholder so failures aren't retried forever
-          GenTexture black;
-          black.Init(4, 4);
-          SaveImage(black, thumbPath(e.path).c_str());
-        }
-        e.texTried = false;  // reload the texture on the next pass
-        m_buildInFlight = false;
-        m_buildPos++;
-      }
+      if (ImGui::SmallButton("Resume##libbuild"))
+        startBuild(false);
     }
   }
 

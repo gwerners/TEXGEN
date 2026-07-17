@@ -159,6 +159,9 @@ static bool IconButton(const char* id, const char* icon, const char* tooltip) {
 void Ide::draw() {
   ImGui::PushFont(m_firaCodeRegular);
 
+  // keep the thumbnail batch alive even when the library UI is hidden
+  m_library.tick();
+
   // Create a full-screen docking space (minus the hint bar at the bottom)
   ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
   ImVec2 fullSize = ImGui::GetIO().DisplaySize;
@@ -421,7 +424,13 @@ void Ide::draw() {
                    ImGuiWindowFlags_NoDocking |
                    ImGuiWindowFlags_NoFocusOnAppearing |
                    ImGuiWindowFlags_NoNav);
-  ImGui::TextUnformatted(g_nodeGraph ? g_nodeGraph->hintText().c_str() : "");
+  {
+    std::string hint = g_nodeGraph ? g_nodeGraph->hintText() : std::string();
+    const std::string lib = m_library.statusText();
+    if (!lib.empty())
+      hint += (hint.empty() ? "" : "   |   ") + lib;
+    ImGui::TextUnformatted(hint.c_str());
+  }
   ImGui::End();
   ImGui::PopStyleVar(2);
 
