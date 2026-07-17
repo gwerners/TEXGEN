@@ -1377,7 +1377,11 @@ static void emitNode(std::ostringstream& ss,
       ss << "    MMTransform(" << v << ", " << in << ", " << pf(p, "tx", 0.0f)
          << ", " << pf(p, "ty", 0.0f) << ", " << pf(p, "rot", 0.0f) << ", "
          << pf(p, "scaleX", 1.0f) << ", " << pf(p, "scaleY", 1.0f) << ", "
-         << (p.value("repeat", true) ? "true" : "false") << ");\n";
+         << (p.value("repeat", true) ? "true" : "false") << ", "
+         << inputRef(conns, id, "TX") << ", " << inputRef(conns, id, "TY")
+         << ", " << inputRef(conns, id, "Rot") << ", "
+         << inputRef(conns, id, "SX") << ", " << inputRef(conns, id, "SY")
+         << ");\n";
     }
   }
 
@@ -1388,7 +1392,8 @@ static void emitNode(std::ostringstream& ss,
     ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
     ss << "    MMShape(" << v << ", " << p.value("shape", 0) << ", "
        << pf(p, "sides", 3.0f) << ", " << pf(p, "radius", 1.0f) << ", "
-       << pf(p, "edge", 0.2f) << ");\n";
+       << pf(p, "edge", 0.2f) << ", " << inputRef(conns, id, "RadiusMap")
+       << ", " << inputRef(conns, id, "EdgeMap") << ");\n";
   }
 
   else if (type == "Pattern") {

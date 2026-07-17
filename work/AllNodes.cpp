@@ -331,7 +331,7 @@ void DeriveNode::renderParams() {
 // ============================================================
 
 std::vector<ImNodes::Ez::SlotInfo> BlurNode::inputSlotInfos() const {
-  return {{"In", 1}};
+  return {{"In", 1}, {"Sigma", 1}};
 }
 
 std::vector<ImNodes::Ez::SlotInfo> BlurNode::outputSlotInfos() const {

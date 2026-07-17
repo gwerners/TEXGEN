@@ -189,18 +189,46 @@ void MMEmboss(GenTexture &out, const GenTexture &in, sF32 angleDeg,
 
 // transform.mmg: translate, rotate around center, scale, repeat/clamp.
 void MMTransform(GenTexture &out, const GenTexture &in, sF32 tx, sF32 ty,
-                 sF32 rotDeg, sF32 scaleX, sF32 scaleY, bool repeat) {
+                 sF32 rotDeg, sF32 scaleX, sF32 scaleY, bool repeat,
+                 const GenTexture *mapTx, const GenTexture *mapTy,
+                 const GenTexture *mapRot, const GenTexture *mapSx,
+                 const GenTexture *mapSy) {
   if (!out.Data || !in.Data)
     return;
   const sInt w = out.XRes, h = out.YRes;
-  const sF32 rot = rotDeg * 0.01745329251f;
-  const sF32 c = cosf(rot), s = sinf(rot);
-  const sF32 sx = fabsf(scaleX) > 1e-6f ? scaleX : 1e-6f;
-  const sF32 sy = fabsf(scaleY) > 1e-6f ? scaleY : 1e-6f;
+  const bool mapped = mapTx || mapTy || mapRot || mapSx || mapSy;
+  // MM modulation: effective = param * (2*map(uv) - 1); null map = 1
+  auto mod = [&](const GenTexture *m, sF32 u, sF32 v) -> sF32 {
+    if (!m || !m->Data)
+      return 1.0f;
+    sF32 cc[4];
+    sampleRGBA(*m, u, v, cc);
+    return 2.0f * (cc[0] + cc[1] + cc[2]) / 3.0f - 1.0f;
+  };
+  const sF32 rot0 = rotDeg * 0.01745329251f;
+  const sF32 c0 = cosf(rot0), s0 = sinf(rot0);
   for (sInt py = 0; py < h; py++) {
     for (sInt px = 0; px < w; px++) {
-      sF32 u = (px + 0.5f) / w - tx - 0.5f;
-      sF32 v = (py + 0.5f) / h - ty - 0.5f;
+      const sF32 uu = (px + 0.5f) / w;
+      const sF32 vv = (py + 0.5f) / h;
+      sF32 c = c0, s = s0;
+      sF32 sx = scaleX, sy = scaleY;
+      sF32 etx = tx, ety = ty;
+      if (mapped) {
+        etx = tx * mod(mapTx, uu, vv);
+        ety = ty * mod(mapTy, uu, vv);
+        const sF32 rot = rot0 * mod(mapRot, uu, vv);
+        c = cosf(rot);
+        s = sinf(rot);
+        sx = scaleX * mod(mapSx, uu, vv);
+        sy = scaleY * mod(mapSy, uu, vv);
+      }
+      if (fabsf(sx) < 1e-6f)
+        sx = 1e-6f;
+      if (fabsf(sy) < 1e-6f)
+        sy = 1e-6f;
+      sF32 u = uu - etx - 0.5f;
+      sF32 v = vv - ety - 0.5f;
       sF32 ru = (c * u + s * v) / sx + 0.5f;
       sF32 rv = (-s * u + c * v) / sy + 0.5f;
       if (repeat) {

@@ -475,7 +475,8 @@ void EmbossNode::renderParams() {
 // ============================================================
 
 std::vector<ImNodes::Ez::SlotInfo> Transform2DNode::inputSlotInfos() const {
-  return {{"In", 1}};
+  return {{"In", 1},  {"TX", 1}, {"TY", 1},
+          {"Rot", 1}, {"SX", 1}, {"SY", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> Transform2DNode::outputSlotInfos() const {
   return {{"Out", 1}};
@@ -501,7 +502,7 @@ void Transform2DNode::renderParams() {
 // ============================================================
 
 std::vector<ImNodes::Ez::SlotInfo> ShapeNode::inputSlotInfos() const {
-  return {};
+  return {{"RadiusMap", 1}, {"EdgeMap", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> ShapeNode::outputSlotInfos() const {
   return {{"Out", 1}};

@@ -101,8 +101,11 @@ enum MMShapeType {
   MMShapeRays,
   MMShapeTypeCount
 };
+// radiusMap/edgeMap (optional, grayscale) modulate radius and edge
+// per pixel (multiplied; null = 1).
 void MMShape(GenTexture &out, sInt shape, sF32 sides, sF32 radius,
-             sF32 edge);
+             sF32 edge, const GenTexture *radiusMap = nullptr,
+             const GenTexture *edgeMap = nullptr);
 
 // Wave pattern (pattern.mmg): combines an X wave and a Y wave.
 enum MMWaveType {

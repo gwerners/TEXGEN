@@ -644,7 +644,7 @@ void DeriveCoreNode::loadParams(const nlohmann::json& j) {
 BlurCoreNode::BlurCoreNode() : m_sizex(0.05f), m_sizey(0.05f), m_order(1), m_mode(0) {}
 
 std::vector<std::string> BlurCoreNode::inputSlotNames() const {
-  return {"In"};
+  return {"In", "Sigma"};
 }
 
 std::vector<std::string> BlurCoreNode::outputSlotNames() const {
@@ -656,7 +656,19 @@ void BlurCoreNode::execute(const std::vector<GenTexture*>& inputs,
   GenTexture* in = ensureInput(inputs[0]);
   outputs.resize(1);
   outputs[0].Init(in->XRes, in->YRes);
-  outputs[0].Blur(*in, m_sizex, m_sizey, m_order, m_mode);
+  // The Sigma map scales the blur size by its average value — a cheap
+  // stand-in for MM's per-pixel sigma modulation.
+  float scale = 1.0f;
+  if (inputs.size() > 1 && inputs[1] && inputs[1]->Data) {
+    const GenTexture* m = inputs[1];
+    double acc = 0.0;
+    for (sInt i = 0; i < m->NPixels; i++) {
+      const Pixel& p = m->Data[i];
+      acc += ((double)p.r + p.g + p.b) / (3.0 * 65535.0);
+    }
+    scale = (float)(acc / m->NPixels);
+  }
+  outputs[0].Blur(*in, m_sizex * scale, m_sizey * scale, m_order, m_mode);
 }
 
 nlohmann::json BlurCoreNode::saveParams() const {

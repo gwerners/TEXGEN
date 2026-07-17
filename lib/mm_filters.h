@@ -29,8 +29,15 @@ void MMEmboss(GenTexture &out, const GenTexture &in, sF32 angleDeg,
 
 // 2D affine transform (transform.mmg): translate, rotate around the
 // center, scale, then wrap (repeat=true) or clamp the source UVs.
+// The optional maps modulate each parameter per pixel, MM-style:
+// effective = param * (2*map(uv) - 1); a null map means neutral (1).
 void MMTransform(GenTexture &out, const GenTexture &in, sF32 tx, sF32 ty,
-                 sF32 rotDeg, sF32 scaleX, sF32 scaleY, bool repeat);
+                 sF32 rotDeg, sF32 scaleX, sF32 scaleY, bool repeat,
+                 const GenTexture *mapTx = nullptr,
+                 const GenTexture *mapTy = nullptr,
+                 const GenTexture *mapRot = nullptr,
+                 const GenTexture *mapSx = nullptr,
+                 const GenTexture *mapSy = nullptr);
 
 // Channel plumbing (combine.mmg / decompose.mmg / invert.mmg).
 // Combine: builds RGBA from four grayscale inputs (null r/g/b -> 0,

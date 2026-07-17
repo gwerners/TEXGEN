@@ -782,7 +782,7 @@ Transform2DCoreNode::Transform2DCoreNode()
       m_repeat(true) {}
 
 std::vector<std::string> Transform2DCoreNode::inputSlotNames() const {
-  return {"In"};
+  return {"In", "TX", "TY", "Rot", "SX", "SY"};
 }
 std::vector<std::string> Transform2DCoreNode::outputSlotNames() const {
   return {"Out"};
@@ -790,11 +790,15 @@ std::vector<std::string> Transform2DCoreNode::outputSlotNames() const {
 
 void Transform2DCoreNode::execute(const std::vector<GenTexture*>& inputs,
                                   std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> const GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
   GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
   outputs.resize(1);
   outputs[0].Init(in->XRes, in->YRes);
   MMTransform(outputs[0], *in, m_tx, m_ty, m_rot, m_scaleX, m_scaleY,
-              m_repeat);
+              m_repeat, get(1), get(2), get(3), get(4), get(5));
 }
 
 nlohmann::json Transform2DCoreNode::saveParams() const {
@@ -831,19 +835,23 @@ ShapeCoreNode::ShapeCoreNode()
       m_edge(0.2f) {}
 
 std::vector<std::string> ShapeCoreNode::inputSlotNames() const {
-  return {};
+  return {"RadiusMap", "EdgeMap"};
 }
 std::vector<std::string> ShapeCoreNode::outputSlotNames() const {
   return {"Out"};
 }
 
-void ShapeCoreNode::execute(const std::vector<GenTexture*>& /*inputs*/,
+void ShapeCoreNode::execute(const std::vector<GenTexture*>& inputs,
                             std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> const GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
   int w = mmSizeFromIdx(m_widthIdx);
   int h = mmSizeFromIdx(m_heightIdx);
   outputs.resize(1);
   outputs[0].Init(w, h);
-  MMShape(outputs[0], m_shape, m_sides, m_radius, m_edge);
+  MMShape(outputs[0], m_shape, m_sides, m_radius, m_edge, get(0), get(1));
 }
 
 nlohmann::json ShapeCoreNode::saveParams() const {

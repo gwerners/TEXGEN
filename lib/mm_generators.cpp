@@ -806,7 +806,8 @@ sF32 shapeValue(sInt shape, sF32 u, sF32 v, sF32 sides, sF32 size,
 } // namespace
 
 void MMShape(GenTexture &out, sInt shape, sF32 sides, sF32 radius,
-             sF32 edge) {
+             sF32 edge, const GenTexture *radiusMap,
+             const GenTexture *edgeMap) {
   if (!out.Data)
     return;
   const sInt w = out.XRes, h = out.YRes;
@@ -814,8 +815,13 @@ void MMShape(GenTexture &out, sInt shape, sF32 sides, sF32 radius,
     for (sInt px = 0; px < w; px++) {
       sF32 u = (px + 0.5f) / w;
       sF32 v = (py + 0.5f) / h;
+      sF32 r = radius, e = edge;
+      if (radiusMap && radiusMap->Data)
+        r *= sampleGrayBilinearWrap(*radiusMap, u, v);
+      if (edgeMap && edgeMap->Data)
+        e *= sampleGrayBilinearWrap(*edgeMap, u, v);
       gray16(out.Data[py * w + px],
-             shapeValue(shape, u, v, sides + 1e-5f, radius, edge));
+             shapeValue(shape, u, v, sides + 1e-5f, r, e));
     }
 }
 

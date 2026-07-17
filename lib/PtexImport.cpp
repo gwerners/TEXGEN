@@ -59,12 +59,12 @@ std::string strOr(const json &p, const char *key, const std::string &def) {
 const std::map<std::string, std::vector<std::string>> &portsIn() {
   static const std::map<std::string, std::vector<std::string>> m = {
       {"colorize", {"In"}},
-      {"transform", {"In", "", "", "", "", ""}},
-      {"transform2", {"In", "", "", "", "", ""}},
-      {"shape", {"", ""}},
+      {"transform", {"In", "TX", "TY", "Rot", "SX", "SY"}},
+      {"transform2", {"In", "TX", "TY", "Rot", "SX", "SY"}},
+      {"shape", {"RadiusMap", "EdgeMap"}},
       {"blend", {"A", "B", "Mask"}},
       {"blend2", {"B", "A", "Mask"}}, // b, l0, a0 (extra layers dropped)
-      {"warp", {"In", "Height"}},
+      {"warp", {"In", "Height", "Strength"}},
       {"normal_map", {"Height"}},
       {"normal_map2", {"Height"}},
       {"material",
@@ -84,8 +84,8 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"brightness_contrast", {"In"}},
       {"adjust_hsv", {"In"}},
       {"alter_hsv", {"In"}},
-      {"gaussian_blur", {"In", ""}},
-      {"fast_blur", {"In", ""}},
+      {"gaussian_blur", {"In", "Sigma"}},
+      {"fast_blur", {"In", "Sigma"}},
       {"make_tileable", {"In"}},
       {"emboss", {"In"}},
       {"quantize", {"In"}},
