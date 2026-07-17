@@ -2178,6 +2178,84 @@ void BevelCoreNode::execute(const std::vector<GenTexture*>& inputs,
 }
 
 // ============================================================
+// ColorNoiseCoreNode
+// ============================================================
+
+std::vector<std::string> ColorNoiseCoreNode::inputSlotNames() const {
+  return {};
+}
+std::vector<std::string> ColorNoiseCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json ColorNoiseCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx},
+          {"heightIdx", m_heightIdx},
+          {"grid", m_grid},
+          {"seed", m_seed}};
+}
+
+void ColorNoiseCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("grid"))
+    m_grid = j["grid"];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void ColorNoiseCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                 std::vector<GenTexture>& outputs) {
+  (void)inputs;
+  outputs.resize(1);
+  outputs[0].Init(32 << m_widthIdx, 32 << m_heightIdx);
+  MMColorNoise(outputs[0], m_grid, m_seed);
+}
+
+// ============================================================
+// DirectionalBlurCoreNode
+// ============================================================
+
+std::vector<std::string> DirectionalBlurCoreNode::inputSlotNames() const {
+  return {"In", "Amount"};
+}
+std::vector<std::string> DirectionalBlurCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json DirectionalBlurCoreNode::saveParams() const {
+  return {{"size", m_size},
+          {"sigma", m_sigma},
+          {"angle", m_angle},
+          {"mode", m_mode}};
+}
+
+void DirectionalBlurCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("size"))
+    m_size = j["size"];
+  if (j.contains("sigma"))
+    m_sigma = j["sigma"];
+  if (j.contains("angle"))
+    m_angle = j["angle"];
+  if (j.contains("mode"))
+    m_mode = j["mode"];
+}
+
+void DirectionalBlurCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                      std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  GenTexture* amount = inputs.size() > 1 && inputs[1] && inputs[1]->Data
+                           ? inputs[1]
+                           : nullptr;
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMDirectionalBlur(outputs[0], *in, amount, m_size, m_sigma, m_angle,
+                    m_mode);
+}
+
+// ============================================================
 // NormalBlendCoreNode
 // ============================================================
 

@@ -85,6 +85,10 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   registry["NormalBlend"] = []() {
     return std::make_unique<NormalBlendNode>();
   };
+  registry["ColorNoise"] = []() { return std::make_unique<ColorNoiseNode>(); };
+  registry["DirectionalBlur"] = []() {
+    return std::make_unique<DirectionalBlurNode>();
+  };
   registry["TilerAdvanced"] = []() {
     return std::make_unique<TilerAdvancedNode>();
   };

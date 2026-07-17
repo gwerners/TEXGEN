@@ -142,6 +142,9 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
       {"NormalBlend",
        {"Filter", "Blends a detail normal map onto a base normal map "
                   "(reoriented normal mapping)"}},
+      {"ColorNoise", {"Noise", "Random color per grid cell"}},
+      {"DirectionalBlur",
+       {"Filter", "One-sided gaussian smear along an angle"}},
       // Combiners
       {"Blend",
        {"Combine", "Blends two inputs with selectable mode and opacity"}},
@@ -254,6 +257,8 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<BevelCoreNode>(r);
     registerType<DilateCoreNode>(r);
     registerType<NormalBlendCoreNode>(r);
+    registerType<ColorNoiseCoreNode>(r);
+    registerType<DirectionalBlurCoreNode>(r);
     registerType<TilerAdvancedCoreNode>(r);
     registerType<DotNoiseCoreNode>(r);
     registerType<ScratchesCoreNode>(r);

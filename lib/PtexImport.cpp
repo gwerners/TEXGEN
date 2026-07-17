@@ -133,6 +133,7 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"bevel", {"In"}},
       {"dilate", {"Mask", "Source"}},
       {"normal_blend", {"Foreground", "Background", "Mask"}},
+      {"directional_blur", {"In", "Amount"}},
       {"tiler_advanced",
        {"In", "Mask", "Color1", "Color2", "TrX", "TrY", "Rot", "ScX",
         "ScY"}},
@@ -624,6 +625,25 @@ bool convertParams(const std::string &type, const json &p,
   if (type == "normal_blend") {
     typeName = "NormalBlend";
     out = {{"amount", numOr(p, "amount", 0.5f)}};
+    return true;
+  }
+  if (type == "color_noise") {
+    typeName = "ColorNoise";
+    int gridExp = intOr(p, "size", 8);
+    out = size3();
+    out["grid"] = 1 << (gridExp < 1 ? 1 : (gridExp > 12 ? 12 : gridExp));
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "directional_blur") {
+    // directional_blur.mmg graph params: param0=size (exponent),
+    // param1=sigma, param2=angle, param3=mode
+    typeName = "DirectionalBlur";
+    int szExp = intOr(p, "param0", 9);
+    out = {{"size", (float)(1 << (szExp < 4 ? 4 : (szExp > 12 ? 12 : szExp)))},
+           {"sigma", numOr(p, "param1", 0.5f)},
+           {"angle", numOr(p, "param2", 0.0f)},
+           {"mode", intOr(p, "param3", 0)}};
     return true;
   }
   if (type == "sphere") {
@@ -1236,7 +1256,8 @@ GraphResult convertGraph(json mmNodes, json mmConns,
         "remap", "tile2x2", "normal_map_convert", "custom_uv",
         "smooth_curvature", "smooth_curvature2", "occlusion2", "hbao",
         "rotate", "tones_range", "math_v3", "tiler_advanced",
-        "height_to_offset", "bevel", "dilate", "normal_blend"};
+        "height_to_offset", "bevel", "dilate", "normal_blend",
+        "directional_blur"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));

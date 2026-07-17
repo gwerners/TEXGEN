@@ -957,6 +957,27 @@ void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
 }
 
 // Dot noise (noise.mmg).
+void MMColorNoise(GenTexture &out, sInt gridSize, sF32 seed) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const Vec2 s2 = mmRand2(seed, 1.0f - seed);
+  const sF32 g = (sF32)(gridSize < 1 ? 1 : gridSize);
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      // color_dots(): cell center in grid space, one random color each
+      const sF32 cx = floorf((px + 0.5f) / w * g) + 0.5f;
+      const sF32 cy = floorf((py + 0.5f) / h * g) + 0.5f;
+      sF32 rgb[3];
+      mmRand3(s2.x + cx, s2.y + cy, rgb);
+      Pixel &o = out.Data[(size_t)py * w + px];
+      o.r = to16(rgb[0]);
+      o.g = to16(rgb[1]);
+      o.b = to16(rgb[2]);
+      o.a = 65535;
+    }
+}
+
 void MMDotNoise(GenTexture &out, sInt gridSize, sF32 density,
                 const GenTexture *densityIn, sF32 seed, sInt mode) {
   if (!out.Data)

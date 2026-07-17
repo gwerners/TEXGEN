@@ -1396,6 +1396,52 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
     }
 }
 
+void MMDirectionalBlur(GenTexture &out, const GenTexture &in,
+                       const GenTexture *amountMap, sF32 sizePx, sF32 sigma,
+                       sF32 angleDeg, sInt mode) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 step = 1.0f / (sizePx > 1.0f ? sizePx : 1.0f);
+  const sF32 a = angleDeg * 0.01745329251f;
+  const sF32 ex = cosf(a) * step, ey = -sinf(a) * step;
+  const sInt first = mode < 0 ? 0 : (mode > 1 ? 1 : mode);
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      const sF32 su = (px + 0.5f) / w, sv = (py + 0.5f) / h;
+      sF32 sg = sigma;
+      if (amountMap && amountMap->Data) {
+        sF32 m[4];
+        sampleRGBA(*amountMap, su, sv, m);
+        sg *= (m[0] + m[1] + m[2]) / 3.0f;
+      }
+      Pixel &o = out.Data[(size_t)py * w + px];
+      if (sg <= 1e-4f) { // degenerate gaussian: passthrough
+        sF32 c[4];
+        sampleRGBA(in, su, sv, c);
+        o.r = to16(c[0]);
+        o.g = to16(c[1]);
+        o.b = to16(c[2]);
+        o.a = to16(c[3]);
+        continue;
+      }
+      sF32 rv[4] = {0, 0, 0, 0}, sum = 0.0f;
+      for (sInt i = first; i <= 50; i++) {
+        const sF32 t = (sF32)i / sg;
+        const sF32 coef = expf(-0.5f * t * t) / (6.28318530718f * sg * sg);
+        sF32 c[4];
+        sampleRGBA(in, su + i * ex, sv + i * ey, c);
+        for (sInt k = 0; k < 4; k++)
+          rv[k] += c[k] * coef;
+        sum += coef;
+      }
+      o.r = to16(rv[0] / sum);
+      o.g = to16(rv[1] / sum);
+      o.b = to16(rv[2] / sum);
+      o.a = to16(rv[3] / sum);
+    }
+}
+
 void MMNormalBlend(GenTexture &out, const GenTexture *fg,
                    const GenTexture *bg, const GenTexture *mask, sF32 amount) {
   if (!out.Data)

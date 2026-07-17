@@ -62,6 +62,9 @@ enum MMBlendMode {
 void MMBlend(GenTexture &out, const GenTexture &a, const GenTexture &b,
              const GenTexture *mask, sInt mode, sF32 opacity);
 
+// Color Noise (color_noise.mmg): constant random RGB per grid cell.
+void MMColorNoise(GenTexture &out, sInt gridSize, sF32 seed);
+
 // Warp: displaces the UVs of 'in' along the gradient (finite differences,
 // half-pixel epsilon scaled by 'epsilon') of the grayscale 'height' map.
 // strength (optional, grayscale) modulates the displacement per pixel.

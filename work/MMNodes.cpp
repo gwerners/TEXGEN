@@ -1251,6 +1251,43 @@ void BevelNode::renderParams() {
   ImGui::PopItemWidth();
 }
 
+std::vector<ImNodes::Ez::SlotInfo> ColorNoiseNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> ColorNoiseNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void ColorNoiseNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##cnoise", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##cnoise", &m_core.m_heightIdx, s_sizesStr);
+  SliderIntW("Grid##cnoise", &m_core.m_grid, 1, 1024);
+  Hint("Cells per axis; each cell gets one random color");
+  SliderFloatW("Seed##cnoise", &m_core.m_seed, 0.0f, 10.0f);
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> DirectionalBlurNode::inputSlotInfos()
+    const {
+  return {{"In", 1}, {"Amount", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> DirectionalBlurNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void DirectionalBlurNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Sigma##dblur", &m_core.m_sigma, 0.0f, 50.0f);
+  Hint("Blur strength in texels (modulated by the Amount input)");
+  SliderFloatW("Angle##dblur", &m_core.m_angle, 0.0f, 360.0f);
+  SliderFloatW("Size##dblur", &m_core.m_size, 16.0f, 2048.0f);
+  Hint("Reference resolution: one tap = 1/size UV");
+  ImGui::Combo("Mode##dblur", &m_core.m_mode, "Include center\0Skip center\0");
+  ImGui::PopItemWidth();
+}
+
 std::vector<ImNodes::Ez::SlotInfo> NormalBlendNode::inputSlotInfos() const {
   return {{"Foreground", 1}, {"Background", 1}, {"Mask", 1}};
 }

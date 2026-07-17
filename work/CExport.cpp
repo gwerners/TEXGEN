@@ -1046,6 +1046,31 @@ static void emitNode(std::ostringstream& ss,
     }
   }
 
+  else if (type == "ColorNoise") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMColorNoise(" << v << ", " << p.value("grid", 256) << ", "
+       << pf(p, "seed", 0.0f) << ");\n";
+  }
+
+  else if (type == "DirectionalBlur") {
+    std::string in = srcVar(conns, id, "In");
+    std::string am = srcVar(conns, id, "Amount");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMDirectionalBlur(" << v << ", " << in << ", "
+         << (am.empty() ? std::string("(const GenTexture*)0") : "&" + am)
+         << ", " << pf(p, "size", 512.0f) << ", " << pf(p, "sigma", 0.5f)
+         << ", " << pf(p, "angle", 0.0f) << ", " << p.value("mode", 0)
+         << ");\n";
+    }
+  }
+
   else if (type == "NormalBlend") {
     std::string fg = srcVar(conns, id, "Foreground");
     std::string bg = srcVar(conns, id, "Background");

@@ -735,6 +735,46 @@ class DilateCoreNode : public CoreNode {
 };
 
 // ============================================================
+// ColorNoiseCoreNode — random RGB per grid cell (color_noise.mmg)
+// ============================================================
+class ColorNoiseCoreNode : public CoreNode {
+ public:
+  ColorNoiseCoreNode() {}
+  std::string typeName() const override { return "ColorNoise"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx = 3, m_heightIdx = 3;
+  int m_grid = 256;  // cells per axis
+  float m_seed = 0.0f;
+};
+
+// ============================================================
+// DirectionalBlurCoreNode — one-sided gaussian smear along an
+// angle (directional_blur.mmg)
+// ============================================================
+class DirectionalBlurCoreNode : public CoreNode {
+ public:
+  DirectionalBlurCoreNode() {}
+  std::string typeName() const override { return "DirectionalBlur"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_size = 512.0f;  // texel step = 1/size UV
+  float m_sigma = 0.5f;
+  float m_angle = 0.0f;
+  int m_mode = 0;  // first tap index (1 skips the center texel)
+};
+
+// ============================================================
 // NormalBlendCoreNode — reoriented normal mapping (normal_blend.mmg)
 // ============================================================
 class NormalBlendCoreNode : public CoreNode {

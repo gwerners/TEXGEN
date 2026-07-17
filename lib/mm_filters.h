@@ -191,3 +191,12 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
 // inputs default to the flat normal (0.5, 0.5, 1).
 void MMNormalBlend(GenTexture &out, const GenTexture *fg,
                    const GenTexture *bg, const GenTexture *mask, sF32 amount);
+
+// Directional Blur (directional_blur.mmg): one-sided gaussian smear
+// of up to 51 taps along 'angle' (degrees, y flipped like MM), with
+// texel steps of 1/sizePx UV. sigma is in tap units and is modulated
+// per pixel by the optional grayscale amount map. mode is the first
+// tap index (0 includes the center texel, 1 skips it).
+void MMDirectionalBlur(GenTexture &out, const GenTexture &in,
+                       const GenTexture *amountMap, sF32 sizePx, sF32 sigma,
+                       sF32 angleDeg, sInt mode);
