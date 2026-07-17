@@ -90,6 +90,7 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
     return std::make_unique<FillToColorNode>();
   };
   registry["Remap"] = []() { return std::make_unique<RemapNode>(); };
+  registry["Levels"] = []() { return std::make_unique<LevelsNode>(); };
   registry["Tile2x2"] = []() { return std::make_unique<Tile2x2Node>(); };
   registry["NormalConvert"] = []() {
     return std::make_unique<NormalConvertNode>();

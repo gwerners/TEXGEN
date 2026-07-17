@@ -257,6 +257,13 @@ class FillToColorNode : public UiNode<FillToColorCoreNode> {
   void renderParams() override;
 };
 
+class LevelsNode : public UiNode<LevelsCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
 class RemapNode : public UiNode<RemapCoreNode> {
  public:
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;

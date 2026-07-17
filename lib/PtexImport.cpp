@@ -280,7 +280,8 @@ bool convertParams(const std::string &type, const json &p,
   if (type == "warp") {
     typeName = "Warp";
     out = {{"amount", numOr(p, "amount", 0.1f)},
-           {"epsilon", numOr(p, "eps", 0.005f)}};
+           {"epsilon", numOr(p, "eps", 0.005f)},
+           {"mode", intOr(p, "mode", 0)}};
     return true;
   }
   if (type == "normal_map" || type == "normal_map2") {
@@ -386,14 +387,30 @@ bool convertParams(const std::string &type, const json &p,
     out = {{"stops", grayStops(0.0f, 0.0f, 1.0f, 1.0f)}};
     return true;
   }
+  if (type == "tones") {
+    typeName = "Levels";
+    auto col = [&](const char* key, float defR, float defG, float defB,
+                   float defA) {
+      json c = p.value(key, json::object());
+      return json{numOr(c, "r", defR), numOr(c, "g", defG),
+                  numOr(c, "b", defB), numOr(c, "a", defA)};
+    };
+    out = {{"inMin", col("in_min", 0.0f, 0.0f, 0.0f, 0.0f)},
+           {"inMid", col("in_mid", 0.5f, 0.5f, 0.5f, 0.5f)},
+           {"inMax", col("in_max", 1.0f, 1.0f, 1.0f, 1.0f)},
+           {"outMin", col("out_min", 0.0f, 0.0f, 0.0f, 0.0f)},
+           {"outMax", col("out_max", 1.0f, 1.0f, 1.0f, 1.0f)}};
+    return true;
+  }
   if (type == "tones_step") {
-    // clamp((x - value) * width + 0.5): linear ramp centered at value
+    // clamp((x - value) / width + 0.5): the ramp spans width around
+    // value (width divides — small width means a sharp step)
     typeName = "Colorize";
     float value = numOr(p, "value", 0.5f);
     float width = numOr(p, "width", 1.0f);
     if (width < 1e-4f)
       width = 1e-4f;
-    float lo = value - 0.5f / width, hi = value + 0.5f / width;
+    float lo = value - 0.5f * width, hi = value + 0.5f * width;
     bool invert = boolOr(p, "invert", false);
     out = {{"stops", invert ? grayStops(lo, 1.0f, hi, 0.0f)
                             : grayStops(lo, 0.0f, hi, 1.0f)}};
@@ -779,7 +796,7 @@ bool isIgnorable(const std::string &type) {
 // close to identity and is approximated by a wire.
 bool isPassthrough(const std::string &type) {
   static const std::set<std::string> s = {
-      "buffer", "reroute", "supersample", "tones",
+      "buffer",     "reroute", "supersample",
       "auto_tones", "tonality", "sharpen", "denoiser"};
   return s.count(type) > 0;
 }

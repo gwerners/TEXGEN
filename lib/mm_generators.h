@@ -62,8 +62,10 @@ void MMBlend(GenTexture &out, const GenTexture &a, const GenTexture &b,
 // Warp: displaces the UVs of 'in' along the gradient (finite differences,
 // half-pixel epsilon scaled by 'epsilon') of the grayscale 'height' map.
 // strength (optional, grayscale) modulates the displacement per pixel.
+// mode 1 scales the warp by (1 - height) ("distance to top").
 void MMWarp(GenTexture &out, const GenTexture &in, const GenTexture &height,
-            const GenTexture *strength, sF32 amount, sF32 epsilon);
+            const GenTexture *strength, sF32 amount, sF32 epsilon,
+            sInt mode = 0);
 
 // Colorize: maps input luminance through a multi-stop color ramp.
 // stops = nStops entries of {pos, r, g, b, a}, sorted by pos ascending.

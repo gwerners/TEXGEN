@@ -475,7 +475,8 @@ void MMBlend(GenTexture &out, const GenTexture &a, const GenTexture &b,
 // ============================================================
 
 void MMWarp(GenTexture &out, const GenTexture &in, const GenTexture &height,
-            const GenTexture *strength, sF32 amount, sF32 epsilon) {
+            const GenTexture *strength, sF32 amount, sF32 epsilon,
+            sInt mode) {
   if (!out.Data || !in.Data || !height.Data)
     return;
   const sInt w = out.XRes, h = out.YRes;
@@ -492,6 +493,8 @@ void MMWarp(GenTexture &out, const GenTexture &in, const GenTexture &height,
       sF32 str = 1.0f;
       if (strength && strength->Data)
         str = sampleGrayBilinearWrap(*strength, u, v);
+      if (mode == 1) // distance to top
+        str *= 1.0f - sampleGrayBilinearWrap(height, u, v);
       sF32 c[4];
       sampleBilinearWrap(in, u + amount * str * sx, v + amount * str * sy, c);
       Pixel &o = out.Data[py * w + px];

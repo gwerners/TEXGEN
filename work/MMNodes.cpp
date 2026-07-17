@@ -149,11 +149,14 @@ std::vector<ImNodes::Ez::SlotInfo> WarpNode::outputSlotInfos() const {
 }
 
 void WarpNode::renderParams() {
+  static const char* warpModes = "Slope\0Distance to top\0";
   ImGui::PushItemWidth(120);
   SliderFloatW("Amount##warp", &m_core.m_amount, -1.0f, 1.0f);
   Hint("The strength of the warp effect");
   SliderFloatW("Epsilon##warp", &m_core.m_epsilon, 0.001f, 0.1f);
   Hint("Sampling distance for the height map slope");
+  ImGui::Combo("Mode##warp", &m_core.m_mode, warpModes);
+  Hint("Distance to top scales the warp by (1 - height)");
   ImGui::PopItemWidth();
 }
 
@@ -1027,8 +1030,7 @@ std::vector<ImNodes::Ez::SlotInfo> Tile2x2Node::outputSlotInfos() const {
 std::vector<ImNodes::Ez::SlotInfo> NormalConvertNode::inputSlotInfos() const {
   return {{"In", 1}};
 }
-std::vector<ImNodes::Ez::SlotInfo> NormalConvertNode::outputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> NormalConvertNode::outputSlotInfos() const {
   return {{"Out", 1}};
 }
 
@@ -1070,8 +1072,7 @@ void CustomUVNode::renderParams() {
 // SmoothCurvatureNode
 // ============================================================
 
-std::vector<ImNodes::Ez::SlotInfo> SmoothCurvatureNode::inputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> SmoothCurvatureNode::inputSlotInfos() const {
   return {{"Height", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> SmoothCurvatureNode::outputSlotInfos()
@@ -1106,5 +1107,32 @@ void AmbientOcclusionNode::renderParams() {
   SliderFloatW("Radius##ao", &m_core.m_radius, 0.01f, 0.25f);
   Hint("Blur radius as a fraction of the texture width");
   SliderFloatW("Strength##ao", &m_core.m_strength, 0.0f, 4.0f);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// LevelsNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> LevelsNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> LevelsNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void LevelsNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::ColorEdit4("In min##lv", m_core.m_inMin,
+                    ImGuiColorEditFlags_NoInputs);
+  ImGui::ColorEdit4("In mid##lv", m_core.m_inMid,
+                    ImGuiColorEditFlags_NoInputs);
+  Hint("Midtone pivot (gamma-like)");
+  ImGui::ColorEdit4("In max##lv", m_core.m_inMax,
+                    ImGuiColorEditFlags_NoInputs);
+  ImGui::ColorEdit4("Out min##lv", m_core.m_outMin,
+                    ImGuiColorEditFlags_NoInputs);
+  ImGui::ColorEdit4("Out max##lv", m_core.m_outMax,
+                    ImGuiColorEditFlags_NoInputs);
   ImGui::PopItemWidth();
 }

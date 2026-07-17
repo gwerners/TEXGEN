@@ -113,6 +113,8 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
       {"FillToColor",
        {"Filter", "Samples a map at each region's center"}},
       {"Remap", {"Filter", "Linear remap to [min, max] with quantization"}},
+      {"Levels",
+       {"Filter", "Per-channel levels: input range, midtone, output range"}},
       {"Tile2x2", {"Combine", "Packs four inputs into quadrants"}},
       {"NormalConvert",
        {"Filter", "Converts normal map conventions (OpenGL/DirectX)"}},
@@ -247,6 +249,7 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<CustomUVCoreNode>(r);
     registerType<SmoothCurvatureCoreNode>(r);
     registerType<AmbientOcclusionCoreNode>(r);
+    registerType<LevelsCoreNode>(r);
     // Structural
     registerType<SubgraphCoreNode>(r);
     registerType<RemoteCoreNode>(r);

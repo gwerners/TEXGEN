@@ -214,11 +214,12 @@ void WarpCoreNode::execute(const std::vector<GenTexture*>& inputs,
                                                           : nullptr;
   outputs.resize(1);
   outputs[0].Init(in->XRes, in->YRes);
-  MMWarp(outputs[0], *in, *height, strength, m_amount, m_epsilon);
+  MMWarp(outputs[0], *in, *height, strength, m_amount, m_epsilon,
+         m_mode);
 }
 
 nlohmann::json WarpCoreNode::saveParams() const {
-  return {{"amount", m_amount}, {"epsilon", m_epsilon}};
+  return {{"amount", m_amount}, {"epsilon", m_epsilon}, {"mode", m_mode}};
 }
 
 void WarpCoreNode::loadParams(const nlohmann::json& j) {
@@ -226,6 +227,8 @@ void WarpCoreNode::loadParams(const nlohmann::json& j) {
     m_amount = j["amount"];
   if (j.contains("epsilon"))
     m_epsilon = j["epsilon"];
+  if (j.contains("mode"))
+    m_mode = j["mode"];
 }
 
 // ============================================================
@@ -1891,4 +1894,49 @@ void AmbientOcclusionCoreNode::execute(const std::vector<GenTexture*>& inputs,
   outputs.resize(1);
   outputs[0].Init(in->XRes, in->YRes);
   MMAmbientOcclusion(outputs[0], *in, m_radius, m_strength);
+}
+
+// ============================================================
+// LevelsCoreNode
+// ============================================================
+
+std::vector<std::string> LevelsCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> LevelsCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+static nlohmann::json levelsArr(const float* v) {
+  return {v[0], v[1], v[2], v[3]};
+}
+
+static void levelsLoad(const nlohmann::json& j, const char* key, float* v) {
+  if (j.contains(key) && j[key].is_array() && j[key].size() >= 4)
+    for (int i = 0; i < 4; i++)
+      v[i] = j[key][i];
+}
+
+nlohmann::json LevelsCoreNode::saveParams() const {
+  return {{"inMin", levelsArr(m_inMin)},
+          {"inMid", levelsArr(m_inMid)},
+          {"inMax", levelsArr(m_inMax)},
+          {"outMin", levelsArr(m_outMin)},
+          {"outMax", levelsArr(m_outMax)}};
+}
+
+void LevelsCoreNode::loadParams(const nlohmann::json& j) {
+  levelsLoad(j, "inMin", m_inMin);
+  levelsLoad(j, "inMid", m_inMid);
+  levelsLoad(j, "inMax", m_inMax);
+  levelsLoad(j, "outMin", m_outMin);
+  levelsLoad(j, "outMax", m_outMax);
+}
+
+void LevelsCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                             std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMLevels(outputs[0], *in, m_inMin, m_inMid, m_inMax, m_outMin, m_outMax);
 }

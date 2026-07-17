@@ -765,7 +765,8 @@ static void emitNode(std::ostringstream& ss,
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
       ss << "    MMWarp(" << v << ", " << in << ", " << hm << ", "
          << inputRef(conns, id, "Strength") << ", " << pf(p, "amount", 0.1f)
-         << ", " << pf(p, "epsilon", 0.005f) << ");\n";
+         << ", " << pf(p, "epsilon", 0.005f) << ", " << p.value("mode", 0)
+         << ");\n";
     }
   }
 
@@ -1163,6 +1164,33 @@ static void emitNode(std::ostringstream& ss,
     }
   }
 
+  else if (type == "Levels") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      static const char* keys[5] = {"inMin", "inMid", "inMax", "outMin",
+                                    "outMax"};
+      static const float defs[5] = {0.0f, 0.5f, 1.0f, 0.0f, 1.0f};
+      ss << "    { ";
+      for (int k = 0; k < 5; k++) {
+        auto arr = p.value(keys[k], nlohmann::json::array());
+        ss << "const sF32 " << keys[k] << "[4] = {";
+        for (int i = 0; i < 4; i++) {
+          float val = (arr.is_array() && (int)arr.size() > i)
+                          ? arr[i].get<float>()
+                          : defs[k];
+          ss << fmtf(val) << (i < 3 ? ", " : "");
+        }
+        ss << "}; ";
+      }
+      ss << "\n      MMLevels(" << v << ", " << in
+         << ", inMin, inMid, inMax, outMin, outMax); }\n";
+    }
+  }
+
   else if (type == "Remap") {
     std::string in = srcVar(conns, id, "In");
     ss << "    GenTexture " << v << ";\n";
@@ -1171,8 +1199,7 @@ static void emitNode(std::ostringstream& ss,
     } else {
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
       ss << "    MMRemap(" << v << ", " << in << ", " << pf(p, "min", 0.0f)
-         << ", " << pf(p, "max", 1.0f) << ", " << pf(p, "step", 0.0f)
-         << ");\n";
+         << ", " << pf(p, "max", 1.0f) << ", " << pf(p, "step", 0.0f) << ");\n";
     }
   }
 
@@ -1243,8 +1270,7 @@ static void emitNode(std::ostringstream& ss,
     } else {
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
       ss << "    MMAmbientOcclusion(" << v << ", " << in << ", "
-         << pf(p, "radius", 0.05f) << ", " << pf(p, "strength", 1.0f)
-         << ");\n";
+         << pf(p, "radius", 0.05f) << ", " << pf(p, "strength", 1.0f) << ");\n";
     }
   }
 

@@ -113,3 +113,9 @@ void MMSmoothCurvature(GenTexture &out, const GenTexture &height,
 // hbao.mmg are shader-based; this uses the blur-minus-height trick).
 void MMAmbientOcclusion(GenTexture &out, const GenTexture &height,
                         sF32 radius, sF32 strength);
+
+// Levels adjustment (tones.mmg): per-channel input range remap with a
+// midtone gamma pivot, then output range remap.
+void MMLevels(GenTexture &out, const GenTexture &in, const sF32 inMin[4],
+              const sF32 inMid[4], const sF32 inMax[4], const sF32 outMin[4],
+              const sF32 outMax[4]);

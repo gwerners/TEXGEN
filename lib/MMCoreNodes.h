@@ -81,6 +81,7 @@ class WarpCoreNode : public CoreNode {
   void loadParams(const nlohmann::json& j) override;
 
   float m_amount, m_epsilon;
+  int m_mode = 0;  // 0 slope, 1 distance-to-top
 };
 
 // ============================================================
@@ -470,6 +471,27 @@ class MultiWarpCoreNode : public CoreNode {
   float m_intensity = 0.5f;
   float m_quality = 50.0f;
   int m_mode = 2;  // 0 min, 1 blur, 2 max
+};
+
+// ============================================================
+// LevelsCoreNode — per-channel levels (tones.mmg)
+// ============================================================
+class LevelsCoreNode : public CoreNode {
+ public:
+  LevelsCoreNode() {}
+  std::string typeName() const override { return "Levels"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_inMin[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+  float m_inMid[4] = {0.5f, 0.5f, 0.5f, 0.5f};
+  float m_inMax[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+  float m_outMin[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+  float m_outMax[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 };
 
 // ============================================================

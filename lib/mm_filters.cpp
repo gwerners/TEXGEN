@@ -908,3 +908,40 @@ void MMAmbientOcclusion(GenTexture &out, const GenTexture &height,
     }
   }
 }
+
+// Levels adjustment (tones.mmg adjust_levels).
+void MMLevels(GenTexture &out, const GenTexture &in, const sF32 inMin[4],
+              const sF32 inMid[4], const sF32 inMax[4], const sF32 outMin[4],
+              const sF32 outMax[4]) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 c[4];
+      sampleRGBA(in, u, v, c);
+      sF32 o[4];
+      for (int k = 0; k < 4; k++) {
+        sF32 range = inMax[k] - inMin[k];
+        if (fabsf(range) < 1e-6f)
+          range = range < 0.0f ? -1e-6f : 1e-6f;
+        sF32 x = clamp01((c[k] - inMin[k]) / range);
+        sF32 mid = (inMid[k] - inMin[k]) / range;
+        if (mid < 1e-4f)
+          mid = 1e-4f;
+        if (mid > 1.0f - 1e-4f)
+          mid = 1.0f - 1e-4f;
+        x = x >= mid ? 0.5f * (1.0f + (x - mid) / (1.0f - mid))
+                     : 0.5f * (x / mid);
+        o[k] = outMin[k] + x * (outMax[k] - outMin[k]);
+      }
+      Pixel &p = out.Data[py * w + px];
+      p.r = to16(o[0]);
+      p.g = to16(o[1]);
+      p.b = to16(o[2]);
+      p.a = to16(o[3]);
+    }
+  }
+}
