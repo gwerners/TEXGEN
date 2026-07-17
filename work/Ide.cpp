@@ -1,5 +1,6 @@
 #include "Ide.h"
 #include "CExport.h"
+#include "Icons.h"
 #include "Nodes.h"
 #include "ProjectIO.h"
 #include "Utils.h"
@@ -107,6 +108,53 @@ void Ide::unLoadTextures() {
     UnloadTexture(m_outputTexture);
 }
 
+void Ide::refreshOutput() {
+  if (!g_nodeGraph)
+    return;
+  GenTexture* lastOut = g_nodeGraph->getLastOutput();
+  if (lastOut && lastOut->Data) {
+    if (m_hasOutputTexture && m_outputTexture.id != 0)
+      UnloadTexture(m_outputTexture);
+    m_outputTexture = LoadTextureFromGenTexture(*lastOut);
+    m_hasOutputTexture = (m_outputTexture.id != 0);
+  }
+}
+
+void Ide::doSave(const std::string& path) {
+  if (!saveProject(path))
+    return;
+  if (g_nodeGraph) {
+    GenTexture* lastOut = g_nodeGraph->getLastOutput();
+    if (lastOut && lastOut->Data)
+      MaterialLibrary::saveThumbnail(*lastOut, path);
+    m_library.invalidate();
+  }
+}
+
+void Ide::doLoad(const std::string& path) {
+  if (loadProject(path) && g_nodeGraph) {
+    g_nodeGraph->generate();
+    refreshOutput();
+  }
+}
+
+void Ide::doImport(const std::string& path) {
+  if (importPtexProject(path) && g_nodeGraph) {
+    g_nodeGraph->generate();
+    refreshOutput();
+  }
+}
+
+// Toolbar icon button with tooltip (falls back to a text button)
+static bool IconButton(const char* id, const char* icon, const char* tooltip) {
+  Texture2D* t = uiIcon(icon);
+  bool clicked = t ? ImGui::ImageButton(id, ImTextureID(t->id), ImVec2(20, 20))
+                   : ImGui::Button(id);
+  if (tooltip && ImGui::IsItemHovered())
+    ImGui::SetTooltip("%s", tooltip);
+  return clicked;
+}
+
 void Ide::draw() {
   ImGui::PushFont(m_firaCodeRegular);
 
@@ -166,83 +214,29 @@ void Ide::draw() {
 
   TitleBarMaxButton("left", m_isLeftFullscreen, m_resetLayout);
 
-  // ── Generate ──────────────────────────────────────────────
-  if (ImGui::Button("Generate", ImVec2(-1, 30))) {
-    if (g_nodeGraph) {
-      g_nodeGraph->generate();
-      GenTexture* lastOut = g_nodeGraph->getLastOutput();
-      if (lastOut && lastOut->Data) {
-        if (m_hasOutputTexture && m_outputTexture.id != 0) {
-          UnloadTexture(m_outputTexture);
-        }
-        m_outputTexture = LoadTextureFromGenTexture(*lastOut);
-        m_hasOutputTexture = (m_outputTexture.id != 0);
-      }
-    }
-  }
-
-  ImGui::Spacing();
-  ImGui::Separator();
-  ImGui::Spacing();
-
-  // ── Project ──────────────────────────────────────────────
-  ImGui::Text("Project");
-  ImGui::PushItemWidth(-1);
-  ImGui::InputText("##projectfile", m_saveFilename, sizeof(m_saveFilename));
-  ImGui::PopItemWidth();
-
-  ImGui::Spacing();
-
-  float btnW =
-      (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) *
-      0.5f;
-  if (ImGui::Button("Save", ImVec2(btnW, 0))) {
-    saveProject(m_saveFilename);
+  // ── Toolbar ──────────────────────────────────────────────
+  if (IconButton("##tb_new", "new", "New project (clears the graph)")) {
+    delete g_nodeGraph;
+    g_nodeGraph = new NodeGraph();
+    refreshOutput();
   }
   ImGui::SameLine();
-  if (ImGui::Button("Save As..", ImVec2(btnW, 0))) {
-    m_saveDialog.open(m_saveFilename);
-  }
-
-  if (ImGui::Button("Load", ImVec2(btnW, 0))) {
-    if (loadProject(m_saveFilename) && g_nodeGraph) {
-      g_nodeGraph->generate();
-      GenTexture* lastOut = g_nodeGraph->getLastOutput();
-      if (lastOut && lastOut->Data) {
-        if (m_hasOutputTexture && m_outputTexture.id != 0) {
-          UnloadTexture(m_outputTexture);
-        }
-        m_outputTexture = LoadTextureFromGenTexture(*lastOut);
-        m_hasOutputTexture = (m_outputTexture.id != 0);
-      }
-    }
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Load..", ImVec2(btnW, 0))) {
+  if (IconButton("##tb_open", "open", "Load project..."))
     m_loadDialog.open(m_saveFilename);
-  }
-
-  if (ImGui::Button("Import MM..", ImVec2(-1, 0))) {
+  ImGui::SameLine();
+  if (IconButton("##tb_save", "save", "Save project (writes thumbnail)"))
+    doSave(m_saveFilename);
+  ImGui::SameLine();
+  if (IconButton("##tb_saveas", "saveas", "Save project as..."))
+    m_saveDialog.open(m_saveFilename);
+  ImGui::SameLine();
+  ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+  ImGui::SameLine();
+  if (IconButton("##tb_import", "import",
+                 "Import a Material Maker .ptex project"))
     m_importDialog.open("", ".ptex");
-  }
-  if (ImGui::IsItemHovered())
-    ImGui::SetTooltip(
-        "Import a Material Maker .ptex project,\n"
-        "converting its nodes to TEXGEN nodes");
-
-  ImGui::Spacing();
-  ImGui::Separator();
-  ImGui::Spacing();
-
-  // ── Export ───────────────────────────────────────────────
-  ImGui::Text("Export");
-  ImGui::PushItemWidth(-1);
-  ImGui::InputText("##exportname", m_exportName, sizeof(m_exportName));
-  ImGui::PopItemWidth();
-
-  ImGui::Spacing();
-
-  if (ImGui::Button("Export C Header", ImVec2(-1, 0))) {
+  ImGui::SameLine();
+  if (IconButton("##tb_export", "export", "Export C header")) {
     if (g_nodeGraph) {
       std::string hName(m_exportName);
       std::string hPath = hName + ".h";
@@ -253,6 +247,61 @@ void Ide::draw() {
       }
     }
   }
+  ImGui::SameLine();
+  ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+  ImGui::SameLine();
+  if (IconButton("##tb_generate", "play", "Generate (re-evaluate the graph)")) {
+    if (g_nodeGraph) {
+      g_nodeGraph->generate();
+      refreshOutput();
+    }
+  }
+
+  ImGui::Spacing();
+
+  // ── Project ──────────────────────────────────────────────
+  if (ImGui::CollapsingHeader("Project", ImGuiTreeNodeFlags_DefaultOpen)) {
+    ImGui::PushItemWidth(-1);
+    ImGui::InputText("##projectfile", m_saveFilename, sizeof(m_saveFilename));
+    ImGui::PopItemWidth();
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Project file used by the Save/Load buttons");
+  }
+
+  // ── Export ───────────────────────────────────────────────
+  if (ImGui::CollapsingHeader("Export")) {
+    ImGui::PushItemWidth(-1);
+    ImGui::InputText("##exportname", m_exportName, sizeof(m_exportName));
+    ImGui::PopItemWidth();
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Base name for the exported C header");
+    if (ImGui::Button("Export C Header", ImVec2(-1, 0))) {
+      if (g_nodeGraph) {
+        std::string hName(m_exportName);
+        std::string hPath = hName + ".h";
+        if (exportCHeader(g_nodeGraph, hName, hPath)) {
+          fmt::print(fg(fmt::color::green), "Exported: {}\n", hPath);
+        } else {
+          fmt::print(fg(fmt::color::red), "Export failed: {}\n", hPath);
+        }
+      }
+    }
+  }
+
+  // ── Library ──────────────────────────────────────────────
+  if (ImGui::CollapsingHeader("Library", ImGuiTreeNodeFlags_DefaultOpen)) {
+    std::string picked;
+    bool pickedPtex = false;
+    if (m_library.draw(picked, pickedPtex)) {
+      if (pickedPtex) {
+        doImport(picked);
+      } else {
+        strncpy(m_saveFilename, picked.c_str(), sizeof(m_saveFilename) - 1);
+        m_saveFilename[sizeof(m_saveFilename) - 1] = '\0';
+        doLoad(picked);
+      }
+    }
+  }
 
   ImGui::End();
 
@@ -260,39 +309,18 @@ void Ide::draw() {
   if (m_saveDialog.show("Save Project As", FileDialog::Save, ".json")) {
     std::string path = m_saveDialog.getResultPath();
     strncpy(m_saveFilename, path.c_str(), sizeof(m_saveFilename) - 1);
-    saveProject(m_saveFilename);
+    doSave(m_saveFilename);
   }
 
   if (m_loadDialog.show("Load Project", FileDialog::Load, ".json")) {
     std::string path = m_loadDialog.getResultPath();
     strncpy(m_saveFilename, path.c_str(), sizeof(m_saveFilename) - 1);
-    if (loadProject(m_saveFilename) && g_nodeGraph) {
-      g_nodeGraph->generate();
-      GenTexture* lastOut = g_nodeGraph->getLastOutput();
-      if (lastOut && lastOut->Data) {
-        if (m_hasOutputTexture && m_outputTexture.id != 0) {
-          UnloadTexture(m_outputTexture);
-        }
-        m_outputTexture = LoadTextureFromGenTexture(*lastOut);
-        m_hasOutputTexture = (m_outputTexture.id != 0);
-      }
-    }
+    doLoad(m_saveFilename);
   }
 
   if (m_importDialog.show("Import Material Maker Project", FileDialog::Load,
                           ".ptex")) {
-    std::string path = m_importDialog.getResultPath();
-    if (importPtexProject(path) && g_nodeGraph) {
-      g_nodeGraph->generate();
-      GenTexture* lastOut = g_nodeGraph->getLastOutput();
-      if (lastOut && lastOut->Data) {
-        if (m_hasOutputTexture && m_outputTexture.id != 0) {
-          UnloadTexture(m_outputTexture);
-        }
-        m_outputTexture = LoadTextureFromGenTexture(*lastOut);
-        m_hasOutputTexture = (m_outputTexture.id != 0);
-      }
-    }
+    doImport(m_importDialog.getResultPath());
   }
 
   // ------------------------------------------------------------------

@@ -9,3 +9,7 @@
 // or nullptr if the category has no icon. Textures are cached for the
 // lifetime of the process (freed by the GL context teardown).
 Texture2D* categoryIcon(const std::string& category);
+
+// Returns a toolbar/UI icon texture by name ("new", "open", "save",
+// "saveas", "import", "export", "play", "refresh") or nullptr.
+Texture2D* uiIcon(const std::string& name);

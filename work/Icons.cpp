@@ -103,6 +103,81 @@ static Texture2D rasterizeIcon(const char* svg, int side) {
   return tex;
 }
 
+// Toolbar / UI icons (same 24x24 line style)
+static const struct {
+  const char* name;
+  const char* svg;
+} kUiSvgs[] = {
+    {"new",
+     R"(<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g stroke="#e6e6e6" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round">
+<path d="M6 3 L14 3 L18 7 L18 21 L6 21 Z"/>
+<path d="M14 3 L14 7 L18 7"/>
+<line x1="9" y1="14" x2="15" y2="14"/>
+<line x1="12" y1="11" x2="12" y2="17"/>
+</g></svg>)"},
+    {"open",
+     R"(<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g stroke="#e6e6e6" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round">
+<path d="M3 6 L9 6 L11 8 L21 8 L21 19 L3 19 Z"/>
+</g></svg>)"},
+    {"save",
+     R"(<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g stroke="#e6e6e6" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round">
+<path d="M4 4 L17 4 L20 7 L20 20 L4 20 Z"/>
+<rect x="8" y="4" width="7" height="5"/>
+<rect x="7" y="13" width="10" height="7"/>
+</g></svg>)"},
+    {"saveas",
+     R"(<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g stroke="#e6e6e6" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round">
+<path d="M4 4 L14 4 L17 7 L17 12"/>
+<path d="M4 4 L4 20 L11 20"/>
+<path d="M20 13 L14 19 L13 22 L16 21 L22 15 Z"/>
+</g></svg>)"},
+    {"import",
+     R"(<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g stroke="#e6e6e6" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round">
+<line x1="12" y1="3" x2="12" y2="13"/>
+<path d="M8 9 L12 13 L16 9"/>
+<path d="M4 15 L4 20 L20 20 L20 15"/>
+</g></svg>)"},
+    {"export",
+     R"(<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g stroke="#e6e6e6" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round">
+<line x1="12" y1="15" x2="12" y2="5"/>
+<path d="M8 9 L12 5 L16 9"/>
+<path d="M4 15 L4 20 L20 20 L20 15"/>
+</g></svg>)"},
+    {"play",
+     R"(<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g stroke="#7dd87d" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round">
+<path d="M8 5 L19 12 L8 19 Z"/>
+</g></svg>)"},
+    {"refresh",
+     R"(<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g stroke="#e6e6e6" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round">
+<path d="M20 12 A 8 8 0 1 1 17.6 6.3"/>
+<path d="M17 2 L18 7 L13 7"/>
+</g></svg>)"},
+};
+
+Texture2D* uiIcon(const std::string& name) {
+  static std::map<std::string, Texture2D> cache;
+  auto it = cache.find(name);
+  if (it == cache.end()) {
+    Texture2D tex = {};
+    for (const auto& entry : kUiSvgs) {
+      if (name == entry.name) {
+        tex = rasterizeIcon(entry.svg, 40);
+        break;
+      }
+    }
+    it = cache.emplace(name, tex).first;
+  }
+  return it->second.id != 0 ? &it->second : nullptr;
+}
+
 Texture2D* categoryIcon(const std::string& category) {
   static std::map<std::string, Texture2D> cache;
 

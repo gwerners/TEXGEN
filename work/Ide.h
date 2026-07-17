@@ -7,6 +7,7 @@
 #include <imgui.h>
 #include <raylib.h>
 #include "FileDialog.h"
+#include "Library.h"
 #include "Preview3D.h"
 #include "ProjectIO.h"
 
@@ -19,6 +20,14 @@ class Ide {
   void loadTexture();
   void unLoadTextures();
   void draw();
+
+ private:
+  // refresh the bottom-panel texture from the graph output
+  void refreshOutput();
+  // save/load/import with thumbnail + output refresh
+  void doSave(const std::string& path);
+  void doLoad(const std::string& path);
+  void doImport(const std::string& path);
 
  private:
   ImFont* LoadCustomFonts(const std::string& fontPath);
@@ -44,6 +53,7 @@ class Ide {
   int m_lastChangeCount = -1;
   Preview3D m_preview3d;
   bool m_preview3dOn = false;
+  MaterialLibrary m_library;
 };
 
 #endif  // IDE_H
