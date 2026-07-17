@@ -262,13 +262,18 @@ bool convertParams(const std::string &type, const json &p,
     return true;
   }
   if (type == "blend" || type == "blend2") {
+    // blend2 layer params are 1-indexed (blend_type1/amount1); multi-
+    // layer instances are pre-expanded into single-layer chains by
+    // expandLayeredBlends()
     typeName = "Blend";
-    int mode = type == "blend" ? intOr(p, "blend_type", 0)
-                               : intOr(p, "blend_type0", 0);
+    int mode = type == "blend"
+                   ? intOr(p, "blend_type", 0)
+                   : intOr(p, "blend_type1", intOr(p, "blend_type0", 0));
     if (mode > 14)
       mode = 0; // Vivid/Pin/... not ported — fall back to Normal
-    float amount = type == "blend" ? numOr(p, "amount", 1.0f)
-                                   : numOr(p, "amount0", 0.5f);
+    float amount = type == "blend"
+                       ? numOr(p, "amount", 1.0f)
+                       : numOr(p, "amount1", numOr(p, "amount0", 0.5f));
     out = {{"mode", mode}, {"opacity", amount}};
     return true;
   }
@@ -843,6 +848,87 @@ void collapsePassthroughs(json &nodes, json &conns) {
   conns = keptConns;
 }
 
+// blend2 stacks any number of layers over a background (layer i sits
+// at port 2i-1, its opacity mask at port 2i, params blend_type<i> /
+// amount<i>). Expand each multi-layer instance into a chain of
+// single-layer blend2 nodes so the 1:1 node mapping applies.
+void expandLayeredBlends(json &nodes, json &conns) {
+  std::set<std::string> blend2s;
+  for (auto &n : nodes)
+    if (n.value("type", std::string()) == "blend2")
+      blend2s.insert(n.value("name", std::string()));
+  if (blend2s.empty())
+    return;
+
+  std::map<std::string, int> maxLayer;
+  for (auto &c : conns) {
+    std::string to = c.value("to", std::string());
+    if (!blend2s.count(to))
+      continue;
+    int tp = c.value("to_port", 0);
+    int layer = (tp + 1) / 2; // ports 1,2 -> layer 1; 3,4 -> 2; ...
+    if (layer > maxLayer[to])
+      maxLayer[to] = layer;
+  }
+
+  json newNodes = json::array();
+  for (auto &n : nodes) {
+    newNodes.push_back(n);
+    std::string nm = n.value("name", std::string());
+    if (!blend2s.count(nm) || maxLayer[nm] <= 1)
+      continue;
+    json params = n.value("parameters", json::object());
+    for (int i = 2; i <= maxLayer[nm]; i++) {
+      json syn;
+      syn["name"] = nm + "__layer" + std::to_string(i);
+      syn["type"] = "blend2";
+      syn["node_position"] = n.value("node_position", json::object());
+      json sp = json::object();
+      std::string bt = "blend_type" + std::to_string(i);
+      std::string am = "amount" + std::to_string(i);
+      if (params.contains(bt))
+        sp["blend_type1"] = params[bt];
+      if (params.contains(am))
+        sp["amount1"] = params[am];
+      syn["parameters"] = sp;
+      newNodes.push_back(syn);
+    }
+  }
+
+  json newConns = json::array();
+  for (auto &c : conns) {
+    json cj = c;
+    std::string to = cj.value("to", std::string());
+    std::string from = cj.value("from", std::string());
+    if (blend2s.count(to) && maxLayer[to] > 1) {
+      int tp = cj.value("to_port", 0);
+      int layer = (tp + 1) / 2;
+      if (layer >= 2) {
+        cj["to"] = to + "__layer" + std::to_string(layer);
+        cj["to_port"] = (tp % 2 == 1) ? 1 : 2; // layer input / mask
+      }
+    }
+    // consumers of the blend2 read the end of the chain
+    if (blend2s.count(from) && maxLayer[from] > 1)
+      cj["from"] = from + "__layer" + std::to_string(maxLayer[from]);
+    newConns.push_back(cj);
+  }
+  for (auto &kv : maxLayer) {
+    if (kv.second <= 1)
+      continue;
+    for (int i = 2; i <= kv.second; i++) {
+      newConns.push_back(
+          {{"from", i == 2 ? kv.first
+                           : kv.first + "__layer" + std::to_string(i - 1)},
+           {"from_port", 0},
+           {"to", kv.first + "__layer" + std::to_string(i)},
+           {"to_port", 0}});
+    }
+  }
+  nodes = newNodes;
+  conns = newConns;
+}
+
 struct GraphResult {
   json nodes = json::array();
   json conns = json::array();
@@ -863,6 +949,7 @@ GraphResult convertGraph(json mmNodes, json mmConns,
                          std::vector<std::string> *skipped) {
   GraphResult res;
   collapsePassthroughs(mmNodes, mmConns);
+  expandLayeredBlends(mmNodes, mmConns);
 
   auto &byName = res.byName;
   std::map<std::string,
