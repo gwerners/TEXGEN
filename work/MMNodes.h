@@ -182,6 +182,20 @@ class SlopeBlurNode : public UiNode<SlopeBlurCoreNode> {
   void renderParams() override;
 };
 
+class AnisotropicNoiseNode : public UiNode<AnisotropicNoiseCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class TilerAdvancedNode : public UiNode<TilerAdvancedCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
 class SphereNode : public UiNode<SphereCoreNode> {
  public:
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;

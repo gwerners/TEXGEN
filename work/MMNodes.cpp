@@ -1159,3 +1159,58 @@ void SphereNode::renderParams() {
   Hint("Divide by 2r so the dome top is exactly 1");
   ImGui::PopItemWidth();
 }
+
+// ============================================================
+// AnisotropicNoiseNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> AnisotropicNoiseNode::inputSlotInfos()
+    const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> AnisotropicNoiseNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void AnisotropicNoiseNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##ani", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##ani", &m_core.m_heightIdx, s_sizesStr);
+  SliderFloatW("Scale X##ani", &m_core.m_scaleX, 1.0f, 32.0f);
+  SliderFloatW("Scale Y##ani", &m_core.m_scaleY, 1.0f, 1024.0f);
+  Hint("High Y scale gives thin horizontal stripes");
+  SliderFloatW("Smooth##ani", &m_core.m_smoothness, 0.0f, 1.0f);
+  SliderFloatW("Interp##ani", &m_core.m_interpolation, 0.0f, 1.0f);
+  SliderFloatW("Seed##ani", &m_core.m_seed, 0.0f, 64.0f);
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// TilerAdvancedNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> TilerAdvancedNode::inputSlotInfos() const {
+  return {{"In", 1},     {"Mask", 1}, {"Color1", 1},
+          {"Color2", 1}, {"TrX", 1},  {"TrY", 1},
+          {"Rot", 1},    {"ScX", 1},  {"ScY", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> TilerAdvancedNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}, {"Color1", 1}, {"Color2", 1}, {"UV", 1}};
+}
+
+void TilerAdvancedNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Tile X##tla", &m_core.m_tx, 1.0f, 32.0f);
+  SliderFloatW("Tile Y##tla", &m_core.m_ty, 1.0f, 32.0f);
+  ImGui::SliderInt("Overlap##tla", &m_core.m_overlap, 0, 3);
+  SliderFloatW("Translate X##tla", &m_core.m_translateX, -1.0f, 1.0f);
+  SliderFloatW("Translate Y##tla", &m_core.m_translateY, -1.0f, 1.0f);
+  Hint("Per-instance offset, modulated by the TrX/TrY maps");
+  SliderFloatW("Rotate##tla", &m_core.m_rotate, -180.0f, 180.0f);
+  SliderFloatW("Scale X##tla", &m_core.m_scaleX, 0.1f, 4.0f);
+  SliderFloatW("Scale Y##tla", &m_core.m_scaleY, 0.1f, 4.0f);
+  SliderFloatW("Seed##tla", &m_core.m_seed, 0.0f, 64.0f);
+  ImGui::PopItemWidth();
+}

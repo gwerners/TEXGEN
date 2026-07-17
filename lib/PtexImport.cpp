@@ -128,6 +128,10 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"rotate", {"In"}},
       {"tones_range", {"In"}},
       {"math_v3", {"A", "B"}},
+      {"noise_anisotropic", {}},
+      {"tiler_advanced",
+       {"In", "Mask", "Color1", "Color2", "TrX", "TrY", "Rot", "ScX",
+        "ScY"}},
       {"bricks3", {"", "", ""}}, // mortar/bevel/round maps unsupported
   };
   return m;
@@ -147,6 +151,7 @@ const std::map<std::string, std::vector<std::string>> &portsOut() {
       {"tiler", {"Out", "Color", ""}},
       {"splatter", {"Out", "Color", ""}},
       {"mwf_map", {"H", "C", "ORM", "EM", "NM"}},
+      {"tiler_advanced", {"Out", "Color1", "Color2", "UV"}},
   };
   return m;
 }
@@ -558,6 +563,31 @@ bool convertParams(const std::string &type, const json &p,
            {"intensity", numOr(p, "param1", 0.5f)},
            {"quality", numOr(p, "param2", 50.0f)},
            {"mode", intOr(p, "param3", 2)}};
+    return true;
+  }
+  if (type == "noise_anisotropic") {
+    typeName = "AnisotropicNoise";
+    out = size3();
+    out["scaleX"] = numOr(p, "scale_x", 4.0f);
+    out["scaleY"] = numOr(p, "scale_y", 256.0f);
+    out["smoothness"] = numOr(p, "smoothness", 1.0f);
+    out["interpolation"] = numOr(p, "interpolation", 1.0f);
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "tiler_advanced") {
+    typeName = "TilerAdvanced";
+    int tsIdx = intOr(p, "inputs", 0);
+    out = {{"tx", numOr(p, "tx", 4.0f)},
+           {"ty", numOr(p, "ty", 4.0f)},
+           {"overlap", intOr(p, "overlap", 1)},
+           {"inputs", tsIdx == 2 ? 4 : (tsIdx == 1 ? 2 : 1)},
+           {"translateX", numOr(p, "translate_x", 0.0f)},
+           {"translateY", numOr(p, "translate_y", 0.0f)},
+           {"rotate", numOr(p, "rotate", 0.0f)},
+           {"scaleX", numOr(p, "scale_x", 1.0f)},
+           {"scaleY", numOr(p, "scale_y", 1.0f)},
+           {"seed", numOr(p, "seed", 0.0f)}};
     return true;
   }
   if (type == "sphere") {
@@ -1091,7 +1121,7 @@ GraphResult convertGraph(json mmNodes, json mmConns,
         "fill_to_color", "fill_to_color2",
         "remap", "tile2x2", "normal_map_convert", "custom_uv",
         "smooth_curvature", "smooth_curvature2", "occlusion2", "hbao",
-        "rotate", "tones_range", "math_v3"};
+        "rotate", "tones_range", "math_v3", "tiler_advanced"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));

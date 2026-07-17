@@ -74,6 +74,12 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   registry["MultiWarp"] = []() { return std::make_unique<MultiWarpNode>(); };
   registry["SlopeBlur"] = []() { return std::make_unique<SlopeBlurNode>(); };
   registry["Sphere"] = []() { return std::make_unique<SphereNode>(); };
+  registry["AnisotropicNoise"] = []() {
+    return std::make_unique<AnisotropicNoiseNode>();
+  };
+  registry["TilerAdvanced"] = []() {
+    return std::make_unique<TilerAdvancedNode>();
+  };
   registry["DotNoise"] = []() { return std::make_unique<DotNoiseNode>(); };
   registry["Scratches"] = []() { return std::make_unique<ScratchesNode>(); };
   registry["Mirror"] = []() { return std::make_unique<MirrorNode>(); };
@@ -1091,7 +1097,7 @@ void NodeGraph::draw() {
                    "RMB group/ungroup";
     } else {
       m_hintText =
-          "RMB add node  |  Ctrl+Z/Y undo/redo  |  drag slots to connect  |  " +
+          "RMB add node  |  P previews  |  Ctrl+Z/Y undo/redo  |  " +
           std::to_string(m_nodes.size()) + " nodes";
     }
     if (m_evaluating)
@@ -1109,6 +1115,16 @@ void NodeGraph::draw() {
       copySelected();
     if (ctrl && ImGui::IsKeyPressed(ImGuiKey_V))
       pasteClipboard();
+    // P: toggle every node preview (chain tracing)
+    if (!ctrl && ImGui::IsKeyPressed(ImGuiKey_P) &&
+        !ImGui::GetIO().WantTextInput) {
+      bool anyClosed = false;
+      for (auto* gn : m_nodes)
+        if (!gn->previewOpen)
+          anyClosed = true;
+      for (auto* gn : m_nodes)
+        gn->previewOpen = anyClosed;
+    }
   }
 
   // Delete selected nodes
@@ -1254,6 +1270,17 @@ void NodeGraph::draw() {
       groupSelected();
     if (ImGui::MenuItem("Ungroup Selected"))
       ungroupSelected();
+
+    ImGui::Separator();
+
+    if (ImGui::MenuItem("Show All Previews", "P")) {
+      for (auto* gn : m_nodes)
+        gn->previewOpen = true;
+    }
+    if (ImGui::MenuItem("Hide All Previews", "P")) {
+      for (auto* gn : m_nodes)
+        gn->previewOpen = false;
+    }
 
     ImGui::Separator();
 

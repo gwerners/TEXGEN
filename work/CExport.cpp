@@ -713,12 +713,11 @@ static void emitNode(std::ostringstream& ss,
   else if (type == "Voronoi") {
     int w = sizeFromIdx(p.value("widthIdx", 3));
     int h = sizeFromIdx(p.value("heightIdx", 3));
-    ss << "    GenTexture " << v << "_Color, " << v << "_F1, " << v
-       << "_Edge, " << v << "_Fill;\n";
+    ss << "    GenTexture " << v << "_Color, " << v << "_F1, " << v << "_Edge, "
+       << v << "_Fill;\n";
     ss << "    " << v << "_Color.Init(" << w << ", " << h << "); " << v
        << "_F1.Init(" << w << ", " << h << "); " << v << "_Edge.Init(" << w
-       << ", " << h << "); " << v << "_Fill.Init(" << w << ", " << h
-       << ");\n";
+       << ", " << h << "); " << v << "_Fill.Init(" << w << ", " << h << ");\n";
     ss << "    MMVoronoi(&" << v << "_Color, &" << v << "_F1, &" << v
        << "_Edge, " << p.value("scaleX", 4) << ", " << p.value("scaleY", 4)
        << ", " << pf(p, "stretchX", 1.0f) << ", " << pf(p, "stretchY", 1.0f)
@@ -1005,6 +1004,51 @@ static void emitNode(std::ostringstream& ss,
       ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
       ss << "    MMSlopeBlur(" << v << ", " << in << ", " << hm << ", "
          << pf(p, "size", 9.0f) << ", " << pf(p, "sigma", 0.5f) << ");\n";
+    }
+  }
+
+  else if (type == "AnisotropicNoise") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMAnisotropicNoise(" << v << ", " << pf(p, "scaleX", 4.0f)
+       << ", " << pf(p, "scaleY", 256.0f) << ", " << pf(p, "seed", 0.0f)
+       << ", " << pf(p, "smoothness", 1.0f) << ", "
+       << pf(p, "interpolation", 1.0f) << ");\n";
+  }
+
+  else if (type == "TilerAdvanced") {
+    static const char* outSlots[4] = {"Out", "Color1", "Color2", "UV"};
+    static const char* inSlots[9] = {"In",  "Mask", "Color1", "Color2",
+                                     "TrX", "TrY",  "Rot",    "ScX",
+                                     "ScY"};
+    std::string srcs[9];
+    for (int i = 0; i < 9; i++)
+      srcs[i] = srcVar(conns, id, inSlots[i]);
+    ss << "    GenTexture";
+    for (int i = 0; i < 4; i++)
+      ss << (i ? "," : "") << " " << v << "_" << outSlots[i];
+    ss << ";\n";
+    std::string dims =
+        srcs[0].empty() ? "256, 256" : srcs[0] + ".XRes, " + srcs[0] + ".YRes";
+    for (int i = 0; i < 4; i++)
+      ss << "    " << v << "_" << outSlots[i] << ".Init(" << dims << ");\n";
+    if (!srcs[0].empty()) {
+      ss << "    MMTilerAdvanced(" << v << "_Out, &" << v << "_Color1, &" << v
+         << "_Color2, &" << v << "_UV, " << srcs[0];
+      // mask, trX, trY, rot, scX, scY, color1, color2
+      static const int order[8] = {1, 4, 5, 6, 7, 8, 2, 3};
+      for (int k = 0; k < 8; k++) {
+        const std::string& s = srcs[order[k]];
+        ss << ", " << (s.empty() ? "nullptr" : "&" + s);
+      }
+      ss << ", " << pf(p, "tx", 4.0f) << ", " << pf(p, "ty", 4.0f) << ", "
+         << p.value("overlap", 1) << ", " << p.value("inputs", 1) << ", "
+         << pf(p, "translateX", 0.0f) << ", " << pf(p, "translateY", 0.0f)
+         << ", " << pf(p, "rotate", 0.0f) << ", " << pf(p, "scaleX", 1.0f)
+         << ", " << pf(p, "scaleY", 1.0f) << ", " << pf(p, "seed", 0.0f)
+         << ");\n";
     }
   }
 

@@ -129,3 +129,20 @@ void MMAmbientOcclusion(GenTexture &out, const GenTexture &height,
 void MMLevels(GenTexture &out, const GenTexture &in, const sF32 inMin[4],
               const sF32 inMid[4], const sF32 inMax[4], const sF32 outMin[4],
               const sF32 outMax[4]);
+
+// Advanced tiler (tiler_advanced.mmg): grid scatter with PER-INSTANCE
+// translate/rotate/scale modulation maps (sampled at each instance's
+// cell position). Outputs: composite grayscale, two colors sampled at
+// the winning cell (random when the color inputs are missing) and the
+// instance UV map (xy = local uv, z = per-instance random) for
+// CustomUV-style consumers.
+void MMTilerAdvanced(GenTexture &out, GenTexture *outColor1,
+                     GenTexture *outColor2, GenTexture *outUV,
+                     const GenTexture &in, const GenTexture *mask,
+                     const GenTexture *trX, const GenTexture *trY,
+                     const GenTexture *rMap, const GenTexture *scX,
+                     const GenTexture *scY, const GenTexture *color1,
+                     const GenTexture *color2, sF32 tx, sF32 ty,
+                     sInt overlap, sInt inputs, sF32 translateX,
+                     sF32 translateY, sF32 rotateDeg, sF32 scaleX,
+                     sF32 scaleY, sF32 seed);

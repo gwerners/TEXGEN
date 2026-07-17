@@ -1835,7 +1835,18 @@ void CustomUVCoreNode::loadParams(const nlohmann::json& j) {
 
 void CustomUVCoreNode::execute(const std::vector<GenTexture*>& inputs,
                                std::vector<GenTexture>& outputs) {
-  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  // MM defaults: 'in' falls back to white (vec4(1)), not black
+  static GenTexture s_white;
+  if (!s_white.Data) {
+    s_white.Init(4, 4);
+    for (sInt i = 0; i < s_white.NPixels; i++) {
+      s_white.Data[i].r = s_white.Data[i].g = s_white.Data[i].b = 65535;
+      s_white.Data[i].a = 65535;
+    }
+  }
+  GenTexture* in = (inputs.size() > 0 && inputs[0] && inputs[0]->Data)
+                       ? inputs[0]
+                       : &s_white;
   GenTexture* map = mmEnsure(inputs.size() > 1 ? inputs[1] : nullptr);
   outputs.resize(1);
   outputs[0].Init(map->XRes, map->YRes);
@@ -1989,4 +2000,112 @@ void SphereCoreNode::execute(const std::vector<GenTexture*>& /*inputs*/,
   outputs.resize(1);
   outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
   MMSphere(outputs[0], m_cx, m_cy, m_r, m_normalized);
+}
+
+// ============================================================
+// AnisotropicNoiseCoreNode
+// ============================================================
+
+std::vector<std::string> AnisotropicNoiseCoreNode::inputSlotNames() const {
+  return {};
+}
+std::vector<std::string> AnisotropicNoiseCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json AnisotropicNoiseCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx},   {"heightIdx", m_heightIdx},
+          {"scaleX", m_scaleX},       {"scaleY", m_scaleY},
+          {"smoothness", m_smoothness}, {"interpolation", m_interpolation},
+          {"seed", m_seed}};
+}
+
+void AnisotropicNoiseCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("scaleX"))
+    m_scaleX = j["scaleX"];
+  if (j.contains("scaleY"))
+    m_scaleY = j["scaleY"];
+  if (j.contains("smoothness"))
+    m_smoothness = j["smoothness"];
+  if (j.contains("interpolation"))
+    m_interpolation = j["interpolation"];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void AnisotropicNoiseCoreNode::execute(
+    const std::vector<GenTexture*>& /*inputs*/,
+    std::vector<GenTexture>& outputs) {
+  outputs.resize(1);
+  outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
+  MMAnisotropicNoise(outputs[0], m_scaleX, m_scaleY, m_seed, m_smoothness,
+                     m_interpolation);
+}
+
+// ============================================================
+// TilerAdvancedCoreNode
+// ============================================================
+
+std::vector<std::string> TilerAdvancedCoreNode::inputSlotNames() const {
+  return {"In", "Mask", "Color1", "Color2", "TrX", "TrY", "Rot", "ScX",
+          "ScY"};
+}
+std::vector<std::string> TilerAdvancedCoreNode::outputSlotNames() const {
+  return {"Out", "Color1", "Color2", "UV"};
+}
+
+nlohmann::json TilerAdvancedCoreNode::saveParams() const {
+  return {{"tx", m_tx},
+          {"ty", m_ty},
+          {"overlap", m_overlap},
+          {"inputs", m_inputs},
+          {"translateX", m_translateX},
+          {"translateY", m_translateY},
+          {"rotate", m_rotate},
+          {"scaleX", m_scaleX},
+          {"scaleY", m_scaleY},
+          {"seed", m_seed}};
+}
+
+void TilerAdvancedCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("tx"))
+    m_tx = j["tx"];
+  if (j.contains("ty"))
+    m_ty = j["ty"];
+  if (j.contains("overlap"))
+    m_overlap = j["overlap"];
+  if (j.contains("inputs"))
+    m_inputs = j["inputs"];
+  if (j.contains("translateX"))
+    m_translateX = j["translateX"];
+  if (j.contains("translateY"))
+    m_translateY = j["translateY"];
+  if (j.contains("rotate"))
+    m_rotate = j["rotate"];
+  if (j.contains("scaleX"))
+    m_scaleX = j["scaleX"];
+  if (j.contains("scaleY"))
+    m_scaleY = j["scaleY"];
+  if (j.contains("seed"))
+    m_seed = j["seed"];
+}
+
+void TilerAdvancedCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                    std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  GenTexture* in = mmEnsure(get(0));
+  outputs.resize(4);
+  for (int i = 0; i < 4; i++)
+    outputs[i].Init(in->XRes, in->YRes);
+  MMTilerAdvanced(outputs[0], &outputs[1], &outputs[2], &outputs[3], *in,
+                  get(1), get(4), get(5), get(6), get(7), get(8), get(2),
+                  get(3), m_tx, m_ty, m_overlap, m_inputs, m_translateX,
+                  m_translateY, m_rotate, m_scaleX, m_scaleY, m_seed);
 }

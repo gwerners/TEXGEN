@@ -1004,3 +1004,146 @@ void MMLevels(GenTexture &out, const GenTexture &in, const sF32 inMin[4],
     }
   }
 }
+
+// Advanced tiler (tiler_advanced.mmg).
+void MMTilerAdvanced(GenTexture &out, GenTexture *outColor1,
+                     GenTexture *outColor2, GenTexture *outUV,
+                     const GenTexture &in, const GenTexture *mask,
+                     const GenTexture *trX, const GenTexture *trY,
+                     const GenTexture *rMap, const GenTexture *scX,
+                     const GenTexture *scY, const GenTexture *color1,
+                     const GenTexture *color2, sF32 tx, sF32 ty,
+                     sInt overlap, sInt inputs, sF32 translateX,
+                     sF32 translateY, sF32 rotateDeg, sF32 scaleX,
+                     sF32 scaleY, sF32 seed) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (tx < 1.0f)
+    tx = 1.0f;
+  if (ty < 1.0f)
+    ty = 1.0f;
+  if (inputs < 1)
+    inputs = 1;
+
+  auto grayAtOr = [](const GenTexture *t, sF32 u, sF32 v, sF32 def) {
+    if (!t || !t->Data)
+      return def;
+    sF32 c[4];
+    sampleRGBA(*t, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+  auto grayIn = [&](sF32 u, sF32 v) {
+    sF32 c[4];
+    sampleRGBA(in, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+
+  for (sInt py = 0; py < h; py++) {
+    const sF32 uvy = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 uvx = (px + 0.5f) / w;
+      sF32 c = 0.0f;
+      sF32 mapU = 0.0f, mapV = 0.0f;
+      sF32 instU = 0.0f, instV = 0.0f, instS = 0.0f;
+
+      for (sInt dx = -overlap; dx <= overlap; dx++) {
+        for (sInt dy = -overlap; dy <= overlap; dy++) {
+          sF32 posX = uvx * tx + (sF32)dx;
+          sF32 posY = uvy * ty + (sF32)dy;
+          posX = glslFract2((floorf(glslMod2(posX, tx)) + 0.5f) / tx) - 0.5f;
+          posY = glslFract2((floorf(glslMod2(posY, ty)) + 0.5f) / ty) - 0.5f;
+
+          const sF32 m =
+              grayAtOr(mask, glslFract2(posX + 0.5f), glslFract2(posY + 0.5f),
+                       1.0f);
+          if (m <= 0.01f)
+            continue;
+
+          sF32 pvx = glslFract2(uvx - posX) - 0.5f;
+          sF32 pvy = glslFract2(uvy - posY) - 0.5f;
+          const sF32 cellU = glslFract2(posX + 0.5f);
+          const sF32 cellV = glslFract2(posY + 0.5f);
+
+          pvx -= translateX * grayAtOr(trX, cellU, cellV, 1.0f) / tx;
+          pvy -= translateY * grayAtOr(trY, cellU, cellV, 1.0f) / ty;
+          const sF32 angle = grayAtOr(rMap, cellU, cellV, 1.0f) * rotateDeg *
+                             0.01745329251f;
+          const sF32 ca = cosf(angle), sa = sinf(angle);
+          sF32 rx = ca * pvx + sa * pvy;
+          sF32 ry = -sa * pvx + ca * pvy;
+          sF32 sxv = scaleX * grayAtOr(scX, cellU, cellV, 1.0f);
+          sF32 syv = scaleY * grayAtOr(scY, cellU, cellV, 1.0f);
+          if (fabsf(sxv) < 1e-6f)
+            sxv = 1e-6f;
+          if (fabsf(syv) < 1e-6f)
+            syv = 1e-6f;
+          rx = rx / sxv + 0.5f;
+          ry = ry / syv + 0.5f;
+          if (rx < 0.0f || rx > 1.0f || ry < 0.0f || ry > 1.0f)
+            continue;
+
+          sF32 sd[2];
+          tilerRand2(seed + cellU, seed + cellV, sd);
+          sF32 su = rx, sv = ry;
+          if (inputs > 1) {
+            sF32 pick[2];
+            tilerRand2(sd[0], sd[0], pick);
+            su = clamp01((rx + floorf(pick[0] * inputs)) / inputs);
+            sv = clamp01((ry + floorf(pick[1] * inputs)) / inputs);
+          }
+
+          const sF32 c1 = grayIn(su, sv) * m;
+          if (c1 >= c) {
+            c = c1;
+            mapU = cellU;
+            mapV = cellV;
+            instU = rx;
+            instV = ry;
+            instS = sd[0];
+          }
+        }
+      }
+
+      const sInt idx = py * w + px;
+      {
+        Pixel &p = out.Data[idx];
+        const sU16 g = to16(c);
+        p.r = p.g = p.b = g;
+        p.a = 65535;
+      }
+      auto writeColorOut = [&](GenTexture *dst, const GenTexture *src,
+                               bool alt) {
+        if (!dst || !dst->Data)
+          return;
+        Pixel &p = dst->Data[idx];
+        if (src && src->Data) {
+          sF32 cc[4];
+          sampleRGBA(*src, mapU, mapV, cc);
+          p.r = to16(cc[0]);
+          p.g = to16(cc[1]);
+          p.b = to16(cc[2]);
+          p.a = to16(cc[3]);
+        } else {
+          // MM default: random color per instance
+          sF32 rc[3];
+          tilerRand3(alt ? -mapU : mapU + (alt ? -1.0f : 0.0f),
+                     alt ? -mapV : mapV, rc);
+          p.r = to16(rc[0]);
+          p.g = to16(rc[1]);
+          p.b = to16(rc[2]);
+          p.a = 65535;
+        }
+      };
+      writeColorOut(outColor1, color1, false);
+      writeColorOut(outColor2, color2, true);
+      if (outUV && outUV->Data) {
+        Pixel &p = outUV->Data[idx];
+        p.r = to16(instU);
+        p.g = to16(instV);
+        p.b = to16(instS);
+        p.a = 65535;
+      }
+    }
+  }
+}

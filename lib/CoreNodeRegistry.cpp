@@ -55,6 +55,8 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
        {"Generator", "Rotated repeating gradient with color stops"}},
       {"DotNoise", {"Generator", "Random dots on a grid (white noise)"}},
       {"Sphere", {"Generator", "Hemisphere heightmap (dome/rivet)"}},
+      {"AnisotropicNoise",
+       {"Generator", "Stripe noise (brushed metal grain)"}},
       {"Scratches", {"Generator", "Layered random line scratches"}},
       {"Shape", {"Generator", "Parametric shape (polygon, star, arc...)"}},
       {"Pattern",
@@ -127,6 +129,8 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
        {"Filter", "Ambient occlusion approximated from a heightmap"}},
       {"Tiler",
        {"Filter", "Scatters jittered copies of the input in a grid"}},
+      {"TilerAdvanced",
+       {"Filter", "Grid scatter with per-instance modulation maps"}},
       // Combiners
       {"Blend",
        {"Combine", "Blends two inputs with selectable mode and opacity"}},
@@ -234,6 +238,8 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<MultiWarpCoreNode>(r);
     registerType<SlopeBlurCoreNode>(r);
     registerType<SphereCoreNode>(r);
+    registerType<AnisotropicNoiseCoreNode>(r);
+    registerType<TilerAdvancedCoreNode>(r);
     registerType<DotNoiseCoreNode>(r);
     registerType<ScratchesCoreNode>(r);
     registerType<MirrorCoreNode>(r);

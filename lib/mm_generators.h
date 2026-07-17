@@ -150,3 +150,8 @@ void MMScratches(GenTexture &out, sInt layers, sF32 length, sF32 width,
 // Sphere heightmap (sphere.mmg): hemisphere height at (cx, cy) with
 // radius r; normalized divides by 2r so the top is exactly 1.
 void MMSphere(GenTexture &out, sF32 cx, sF32 cy, sF32 r, bool normalized);
+
+// Anisotropic noise (noise_anisotropic.mmg): 1D value noise stretched
+// into stripes (brushed-metal grain).
+void MMAnisotropicNoise(GenTexture &out, sF32 scaleX, sF32 scaleY, sF32 seed,
+                        sF32 smoothness, sF32 interpolation);

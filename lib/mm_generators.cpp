@@ -1058,3 +1058,33 @@ void MMSphere(GenTexture &out, sF32 cx, sF32 cy, sF32 r, bool normalized) {
     }
   }
 }
+
+// Anisotropic noise (noise_anisotropic.mmg).
+void MMAnisotropicNoise(GenTexture &out, sF32 scaleX, sF32 scaleY, sF32 seed,
+                        sF32 smoothness, sF32 interpolation) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (smoothness < 1e-4f)
+    smoothness = 1e-4f;
+  Vec2 s2 = mmRand2(seed, 1.0f - seed);
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      const sF32 xyY = floorf(v * scaleY);
+      const sF32 off = mmRand(s2.x + xyY, s2.y + xyY);
+      const sF32 xo = floorf(u * scaleX + off);
+      const sF32 yo = floorf(v * scaleY);
+      const sF32 f0 = mmRand(s2.x + glslMod(xo, scaleX), s2.y + glslMod(yo, scaleY));
+      const sF32 f1 =
+          mmRand(s2.x + glslMod(xo + 1.0f, scaleX), s2.y + glslMod(yo, scaleY));
+      sF32 mixer =
+          clamp01((glslFract(u * scaleX + off) - 0.5f) / smoothness + 0.5f);
+      const sF32 sm = mixer * mixer * (3.0f - 2.0f * mixer);
+      const sF32 lin = f0 + (f1 - f0) * mixer;
+      const sF32 smo = f0 + (f1 - f0) * sm;
+      gray16(out.Data[py * w + px], lin + (smo - lin) * interpolation);
+    }
+  }
+}
