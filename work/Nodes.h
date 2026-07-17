@@ -33,6 +33,7 @@ struct NodeConnection {
 };
 
 class NodeGraph;
+class GraphRunner;
 
 // Wraps a TextureNode with ImNodes graph state
 class GraphNode {
@@ -88,7 +89,12 @@ class NodeGraph {
   ~NodeGraph();
 
   void draw();      // renders ImNodes canvas with context menu
-  void generate();  // topological sort + execute all nodes
+  void generate();  // evaluate all nodes (async when a runner is set)
+
+  // Attach the worker-thread evaluator; when set, generate() and
+  // refreshNode() enqueue snapshots instead of blocking the UI.
+  void setRunner(GraphRunner* runner) { m_runner = runner; }
+  bool evaluating() const { return m_evaluating; }
 
   // Refresh a single node (gather inputs, execute, update preview)
   // then cascade-refresh all downstream nodes
@@ -136,6 +142,9 @@ class NodeGraph {
  private:
   std::vector<GraphNode*> m_nodes;
   std::map<std::string, NodeFactory> m_registry;
+  GraphRunner* m_runner = nullptr;
+  bool m_evaluating = false;
+  void pollRunner();  // apply finished worker results (main thread)
   int m_nextId = 0;
   GenTexture m_lastOutput;
   bool m_hasOutput = false;

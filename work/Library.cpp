@@ -173,21 +173,30 @@ bool MaterialLibrary::draw(std::string& outPath, bool& outIsPtex) {
            fs::exists(thumbPath(m_entries[m_buildPos].path)))
       m_buildPos++;
     if (m_buildPos >= (int)m_entries.size()) {
-      m_buildPos = -1;
-    } else {
+      if (!m_buildInFlight)
+        m_buildPos = -1;
+    }
+    if (m_buildPos >= 0 && m_buildPos < (int)m_entries.size()) {
       Entry& e = m_entries[m_buildPos];
       ImGui::Text("Rendering %s...", e.name.c_str());
       ImGui::SameLine();
-      if (ImGui::SmallButton("Stop##libbuild")) {
+      if (ImGui::SmallButton("Stop##libbuild") && !m_buildInFlight) {
         m_buildPos = -1;
-      } else {
-        if (!buildThumbnail(e.path)) {
+      } else if (!m_buildInFlight) {
+        // evaluate on a worker so the UI never blocks
+        std::string path = e.path;
+        m_buildFuture = std::async(std::launch::async, buildThumbnail, path);
+        m_buildInFlight = true;
+      } else if (m_buildFuture.wait_for(std::chrono::seconds(0)) ==
+                 std::future_status::ready) {
+        if (!m_buildFuture.get()) {
           // write a placeholder so failures aren't retried forever
           GenTexture black;
           black.Init(4, 4);
           SaveImage(black, thumbPath(e.path).c_str());
         }
         e.texTried = false;  // reload the texture on the next pass
+        m_buildInFlight = false;
         m_buildPos++;
       }
     }

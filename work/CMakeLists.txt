@@ -101,6 +101,7 @@ set(SRC
   Icons.cpp
   Preview3D.cpp
   Library.cpp
+  GraphRunner.cpp
   AllNodes.cpp
   AggNodes.cpp
   MMNodes.cpp
@@ -120,6 +121,7 @@ set(HEADERS
   Icons.h
   Preview3D.h
   Library.h
+  GraphRunner.h
   AllNodes.h
   TextureNode.h
   ProjectIO.h

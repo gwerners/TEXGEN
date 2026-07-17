@@ -7,6 +7,7 @@
 // UI keeps breathing and the build can be stopped).
 
 #include <raylib.h>
+#include <future>
 #include <string>
 #include <vector>
 
@@ -43,4 +44,6 @@ class MaterialLibrary {
   std::vector<Entry> m_entries;
   bool m_scanned = false;
   int m_buildPos = -1;  // >= 0 while batch-building thumbnails
+  std::future<bool> m_buildFuture;
+  bool m_buildInFlight = false;
 };

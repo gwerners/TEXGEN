@@ -7,6 +7,7 @@
 #include <imgui.h>
 #include <raylib.h>
 #include "FileDialog.h"
+#include "GraphRunner.h"
 #include "Library.h"
 #include "Preview3D.h"
 #include "ProjectIO.h"
@@ -54,6 +55,7 @@ class Ide {
   Preview3D m_preview3d;
   bool m_preview3dOn = false;
   MaterialLibrary m_library;
+  GraphRunner m_runner;
 };
 
 #endif  // IDE_H

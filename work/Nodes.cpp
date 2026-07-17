@@ -2,6 +2,7 @@
 #include "AggNodes.h"
 #include "AllNodes.h"
 #include "CoreNodeRegistry.h"
+#include "GraphRunner.h"
 #include "Icons.h"
 #include "MMNodes.h"
 #include "StructNodes.h"
@@ -734,6 +735,13 @@ std::vector<GraphNode*> NodeGraph::getDownstreamNodes(GraphNode* start) {
 }
 
 void NodeGraph::refreshNode(GraphNode* node) {
+  if (m_runner) {
+    if (node->texNode()->typeName() == "Remote")
+      applyRemoteNode(node, false);
+    m_runner->request(save());
+    m_evaluating = true;
+    return;
+  }
   // Remote nodes don't process textures: pushing their sliders means
   // patching the target nodes' params and refreshing those instead.
   if (node->texNode()->typeName() == "Remote") {
@@ -780,6 +788,14 @@ void NodeGraph::resetNodeParams(GraphNode* node) {
 }
 
 void NodeGraph::generate() {
+  if (m_runner) {
+    // evaluate a snapshot on the worker thread; results land in
+    // pollRunner() and the previous outputs stay visible meanwhile
+    applyRemoteValues();
+    m_runner->request(save());
+    m_evaluating = true;
+    return;
+  }
   applyRemoteValues();
 
   for (auto* n : m_nodes) {
@@ -956,10 +972,54 @@ static bool rectContains(ImVec2 rmin, ImVec2 rmax, ImVec2 p) {
   return p.x >= rmin.x && p.x <= rmax.x && p.y >= rmin.y && p.y <= rmax.y;
 }
 
+void NodeGraph::pollRunner() {
+  if (!m_runner)
+    return;
+  GraphRunner::Result res;
+  if (!m_runner->poll(res)) {
+    m_evaluating = m_runner->busy();
+    return;
+  }
+  m_evaluating = m_runner->busy();
+  if (!res.ok)
+    return;
+
+  for (auto* gn : m_nodes) {
+    auto it = res.outputs.find(gn->texNode()->id);
+    if (it == res.outputs.end())
+      continue;
+    gn->cachedOutputs = std::move(it->second);
+    gn->executed = true;
+    if (!gn->cachedOutputs.empty() && gn->cachedOutputs[0].Data) {
+      if (gn->hasPreview && gn->previewTex.id != 0)
+        UnloadTexture(gn->previewTex);
+      gn->previewTex = LoadTextureFromGenTexture(gn->cachedOutputs[0]);
+      gn->hasPreview = (gn->previewTex.id != 0);
+    }
+  }
+  if (res.hasFinal) {
+    m_lastOutput = std::move(res.finalOutput);
+    m_hasOutput = true;
+    m_changeCount++;
+    // keep the Output node behavior of writing its file
+    for (auto* gn : m_nodes) {
+      if (gn->texNode()->typeName() == "Output") {
+        std::string fn =
+            gn->texNode()->saveParams().value("filename", std::string());
+        if (!fn.empty())
+          SaveImage(m_lastOutput, fn.c_str());
+        break;
+      }
+    }
+  }
+}
+
 void NodeGraph::draw() {
   static ImNodes::Ez::Context* context = nullptr;
   if (!context)
     context = ImNodes::Ez::CreateContext();
+
+  pollRunner();
 
   ImGui::BeginGroup();
   ImNodes::Ez::BeginCanvas();
@@ -1033,6 +1093,8 @@ void NodeGraph::draw() {
           "RMB add node  |  Ctrl+Z/Y undo/redo  |  drag slots to connect  |  " +
           std::to_string(m_nodes.size()) + " nodes";
     }
+    if (m_evaluating)
+      m_hintText = "[evaluating...]  " + m_hintText;
   }
 
   // Undo/Redo shortcuts

@@ -74,6 +74,7 @@ Ide::Ide(const int /*screenWidth*/,
   if (!g_nodeGraph) {
     g_nodeGraph = new NodeGraph();
   }
+  g_nodeGraph->setRunner(&m_runner);
 
   loadTexture();
 }
@@ -218,6 +219,7 @@ void Ide::draw() {
   if (IconButton("##tb_new", "new", "New project (clears the graph)")) {
     delete g_nodeGraph;
     g_nodeGraph = new NodeGraph();
+    g_nodeGraph->setRunner(&m_runner);
     refreshOutput();
   }
   ImGui::SameLine();
