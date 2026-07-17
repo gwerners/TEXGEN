@@ -23,7 +23,7 @@ uniform mat4 matNormal;
 uniform sampler2D heightMap;
 uniform int hasHeight;
 uniform float displace;
-uniform float tiling;
+uniform vec2 tiling;
 out vec2 fragUV;
 out vec3 fragPos;
 out vec3 fragNormal;
@@ -64,7 +64,7 @@ uniform int hasAO;
 uniform int hasEmission;
 uniform vec3 lightDir;
 uniform vec3 viewPos;
-uniform float tiling;
+uniform vec2 tiling;
 out vec4 finalColor;
 
 void main() {
@@ -256,7 +256,10 @@ void Preview3D::draw(NodeGraph* graph) {
   SetShaderValue(m_shader, m_locViewPos, viewPos, SHADER_UNIFORM_VEC3);
   float disp = m_shape == 2 ? m_displace * 2.0f : m_displace;
   SetShaderValue(m_shader, m_locDisplace, &disp, SHADER_UNIFORM_FLOAT);
-  SetShaderValue(m_shader, m_locTiling, &m_tiling, SHADER_UNIFORM_FLOAT);
+  // the sphere's equirect UVs cover twice the arc along U as along V;
+  // doubling the U repeat keeps the texels square
+  float tiling[2] = {m_shape == 0 ? m_tiling * 2.0f : m_tiling, m_tiling};
+  SetShaderValue(m_shader, m_locTiling, tiling, SHADER_UNIFORM_VEC2);
   static const int mapSlot[7] = {MATERIAL_MAP_ALBEDO,    MATERIAL_MAP_NORMAL,
                                  MATERIAL_MAP_ROUGHNESS, MATERIAL_MAP_METALNESS,
                                  MATERIAL_MAP_HEIGHT,    MATERIAL_MAP_OCCLUSION,
@@ -272,7 +275,13 @@ void Preview3D::draw(NodeGraph* graph) {
   BeginTextureMode(m_rt);
   ClearBackground(Color{26, 26, 30, 255});
   BeginMode3D(cam);
-  DrawModel(model, Vector3{0, 0, 0}, 1.0f, WHITE);
+  // the generated sphere has its poles on the Z axis; stand it upright
+  // so the default view faces the equator, not a pole
+  if (m_shape == 0)
+    DrawModelEx(model, Vector3{0, 0, 0}, Vector3{1, 0, 0}, -90.0f,
+                Vector3{1, 1, 1}, WHITE);
+  else
+    DrawModel(model, Vector3{0, 0, 0}, 1.0f, WHITE);
   EndMode3D();
   EndTextureMode();
 

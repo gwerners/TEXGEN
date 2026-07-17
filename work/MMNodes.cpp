@@ -1268,8 +1268,7 @@ void ColorNoiseNode::renderParams() {
   ImGui::PopItemWidth();
 }
 
-std::vector<ImNodes::Ez::SlotInfo> DirectionalBlurNode::inputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> DirectionalBlurNode::inputSlotInfos() const {
   return {{"In", 1}, {"Amount", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> DirectionalBlurNode::outputSlotInfos()

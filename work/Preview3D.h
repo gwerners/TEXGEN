@@ -35,7 +35,7 @@ class Preview3D {
   float m_yaw = 0.7f, m_pitch = 0.35f, m_dist = 2.4f;
   bool m_autoRotate = true;
   float m_displace = 0.12f;
-  float m_tiling = 1.0f;
+  float m_tiling = 2.0f;
   double m_lastUpload = -1.0;
   int m_lastChangeCount = -1;
 
