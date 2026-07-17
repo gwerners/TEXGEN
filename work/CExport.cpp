@@ -813,9 +813,8 @@ static void emitNode(std::ostringstream& ss,
   }
 
   else if (type == "Material") {
-    static const char* channels[] = {"Albedo",   "Normal", "Roughness",
-                                     "Metallic", "Depth",  "AO",
-                                     "Emission"};
+    static const char* channels[] = {
+        "Albedo", "Normal", "Roughness", "Metallic", "Depth", "AO", "Emission"};
     std::string base = p.value("baseName", std::string("material"));
     for (auto& ch : channels) {
       std::string src = srcVar(conns, id, ch);
@@ -828,9 +827,8 @@ static void emitNode(std::ostringstream& ss,
          << ".png\");\n";
     }
     // Lit preview output
-    static const char* previewIns[] = {"Albedo",   "Normal", "Roughness",
-                                       "Metallic", "AO",     "Emission",
-                                       "Depth"};
+    static const char* previewIns[] = {
+        "Albedo", "Normal", "Roughness", "Metallic", "AO", "Emission", "Depth"};
     std::string srcs[7], sizeRef;
     for (int i = 0; i < 7; i++) {
       srcs[i] = srcVar(conns, id, previewIns[i]);
