@@ -143,6 +143,8 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
        {"Filter", "Blends a detail normal map onto a base normal map "
                   "(reoriented normal mapping)"}},
       {"ColorNoise", {"Generator", "Random color per grid cell"}},
+      {"AddTiler",
+       {"Filter", "Additive instance scatter (speckles/debris)"}},
       {"Box", {"Generator", "Depth of a rotated 3D box seen from above"}},
       {"WaveletNoise",
        {"Generator", "Oriented sine wavelets accumulated over octaves"}},
@@ -273,6 +275,7 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<DilateCoreNode>(r);
     registerType<NormalBlendCoreNode>(r);
     registerType<ColorNoiseCoreNode>(r);
+    registerType<AddTilerCoreNode>(r);
     registerType<BoxCoreNode>(r);
     registerType<WaveletNoiseCoreNode>(r);
     registerType<BinarySmoothCoreNode>(r);

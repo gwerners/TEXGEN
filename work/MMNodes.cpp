@@ -1040,7 +1040,8 @@ std::vector<ImNodes::Ez::SlotInfo> NormalConvertNode::outputSlotInfos() const {
 }
 
 void NormalConvertNode::renderParams() {
-  static const char* ops = "From/To OpenGL\0From/To DirectX\0";
+  static const char* ops =
+      "From/To OpenGL\0From/To DirectX\0Flip G (GL<->DX)\0Identity\0";
   ImGui::PushItemWidth(140);
   ImGui::Combo("Op##nmc", &m_core.m_op, ops);
   Hint("Flips normal map channels between conventions");
@@ -1250,6 +1251,33 @@ void BevelNode::renderParams() {
   Hint("Width of the bevel ramp around the mask (UV units)");
   if (!m_core.m_curve.empty())
     ImGui::TextDisabled("curve: %d points", (int)m_core.m_curve.size());
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> AddTilerNode::inputSlotInfos() const {
+  return {{"In", 1}, {"Mask", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> AddTilerNode::outputSlotInfos() const {
+  return {{"Out", 1}, {"Color", 1}};
+}
+
+void AddTilerNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("TX##atil", &m_core.m_tx, 1.0f, 256.0f);
+  SliderFloatW("TY##atil", &m_core.m_ty, 1.0f, 256.0f);
+  Hint("Instance grid cells per axis");
+  SliderIntW("Overlap##atil", &m_core.m_overlap, 0, 4);
+  SliderFloatW("ScaleX##atil", &m_core.m_scaleX, 0.001f, 1.0f);
+  SliderFloatW("ScaleY##atil", &m_core.m_scaleY, 0.001f, 1.0f);
+  Hint("Instance size as a fraction of the texture");
+  SliderFloatW("FixedOff##atil", &m_core.m_fixedOffset, 0.0f, 1.0f);
+  SliderFloatW("Offset##atil", &m_core.m_offset, 0.0f, 1.0f);
+  SliderFloatW("Rotate##atil", &m_core.m_rotate, 0.0f, 180.0f);
+  SliderFloatW("Scale##atil", &m_core.m_scale, 0.0f, 1.0f);
+  Hint("Random per-instance scale jitter");
+  SliderFloatW("Value##atil", &m_core.m_value, 0.0f, 1.0f);
+  Hint("Random per-instance intensity attenuation");
+  SliderFloatW("Seed##atil", &m_core.m_seed, 0.0f, 10.0f);
   ImGui::PopItemWidth();
 }
 

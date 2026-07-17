@@ -13,6 +13,86 @@ using nlohmann::json;
 
 namespace {
 
+// ---- tiny arithmetic evaluator for MM parameter expressions ----
+// Handles numbers, + - * /, unary minus and parentheses — enough for
+// constants like "3.14 / 2.0" and macro params like "0.004 / $d_scale"
+// once the $vars have been substituted. Anything else (per-pixel
+// expressions like "$uv.x") fails and the caller keeps its default.
+struct ArithParser {
+  const char *s;
+  bool ok = true;
+  void ws() {
+    while (*s == ' ' || *s == '\t')
+      s++;
+  }
+  double expr() {
+    double v = term();
+    for (;;) {
+      ws();
+      if (*s == '+') {
+        s++;
+        v += term();
+      } else if (*s == '-') {
+        s++;
+        v -= term();
+      } else {
+        return v;
+      }
+    }
+  }
+  double term() {
+    double v = factor();
+    for (;;) {
+      ws();
+      if (*s == '*') {
+        s++;
+        v *= factor();
+      } else if (*s == '/') {
+        s++;
+        double d = factor();
+        v = d != 0.0 ? v / d : 0.0;
+      } else {
+        return v;
+      }
+    }
+  }
+  double factor() {
+    ws();
+    if (*s == '-') {
+      s++;
+      return -factor();
+    }
+    if (*s == '(') {
+      s++;
+      double v = expr();
+      ws();
+      if (*s == ')')
+        s++;
+      else
+        ok = false;
+      return v;
+    }
+    char *end = nullptr;
+    double v = strtod(s, &end);
+    if (end == s) {
+      ok = false;
+      return 0.0;
+    }
+    s = end;
+    return v;
+  }
+};
+
+bool evalArith(const std::string &str, double &out) {
+  ArithParser p{str.c_str()};
+  double v = p.expr();
+  p.ws();
+  if (!p.ok || *p.s != '\0')
+    return false;
+  out = v;
+  return true;
+}
+
 // ---- tolerant readers (community files carry strings like "$size") ----
 
 float numOr(const json &p, const char *key, float def) {
@@ -25,6 +105,9 @@ float numOr(const json &p, const char *key, float def) {
     return v.get<bool>() ? 1.0f : 0.0f;
   if (v.is_string()) {
     const std::string &s = v.get_ref<const std::string &>();
+    double d;
+    if (evalArith(s, d))
+      return (float)d;
     char *end = nullptr;
     float f = strtof(s.c_str(), &end);
     if (end && end != s.c_str())
@@ -128,6 +211,7 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"occlusion", {"Height"}},
       {"noise2", {"Density"}},
       {"binary_smooth", {"In"}},
+      {"add_tiler", {"In", "Mask"}},
       {"box", {}},
       {"wavelet_noise", {}},
       {"edge_detect_2", {"In"}},
@@ -173,6 +257,7 @@ const std::map<std::string, std::vector<std::string>> &portsOut() {
       {"tiler_advanced", {"Out", "Color1", "Color2", "UV"}},
       {"height_to_offset", {"X", "Y"}},
       {"weave2", {"Out", "Horizontal", "Vertical"}},
+      {"add_tiler", {"Out", "Color"}},
   };
   return m;
 }
@@ -766,8 +851,13 @@ bool convertParams(const std::string &type, const json &p,
     return true;
   }
   if (type == "normal_map_convert") {
+    // MM's ops convert between its Default format (inverted Z) and
+    // OpenGL/DirectX; our pipeline already carries OpenGL normals, so
+    // "From/To OpenGL" is an identity here and "From/To DirectX" is a
+    // G flip (handled by our op 2). Identity instances still emit a
+    // NormalConvert so the wiring survives, with op 3 (= passthrough).
     typeName = "NormalConvert";
-    out = {{"op", intOr(p, "op", 1)}};
+    out = {{"op", intOr(p, "op", 1) == 0 ? 3 : 2}};
     return true;
   }
   if (type == "custom_uv") {
@@ -804,6 +894,22 @@ bool convertParams(const std::string &type, const json &p,
     out["density"] = numOr(p, "density", 0.5f);
     out["seed"] = numOr(p, "seed", 0.0f);
     out["mode"] = 0;
+    return true;
+  }
+  if (type == "add_tiler") {
+    // dirt.mmg's embedded "Add Tiler" shader (renamed in the template)
+    typeName = "AddTiler";
+    out = {{"tx", numOr(p, "tx", 4.0f)},
+           {"ty", numOr(p, "ty", 4.0f)},
+           {"overlap", intOr(p, "overlap", 1)},
+           {"scaleX", numOr(p, "scale_x", 1.0f)},
+           {"scaleY", numOr(p, "scale_y", 1.0f)},
+           {"fixedOffset", numOr(p, "fixed_offset", 0.5f)},
+           {"offset", numOr(p, "offset", 0.5f)},
+           {"rotate", numOr(p, "rotate", 0.0f)},
+           {"scale", numOr(p, "scale", 0.0f)},
+           {"value", numOr(p, "value", 0.5f)},
+           {"seed", numOr(p, "seed", 0.0f)}};
     return true;
   }
   if (type == "box") {
@@ -1212,6 +1318,8 @@ const std::map<std::string, const char *> &graphMacroTemplates() {
   static const std::map<std::string, const char *> m = {
       {"crystal",
        R"mmg({"connections":[{"from":"voronoi","from_port":0,"to":"math_2","to_port":0},{"from":"voronoi_2","from_port":0,"to":"math_3","to_port":0},{"from":"math","from_port":0,"to":"math_5","to_port":1},{"from":"math_4","from_port":0,"to":"math_5","to_port":0},{"from":"math_5","from_port":0,"to":"math_6","to_port":0},{"from":"math_4","from_port":0,"to":"math_6","to_port":1},{"from":"math_2","from_port":0,"to":"math","to_port":0},{"from":"math_2","from_port":0,"to":"math_4","to_port":0},{"from":"math_3","from_port":0,"to":"math_4","to_port":1},{"from":"math_3","from_port":0,"to":"math","to_port":1},{"from":"math_6","from_port":0,"to":"math_7","to_port":0},{"from":"math_7","from_port":0,"to":"gen_outputs","to_port":0}],"label":"Crystal","name":"crystal","nodes":[{"name":"math","node_position":{"x":-1260,"y":200},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":13},"seed_int":0,"type":"math"},{"name":"math_2","node_position":{"x":-1640,"y":200},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":19},"seed_int":0,"type":"math"},{"name":"voronoi","node_position":{"x":-2000,"y":200},"parameters":{"intensity":1,"randomness":1,"scale_x":16,"scale_y":16,"stretch_x":0.85,"stretch_y":0.85},"seed_int":0,"type":"voronoi"},{"name":"voronoi_2","node_position":{"x":-2000,"y":520},"parameters":{"intensity":1,"randomness":1,"scale_x":16,"scale_y":16,"stretch_x":0.85,"stretch_y":0.85},"seed_int":1998774700,"type":"voronoi"},{"name":"math_3","node_position":{"x":-1640,"y":520},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":19},"seed_int":0,"type":"math"},{"name":"math_4","node_position":{"x":-1260,"y":520},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":14},"seed_int":0,"type":"math"},{"name":"math_5","node_position":{"x":-920,"y":360},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":1},"seed_int":0,"type":"math"},{"name":"math_6","node_position":{"x":-660,"y":360},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":3},"seed_int":0,"type":"math"},{"name":"gen_inputs","node_position":{"x":-2200,"y":400},"parameters":{},"ports":[],"seed_int":0,"type":"ios"},{"name":"gen_outputs","node_position":{"x":-120,"y":360},"parameters":{},"ports":[{"group_size":0,"name":"out","shortdesc":"Output","type":"f"}],"seed_int":0,"type":"ios"},{"name":"gen_parameters","node_position":{"x":-1560,"y":-60},"parameters":{"param0":16,"param1":16},"seed_int":0,"type":"remote","widgets":[{"label":"Scale X","linked_widgets":[{"node":"voronoi","widget":"scale_x"},{"node":"voronoi_2","widget":"scale_x"}],"name":"param0","type":"linked_control"},{"label":"Scale Y","linked_widgets":[{"node":"voronoi","widget":"scale_y"},{"node":"voronoi_2","widget":"scale_y"}],"name":"param1","type":"linked_control"}]},{"name":"math_7","node_position":{"x":-400,"y":360},"parameters":{"clamp":false,"default_in1":0,"default_in2":1.45,"op":2},"seed_int":0,"type":"math"}],"parameters":{"param0":16,"param1":16},"type":"graph"})mmg"},
+      {"dirt",
+       R"mmg({"connections":[{"from":"tiler","from_port":0,"to":"math","to_port":0},{"from":"shape","from_port":0,"to":"math_2","to_port":0},{"from":"fbm2","from_port":0,"to":"colorize","to_port":0},{"from":"colorize","from_port":0,"to":"tiler","to_port":1},{"from":"shape_2","from_port":0,"to":"math_3","to_port":0},{"from":"math_2","from_port":0,"to":"tiler","to_port":0},{"from":"shape_2","from_port":0,"to":"tiler_2","to_port":0},{"from":"math_3","from_port":0,"to":"tiler_3","to_port":0},{"from":"tiler_2","from_port":0,"to":"math_6","to_port":0},{"from":"tiler_3","from_port":0,"to":"math_6","to_port":1},{"from":"math_6","from_port":0,"to":"math_7","to_port":0},{"from":"math","from_port":0,"to":"switch","to_port":0},{"from":"math_7","from_port":0,"to":"switch","to_port":1},{"from":"switch","from_port":0,"to":"buffer_2","to_port":0},{"from":"buffer_2","from_port":0,"to":"gen_outputs","to_port":0},{"from":"tiler_5","from_port":0,"to":"math_5","to_port":0},{"from":"shape_3","from_port":0,"to":"rotate","to_port":0},{"from":"rotate","from_port":0,"to":"tiler_5","to_port":0},{"from":"math_3","from_port":0,"to":"tiler_4","to_port":0},{"from":"shape_3","from_port":0,"to":"tiler_6","to_port":0},{"from":"tiler_4","from_port":0,"to":"math_4","to_port":0},{"from":"tiler_6","from_port":0,"to":"math_4","to_port":1},{"from":"math_4","from_port":0,"to":"math_12","to_port":0},{"from":"math_5","from_port":0,"to":"math_12","to_port":1},{"from":"math_12","from_port":0,"to":"math_9","to_port":0},{"from":"math_9","from_port":0,"to":"switch","to_port":2}],"label":"Dirt","name":"dirt","node_position":{"x":0,"y":0},"nodes":[{"name":"math_2","node_position":{"x":-1417.5,"y":-8.5},"parameters":{"clamp":false,"default_in1":0,"default_in2":"3.14 / 2.0","op":17},"seed_int":0,"type":"math"},{"name":"shape","node_position":{"x":-1629.5,"y":4.5},"parameters":{"edge":0.32,"radius":1,"shape":0,"sides":6},"seed_int":0,"type":"shape"},{"name":"fbm2","node_position":{"x":-1072.5,"y":-246.5},"parameters":{"folds":0,"iterations":2,"noise":1,"offset":0,"persistence":0.5,"scale_x":"2.0 * $d_scale","scale_y":"2.0 * $d_scale"},"seed_int":1301452400,"type":"fbm2"},{"name":"colorize","node_position":{"x":-732.5,"y":-222.5},"parameters":{"gradient":{"interpolation":1,"points":[{"a":1,"b":0.34375,"g":0.34375,"pos":0,"r":0.34375},{"a":1,"b":0.800781,"g":0.800781,"pos":1,"r":0.800781}],"type":"Gradient"}},"seed_int":0,"type":"colorize"},{"name":"tiler","node_position":{"x":-1069.5,"y":8.5},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":0,"scale":0.7,"scale_x":"0.004 / $d_scale","scale_y":"0.004 / $d_scale","select_inputs":0,"tx":"256.0 * $d_scale","ty":"256.0 * $d_scale","value":0.86,"variations":false},"seed_int":37842957,"type":"add_tiler"},{"name":"math","node_position":{"x":-747.5,"y":-2.5},"parameters":{"clamp":false,"default_in1":0,"default_in2":0.48,"op":2},"seed_int":0,"type":"math"},{"name":"gen_inputs","node_position":{"x":-1947.5,"y":-55.357143},"parameters":{},"ports":[],"seed_int":0,"type":"ios"},{"name":"gen_outputs","node_position":{"x":184.5,"y":516.642822},"parameters":{},"ports":[{"group_size":0,"name":"port0","type":"f"}],"seed_int":0,"type":"ios"},{"name":"gen_parameters","node_position":{"x":-1176.071411,"y":-484.5},"parameters":{"d_scale":1,"param0":0,"param1":11},"seed_int":0,"type":"remote","widgets":[{"configurations":{"Dirt 1":[{"node":"switch","value":0,"widget":"source"}],"Dirt 2":[{"node":"switch","value":1,"widget":"source"}],"Dirt 3":[{"node":"switch","value":2,"widget":"source"}]},"label":"Type","linked_widgets":[{"node":"switch","widget":"source"}],"name":"param0","type":"config_control"},{"default":1,"label":"Scale","max":8,"min":1,"name":"d_scale","step":1,"type":"named_parameter"},{"label":"","linked_widgets":[{"node":"buffer_2","widget":"size"}],"name":"param1","type":"linked_control"}]},{"name":"shape_2","node_position":{"x":-1505.75708,"y":610.095276},"parameters":{"edge":1,"radius":1,"shape":0,"sides":6},"seed_int":0,"type":"shape"},{"name":"math_3","node_position":{"x":-1565.75708,"y":1001.095215},"parameters":{"clamp":false,"default_in1":0,"default_in2":"3.14 / 2.0","op":17},"seed_int":0,"type":"math"},{"name":"tiler_2","node_position":{"x":-1148.00708,"y":570.928589},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":0,"scale":0.7,"scale_x":"0.008 / $d_scale","scale_y":"0.008 / $d_scale","select_inputs":0,"tx":"64.0 * $d_scale","ty":"64.0 * $d_scale","value":0.86,"variations":false},"seed_int":3027037116,"type":"add_tiler"},{"name":"tiler_3","node_position":{"x":-1168.25708,"y":978.428589},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":0,"scale":0.7,"scale_x":"0.004 / $d_scale","scale_y":"0.004 / $d_scale","select_inputs":0,"tx":"256.0 * $d_scale","ty":"256.0 * $d_scale","value":0.86,"variations":false},"seed_int":37842957,"type":"add_tiler"},{"name":"math_6","node_position":{"x":-839.75708,"y":757.428589},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":0},"seed_int":0,"type":"math"},{"name":"math_7","node_position":{"x":-822.75708,"y":976.428589},"parameters":{"clamp":false,"default_in1":0,"default_in2":0.41,"op":2},"seed_int":0,"type":"math"},{"name":"switch","node_position":{"x":-97.75708,"y":507.428589},"parameters":{"choices":3,"outputs":1,"source":0},"seed_int":0,"type":"switch"},{"name":"buffer_2","node_position":{"x":-99.24292,"y":682.355774},"parameters":{"size":11},"seed_int":0,"type":"buffer","version":1},{"name":"tiler_5","node_position":{"x":-1162.04834,"y":2428.061279},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":180,"scale":0.53,"scale_x":0.004,"scale_y":0.024,"select_inputs":0,"tx":128,"ty":128,"value":0.86,"variations":false},"seed_int":951468400,"type":"add_tiler"},{"name":"shape_3","node_position":{"x":-1698.54834,"y":2330.061279},"parameters":{"edge":1,"radius":0.6,"shape":1,"sides":4},"seed_int":0,"type":"shape"},{"name":"math_5","node_position":{"x":-873.54834,"y":2374.061279},"parameters":{"clamp":false,"default_in1":0,"default_in2":0.24,"op":2},"seed_int":0,"type":"math"},{"generic_size":1,"name":"rotate","node_position":{"x":-1442.54834,"y":2496.061279},"parameters":{"cx":0,"cy":0,"rotate":45},"seed_int":0,"type":"rotate"},{"name":"tiler_4","node_position":{"x":-1162.04834,"y":1532.061279},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":0,"scale":0.7,"scale_x":"0.008 / $d_scale","scale_y":"0.008 / $d_scale","select_inputs":0,"tx":"128.0 * $d_scale","ty":"128.0 * $d_scale","value":0.86,"variations":false},"seed_int":3027037116,"type":"add_tiler"},{"name":"tiler_6","node_position":{"x":-1151.04834,"y":1959.061279},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":180,"scale":0.7,"scale_x":"0.012 / $d_scale","scale_y":"0.012 / $d_scale","select_inputs":0,"tx":"128.0 * $d_scale","ty":"128.0 * $d_scale","value":0.86,"variations":false},"seed_int":37842957,"type":"add_tiler"},{"name":"math_4","node_position":{"x":-824.54834,"y":1597.061279},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":0},"seed_int":0,"type":"math"},{"name":"math_9","node_position":{"x":-583.54834,"y":1784.061279},"parameters":{"clamp":false,"default_in1":0,"default_in2":0.32,"op":2},"seed_int":0,"type":"math"},{"name":"math_12","node_position":{"x":-825.54834,"y":1802.061279},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":1},"seed_int":0,"type":"math"}],"parameters":{"d_scale":1,"param0":0,"param1":11},"seed_int":3201271054,"type":"graph"})mmg"},
   };
   return m;
 }
@@ -1250,6 +1358,41 @@ void expandGraphMacros(json &nodes) {
         }
       }
     }
+    // resolve "$param" arithmetic expressions in inner params (e.g.
+    // dirt's "0.004 / $d_scale"); per-pixel expressions are left as-is
+    {
+      std::vector<std::pair<std::string, std::string>> subs;
+      for (auto it2 = pvals.begin(); it2 != pvals.end(); ++it2)
+        if (it2.value().is_number())
+          subs.push_back({"$" + it2.key(),
+                          "(" + std::to_string(it2.value().get<double>()) +
+                              ")"});
+      std::sort(subs.begin(), subs.end(),
+                [](const auto &a, const auto &b) {
+                  return a.first.size() > b.first.size();
+                });
+      for (auto &tn : tnodes) {
+        if (!tn.contains("parameters") || !tn["parameters"].is_object())
+          continue;
+        for (auto it2 = tn["parameters"].begin();
+             it2 != tn["parameters"].end(); ++it2) {
+          if (!it2.value().is_string())
+            continue;
+          std::string s = it2.value().get<std::string>();
+          for (auto &sub : subs) {
+            size_t pos = 0;
+            while ((pos = s.find(sub.first, pos)) != std::string::npos) {
+              s.replace(pos, sub.first.size(), sub.second);
+              pos += sub.second.size();
+            }
+          }
+          double v;
+          if (s.find('$') == std::string::npos && evalArith(s, v))
+            it2.value() = v;
+        }
+      }
+    }
+
     // the instance seed offsets every unlocked inner node's own seed
     double iseed = 0.0;
     if (n.contains("seed") && n["seed"].is_number())
@@ -1332,6 +1475,19 @@ GraphResult convertGraph(json mmNodes, json mmConns,
     } else if (type == "graph") {
       std::vector<std::string> ins, outs;
       p = graphToSubgraph(n, baseName, skipped, ins, outs);
+      // a subgraph whose outputs all lost their internal feed (its
+      // chains were unsupported, e.g. custom shaders) contributes
+      // nothing but black — skip it like an unsupported node so its
+      // consumers degrade gracefully instead
+      bool anyOut = false;
+      for (auto &o : p.value("outputs", json::array()))
+        if (o.value("id", -1) >= 0)
+          anyOut = true;
+      if (!anyOut) {
+        if (skipped)
+          skipped->push_back(n.value("label", std::string("graph")));
+        continue;
+      }
       typeName = "Subgraph";
       dynPorts[name] = {ins, outs};
     } else if (!convertParams(type, params, baseName, typeName, p)) {
@@ -1450,6 +1606,60 @@ GraphResult convertGraph(json mmNodes, json mmConns,
       if (pruned.count(res.previewId))
         res.previewId = -1;
     }
+  }
+
+  // A Blend that lost one of its two image inputs (its source chain
+  // was unsupported/pruned) would composite against black and poison
+  // everything downstream (e.g. an AO chain multiplying the preview
+  // to zero). Degrade it to a wire: consumers reconnect to the input
+  // that survived. Iterate for chains of such blends.
+  for (;;) {
+    bool changed = false;
+    std::map<int, json *> srcA, srcB;
+    for (auto &c : res.conns) {
+      const int to = c["toId"].get<int>();
+      const std::string slot = c["toSlot"].get<std::string>();
+      if (slot == "A")
+        srcA[to] = &c;
+      else if (slot == "B")
+        srcB[to] = &c;
+    }
+    for (auto &n : res.nodes) {
+      if (n["typeName"] != "Blend")
+        continue;
+      const int id = n["id"].get<int>();
+      const bool hasA = srcA.count(id) > 0, hasB = srcB.count(id) > 0;
+      if (hasA == hasB)
+        continue; // both present (normal) or both missing (harmless)
+      json &src = hasA ? *srcA[id] : *srcB[id];
+      const int fromId = src["fromId"].get<int>();
+      const std::string fromSlot = src["fromSlot"].get<std::string>();
+      json keptConns = json::array();
+      for (auto &c : res.conns) {
+        if (c["toId"].get<int>() == id)
+          continue; // drop the blend's own inputs (incl. Mask)
+        if (c["fromId"].get<int>() == id) {
+          json c2 = c;
+          c2["fromId"] = fromId;
+          c2["fromSlot"] = fromSlot;
+          keptConns.push_back(c2);
+        } else {
+          keptConns.push_back(c);
+        }
+      }
+      res.conns = keptConns;
+      json keptNodes = json::array();
+      for (auto &nn : res.nodes)
+        if (nn["id"].get<int>() != id)
+          keptNodes.push_back(nn);
+      res.nodes = keptNodes;
+      if (res.previewId == id)
+        res.previewId = fromId;
+      changed = true;
+      break; // maps into res.conns are stale — restart
+    }
+    if (!changed)
+      break;
   }
   return res;
 }

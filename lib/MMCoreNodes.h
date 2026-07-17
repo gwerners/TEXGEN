@@ -736,6 +736,29 @@ class DilateCoreNode : public CoreNode {
 };
 
 // ============================================================
+// AddTilerCoreNode — additive scatter (dirt.mmg's embedded tiler)
+// ============================================================
+class AddTilerCoreNode : public CoreNode {
+ public:
+  AddTilerCoreNode() {}
+  std::string typeName() const override { return "AddTiler"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_tx = 4.0f, m_ty = 4.0f;
+  int m_overlap = 1;
+  float m_scaleX = 1.0f, m_scaleY = 1.0f;
+  float m_fixedOffset = 0.5f, m_offset = 0.5f;
+  float m_rotate = 0.0f, m_scale = 0.0f;
+  float m_value = 0.5f;
+  float m_seed = 0.0f;
+};
+
+// ============================================================
 // BoxCoreNode — raycast box depth (box.mmg)
 // ============================================================
 class BoxCoreNode : public CoreNode {

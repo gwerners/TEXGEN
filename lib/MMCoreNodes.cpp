@@ -2181,6 +2181,54 @@ void BevelCoreNode::execute(const std::vector<GenTexture*>& inputs,
 }
 
 // ============================================================
+// AddTilerCoreNode
+// ============================================================
+
+std::vector<std::string> AddTilerCoreNode::inputSlotNames() const {
+  return {"In", "Mask"};
+}
+std::vector<std::string> AddTilerCoreNode::outputSlotNames() const {
+  return {"Out", "Color"};
+}
+
+nlohmann::json AddTilerCoreNode::saveParams() const {
+  return {{"tx", m_tx},         {"ty", m_ty},
+          {"overlap", m_overlap}, {"scaleX", m_scaleX},
+          {"scaleY", m_scaleY}, {"fixedOffset", m_fixedOffset},
+          {"offset", m_offset}, {"rotate", m_rotate},
+          {"scale", m_scale},   {"value", m_value},
+          {"seed", m_seed}};
+}
+
+void AddTilerCoreNode::loadParams(const nlohmann::json& j) {
+  auto f = [&](const char* k, float& v) {
+    if (j.contains(k))
+      v = j[k];
+  };
+  f("tx", m_tx); f("ty", m_ty);
+  if (j.contains("overlap"))
+    m_overlap = j["overlap"];
+  f("scaleX", m_scaleX); f("scaleY", m_scaleY);
+  f("fixedOffset", m_fixedOffset); f("offset", m_offset);
+  f("rotate", m_rotate); f("scale", m_scale);
+  f("value", m_value); f("seed", m_seed);
+}
+
+void AddTilerCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                               std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  GenTexture* mask = inputs.size() > 1 && inputs[1] && inputs[1]->Data
+                         ? inputs[1]
+                         : nullptr;
+  outputs.resize(2);
+  outputs[0].Init(in->XRes, in->YRes);
+  outputs[1].Init(in->XRes, in->YRes);
+  MMAddTiler(outputs[0], &outputs[1], *in, mask, m_tx, m_ty, m_overlap,
+             m_scaleX, m_scaleY, m_fixedOffset, m_offset, m_rotate, m_scale,
+             m_value, m_seed);
+}
+
+// ============================================================
 // BoxCoreNode / WaveletNoiseCoreNode / BinarySmoothCoreNode
 // ============================================================
 

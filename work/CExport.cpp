@@ -1047,6 +1047,29 @@ static void emitNode(std::ostringstream& ss,
     }
   }
 
+  else if (type == "AddTiler") {
+    std::string in = srcVar(conns, id, "In");
+    std::string mask = srcVar(conns, id, "Mask");
+    ss << "    GenTexture " << v << "_Out, " << v << "_Color;\n";
+    if (in.empty()) {
+      ss << "    " << v << "_Out.Init(256, 256); " << v
+         << "_Color.Init(256, 256);\n";
+    } else {
+      ss << "    " << v << "_Out.Init(" << in << ".XRes, " << in
+         << ".YRes); " << v << "_Color.Init(" << in << ".XRes, " << in
+         << ".YRes);\n";
+      ss << "    MMAddTiler(" << v << "_Out, &" << v << "_Color, " << in
+         << ", "
+         << (mask.empty() ? std::string("(const GenTexture*)0") : "&" + mask)
+         << ", " << pf(p, "tx", 4.0f) << ", " << pf(p, "ty", 4.0f) << ", "
+         << p.value("overlap", 1) << ", " << pf(p, "scaleX", 1.0f) << ", "
+         << pf(p, "scaleY", 1.0f) << ", " << pf(p, "fixedOffset", 0.5f)
+         << ", " << pf(p, "offset", 0.5f) << ", " << pf(p, "rotate", 0.0f)
+         << ", " << pf(p, "scale", 0.0f) << ", " << pf(p, "value", 0.5f)
+         << ", " << pf(p, "seed", 0.0f) << ");\n";
+    }
+  }
+
   else if (type == "Box") {
     int w = sizeFromIdx(p.value("widthIdx", 3));
     int h = sizeFromIdx(p.value("heightIdx", 3));

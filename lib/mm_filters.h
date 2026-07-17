@@ -105,6 +105,9 @@ void MMTile2x2(GenTexture &out, const GenTexture *in1, const GenTexture *in2,
 
 // Normal map convention conversion (normal_map_convert.mmg):
 // op 0 = from/to OpenGL (flip R and B), 1 = from/to DirectX (flip all).
+// op 2 = flip G only (OpenGL <-> DirectX for pipelines that already
+// carry OpenGL normals, like ours — MM's ops assume its Default
+// format with inverted Z). op 3 = identity.
 void MMNormalConvert(GenTexture &out, const GenTexture &in, sInt op);
 
 // Per-region UV scatter (custom_uv.mmg): samples 'in' at map.xy
@@ -136,6 +139,15 @@ void MMLevels(GenTexture &out, const GenTexture &in, const sF32 inMin[4],
 // the winning cell (random when the color inputs are missing) and the
 // instance UV map (xy = local uv, z = per-instance random) for
 // CustomUV-style consumers.
+// Additive scatter tiler (the "Add Tiler" shader embedded in
+// dirt.mmg): like MMTiler but instance contributions are SUMMED, the
+// jittered position is wrapped with fract, and there is no tileset.
+// outColor (optional) gets the random color of the topmost instance.
+void MMAddTiler(GenTexture &out, GenTexture *outColor, const GenTexture &in,
+                const GenTexture *mask, sF32 tx, sF32 ty, sInt overlap,
+                sF32 scaleX, sF32 scaleY, sF32 fixedOffset, sF32 offset,
+                sF32 rotateDeg, sF32 scaleJitter, sF32 value, sF32 seed);
+
 void MMTilerAdvanced(GenTexture &out, GenTexture *outColor1,
                      GenTexture *outColor2, GenTexture *outUV,
                      const GenTexture &in, const GenTexture *mask,

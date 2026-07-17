@@ -594,6 +594,107 @@ void MMTiler(GenTexture &out, GenTexture *outColor, const GenTexture &in,
   }
 }
 
+// Additive scatter tiler (the "Add Tiler" shader inside dirt.mmg).
+void MMAddTiler(GenTexture &out, GenTexture *outColor, const GenTexture &in,
+                const GenTexture *mask, sF32 tx, sF32 ty, sInt overlap,
+                sF32 scaleX, sF32 scaleY, sF32 fixedOffset, sF32 offset,
+                sF32 rotateDeg, sF32 scaleJitter, sF32 value, sF32 seed) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (tx < 1.0f)
+    tx = 1.0f;
+  if (ty < 1.0f)
+    ty = 1.0f;
+  if (scaleX < 1e-6f)
+    scaleX = 1e-6f;
+  if (scaleY < 1e-6f)
+    scaleY = 1e-6f;
+
+  auto grayIn = [&](sF32 u, sF32 v) -> sF32 {
+    sF32 c[4];
+    sampleRGBA(in, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+  auto maskAt = [&](sF32 u, sF32 v) -> sF32 {
+    if (!mask || !mask->Data)
+      return 1.0f;
+    sF32 c[4];
+    sampleRGBA(*mask, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+
+  for (sInt py = 0; py < h; py++) {
+    const sF32 uvy = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 uvx = (px + 0.5f) / w;
+      sF32 c = 0.0f;
+      sF32 rc[3] = {0.0f, 0.0f, 0.0f};
+
+      for (sInt dx = -overlap; dx <= overlap; dx++) {
+        for (sInt dy = -overlap; dy <= overlap; dy++) {
+          sF32 posX = uvx * tx + (sF32)dx;
+          sF32 posY = uvy * ty + (sF32)dy;
+          posX = glslFract2((floorf(glslMod2(posX, tx)) + 0.5f) / tx) - 0.5f;
+          posY = glslFract2((floorf(glslMod2(posY, ty)) + 0.5f) / ty) - 0.5f;
+
+          sF32 sd[2];
+          tilerRand2(posX + seed, posY + seed, sd);
+          sF32 rc1[3];
+          tilerRand3(sd[0], sd[1], rc1);
+
+          // fract-wrapped jitter; the fixed row offset uses the cell
+          // position itself, exactly as the embedded shader
+          posX = glslFract2(posX +
+                            (fixedOffset / tx) *
+                                floorf(glslMod2(posY * ty, 2.0f)) +
+                            offset * sd[0] / tx);
+          posY = glslFract2(posY + offset * sd[1] / ty);
+
+          const sF32 m = maskAt(glslFract2(posX + 0.5f),
+                                glslFract2(posY + 0.5f));
+          if (m <= 0.01f)
+            continue;
+
+          sF32 pvx = glslFract2(uvx - posX) - 0.5f;
+          sF32 pvy = glslFract2(uvy - posY) - 0.5f;
+          tilerRand2(sd[0], sd[1], sd);
+          const sF32 angle = (sd[0] * 2.0f - 1.0f) * rotateDeg *
+                             0.01745329251f;
+          const sF32 ca = cosf(angle), sa = sinf(angle);
+          sF32 rx = ca * pvx + sa * pvy;
+          sF32 ry = -sa * pvx + ca * pvy;
+          const sF32 sj = (sd[1] - 0.5f) * 2.0f * scaleJitter + 1.0f;
+          rx = rx * sj / scaleX + 0.5f;
+          ry = ry * sj / scaleY + 0.5f;
+          tilerRand2(sd[0], sd[1], sd);
+          if (rx < 0.0f || rx > 1.0f || ry < 0.0f || ry > 1.0f)
+            continue;
+
+          const sF32 c1 = grayIn(rx, ry) * m * (1.0f - value * sd[0]);
+          c += c1;
+          if (c1 >= c) {
+            rc[0] = rc1[0];
+            rc[1] = rc1[1];
+            rc[2] = rc1[2];
+          }
+        }
+      }
+
+      Pixel &p = out.Data[py * w + px];
+      p.r = p.g = p.b = to16(c);
+      p.a = 65535;
+      if (outColor && outColor->Data) {
+        Pixel &q = outColor->Data[py * w + px];
+        q.r = to16(rc[0]);
+        q.g = to16(rc[1]);
+        q.b = to16(rc[2]);
+        q.a = 65535;
+      }
+    }
+  }
+}
+
 // Directional gaussian along the heightmap slope (slope_blur.mmg).
 void MMSlopeBlur(GenTexture &out, const GenTexture &in,
                  const GenTexture &height, sF32 size, sF32 sigma) {
@@ -811,10 +912,18 @@ void MMNormalConvert(GenTexture &out, const GenTexture &in, sInt op) {
         p.r = to16(1.0f - c[0]);
         p.g = to16(c[1]);
         p.b = to16(1.0f - c[2]);
-      } else { // from/to DirectX: flip all
+      } else if (op == 1) { // from/to DirectX: flip all
         p.r = to16(1.0f - c[0]);
         p.g = to16(1.0f - c[1]);
         p.b = to16(1.0f - c[2]);
+      } else if (op == 2) { // OpenGL <-> DirectX: flip G only
+        p.r = to16(c[0]);
+        p.g = to16(1.0f - c[1]);
+        p.b = to16(c[2]);
+      } else { // identity (op 3): keep the map as-is
+        p.r = to16(c[0]);
+        p.g = to16(c[1]);
+        p.b = to16(c[2]);
       }
       p.a = to16(c[3]);
     }
