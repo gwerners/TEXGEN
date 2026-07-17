@@ -1011,13 +1011,38 @@ static void emitNode(std::ostringstream& ss,
     std::string in = srcVar(conns, id, "Height");
     ss << "    GenTexture " << v << "_X, " << v << "_Y;\n";
     if (in.empty()) {
-      ss << "    " << v << "_X.Init(256, 256); " << v
-         << "_Y.Init(256, 256);\n";
+      ss << "    " << v << "_X.Init(256, 256); " << v << "_Y.Init(256, 256);\n";
     } else {
       ss << "    " << v << "_X.Init(" << in << ".XRes, " << in << ".YRes); "
          << v << "_Y.Init(" << in << ".XRes, " << in << ".YRes);\n";
-      ss << "    MMHeightToOffset(" << v << "_X, " << v << "_Y, " << in
-         << ", " << pf(p, "target", 0.5f) << ");\n";
+      ss << "    MMHeightToOffset(" << v << "_X, " << v << "_Y, " << in << ", "
+         << pf(p, "target", 0.5f) << ");\n";
+    }
+  }
+
+  else if (type == "Bevel") {
+    std::string in = srcVar(conns, id, "In");
+    auto curve = p.value("curve", nlohmann::json::array());
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    { const MMCurvePoint curve[] = {";
+      if (curve.empty())
+        ss << "{0.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 0.0f}";
+      else
+        for (size_t i = 0; i < curve.size(); i++) {
+          auto& c = curve[i];
+          ss << "{" << fmtf(c[0].get<float>()) << ", "
+             << fmtf(c[1].get<float>()) << ", " << fmtf(c[2].get<float>())
+             << ", " << fmtf(c[3].get<float>()) << "}"
+             << (i + 1 < curve.size() ? ", " : "");
+        }
+      ss << "};\n";
+      ss << "      MMBevel(" << v << ", " << in << ", "
+         << pf(p, "distance", 0.1f) << ", curve, "
+         << (curve.empty() ? 2 : (int)curve.size()) << "); }\n";
     }
   }
 

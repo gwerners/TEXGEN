@@ -24,13 +24,13 @@
 #include <thread>
 #include <vector>
 
-#include "gentexture.hpp"
 #include <nlohmann/json.hpp>
+#include "gentexture.hpp"
 
 class GraphRunner {
-public:
+ public:
   struct Result {
-    std::map<int, std::vector<GenTexture>> outputs; // node id -> outputs
+    std::map<int, std::vector<GenTexture>> outputs;  // node id -> outputs
     GenTexture finalOutput;
     bool hasFinal = false;
     bool ok = false;
@@ -60,15 +60,15 @@ public:
 
   // Moves a finished full result (or an incremental run's final
   // output) out; returns false if none is ready.
-  bool poll(Result &out);
+  bool poll(Result& out);
 
   // Drains the per-node results streamed by incremental runs.
-  void pollStream(std::vector<NodeResult> &out);
+  void pollStream(std::vector<NodeResult>& out);
 
-private:
+ private:
   struct Job {
     nlohmann::json project;
-    std::set<int> dirty; // changed node ids (ignored when full)
+    std::set<int> dirty;  // changed node ids (ignored when full)
     bool full = true;
     bool propagate = true;
   };

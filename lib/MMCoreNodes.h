@@ -697,6 +697,25 @@ class HeightToOffsetCoreNode : public CoreNode {
 };
 
 // ============================================================
+// BevelCoreNode — distance-ramp bevel + profile curve (bevel.mmg)
+// ============================================================
+class BevelCoreNode : public CoreNode {
+ public:
+  BevelCoreNode() {}
+  std::string typeName() const override { return "Bevel"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_distance = 0.1f;
+  // [[x, y, ls, rs], ...] — identity ramp when empty
+  std::vector<MMCurvePoint> m_curve;
+};
+
+// ============================================================
 // AnisotropicNoiseCoreNode — stripe noise (noise_anisotropic.mmg)
 // ============================================================
 class AnisotropicNoiseCoreNode : public CoreNode {

@@ -1191,3 +1191,120 @@ void MMHeightToOffset(GenTexture &outX, GenTexture &outY,
     }
   }
 }
+
+// ============================================================
+// Curve + Bevel
+// ============================================================
+
+sF32 MMCurveEval(const MMCurvePoint *pts, sInt n, sF32 x) {
+  if (!pts || n <= 0)
+    return x;
+  if (n == 1 || x <= pts[0].x)
+    return n == 1 ? pts[0].y : pts[0].y;
+  if (x >= pts[n - 1].x)
+    return pts[n - 1].y;
+  sInt i = 0;
+  while (i + 2 < n && x > pts[i + 1].x)
+    i++;
+  const MMCurvePoint &p0 = pts[i];
+  const MMCurvePoint &p1 = pts[i + 1];
+  const sF32 dx = p1.x - p0.x;
+  if (dx <= 1e-8f)
+    return p1.y;
+  const sF32 t = (x - p0.x) / dx;
+  const sF32 d0 = p0.rs * dx;
+  const sF32 d1 = p1.ls * dx;
+  const sF32 t2 = t * t, t3 = t2 * t;
+  return (2.0f * t3 - 3.0f * t2 + 1.0f) * p0.y + (t3 - 2.0f * t2 + t) * d0 +
+         (-2.0f * t3 + 3.0f * t2) * p1.y + (t3 - t2) * d1;
+}
+
+// 1D squared-distance transform (Felzenszwalb & Huttenlocher).
+static void mmDt1d(const sF32 *f, sF32 *d, sInt *v, sF32 *z, sInt n) {
+  sInt k = 0;
+  v[0] = 0;
+  z[0] = -1e20f;
+  z[1] = 1e20f;
+  for (sInt q = 1; q < n; q++) {
+    sF32 s;
+    for (;;) {
+      s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2.0f * q - 2.0f * v[k]);
+      if (s <= z[k] && k > 0) {
+        k--;
+        continue;
+      }
+      break;
+    }
+    if (s <= z[k]) {
+      v[k] = q; // degenerate: replace
+    } else {
+      k++;
+      v[k] = q;
+    }
+    z[k] = s;
+    z[k + 1] = 1e20f;
+  }
+  k = 0;
+  for (sInt q = 0; q < n; q++) {
+    while (z[k + 1] < q)
+      k++;
+    const sF32 dq = (sF32)(q - v[k]);
+    d[q] = dq * dq + f[v[k]];
+  }
+}
+
+void MMBevel(GenTexture &out, const GenTexture &in, sF32 distance,
+             const MMCurvePoint *curve, sInt nCurve) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 INF = 1e18f;
+
+  // squared EDT to the gray >= 0.5 region; toroidal via 3x tiling of
+  // each 1D pass (max distance < one tile, so one wrap suffices)
+  std::vector<sF32> col((size_t)w * h), dist((size_t)w * h);
+  {
+    const sInt n3 = (h > w ? h : w) * 3;
+    std::vector<sF32> f(n3), d(n3), z(n3 + 1);
+    std::vector<sInt> v(n3);
+    // vertical pass
+    for (sInt x = 0; x < w; x++) {
+      for (sInt rep = 0; rep < 3; rep++)
+        for (sInt y = 0; y < h; y++) {
+          sF32 c[4];
+          sampleRGBA(in, (x + 0.5f) / w, (y + 0.5f) / h, c);
+          const sF32 g = (c[0] + c[1] + c[2]) / 3.0f;
+          f[rep * h + y] = g >= 0.5f ? 0.0f : INF;
+        }
+      mmDt1d(f.data(), d.data(), v.data(), z.data(), 3 * h);
+      for (sInt y = 0; y < h; y++)
+        col[(size_t)y * w + x] = d[h + y];
+    }
+    // horizontal pass over the vertical distances
+    for (sInt y = 0; y < h; y++) {
+      for (sInt rep = 0; rep < 3; rep++)
+        for (sInt x = 0; x < w; x++)
+          f[rep * w + x] = col[(size_t)y * w + x];
+      mmDt1d(f.data(), d.data(), v.data(), z.data(), 3 * w);
+      for (sInt x = 0; x < w; x++)
+        dist[(size_t)y * w + x] = d[w + x];
+    }
+  }
+
+  const sF32 radius = distance * (sF32)w;
+  for (sInt y = 0; y < h; y++)
+    for (sInt x = 0; x < w; x++) {
+      const size_t idx = (size_t)y * w + x;
+      sF32 ramp = 0.0f;
+      if (radius > 1e-6f) {
+        ramp = 1.0f - sqrtf(dist[idx]) / radius;
+        ramp = ramp < 0.0f ? 0.0f : (ramp > 1.0f ? 1.0f : ramp);
+      } else {
+        ramp = dist[idx] <= 0.0f ? 1.0f : 0.0f;
+      }
+      const sF32 g = clamp01(MMCurveEval(curve, nCurve, ramp));
+      Pixel &px = out.Data[idx];
+      px.r = px.g = px.b = to16(g);
+      px.a = 65535;
+    }
+}

@@ -2138,3 +2138,41 @@ void HeightToOffsetCoreNode::execute(const std::vector<GenTexture*>& inputs,
   outputs[1].Init(in->XRes, in->YRes);
   MMHeightToOffset(outputs[0], outputs[1], *in, m_target);
 }
+
+// ============================================================
+// BevelCoreNode
+// ============================================================
+
+std::vector<std::string> BevelCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> BevelCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json BevelCoreNode::saveParams() const {
+  nlohmann::json curve = nlohmann::json::array();
+  for (auto& p : m_curve)
+    curve.push_back({p.x, p.y, p.ls, p.rs});
+  return {{"distance", m_distance}, {"curve", curve}};
+}
+
+void BevelCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("distance"))
+    m_distance = j["distance"];
+  if (j.contains("curve") && j["curve"].is_array()) {
+    m_curve.clear();
+    for (auto& p : j["curve"])
+      if (p.is_array() && p.size() >= 4)
+        m_curve.push_back({p[0].get<float>(), p[1].get<float>(),
+                           p[2].get<float>(), p[3].get<float>()});
+  }
+}
+
+void BevelCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                            std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMBevel(outputs[0], *in, m_distance, m_curve.data(), (int)m_curve.size());
+}

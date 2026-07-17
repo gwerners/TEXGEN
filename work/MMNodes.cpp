@@ -1217,12 +1217,10 @@ void TilerAdvancedNode::renderParams() {
 // HeightToOffsetNode
 // ============================================================
 
-std::vector<ImNodes::Ez::SlotInfo> HeightToOffsetNode::inputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> HeightToOffsetNode::inputSlotInfos() const {
   return {{"Height", 1}};
 }
-std::vector<ImNodes::Ez::SlotInfo> HeightToOffsetNode::outputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> HeightToOffsetNode::outputSlotInfos() const {
   return {{"X", 1}, {"Y", 1}};
 }
 
@@ -1230,5 +1228,25 @@ void HeightToOffsetNode::renderParams() {
   ImGui::PushItemWidth(120);
   SliderFloatW("Target##hto", &m_core.m_target, 0.0f, 1.0f);
   Hint("Height level the offsets push toward");
+  ImGui::PopItemWidth();
+}
+
+// ============================================================
+// BevelNode
+// ============================================================
+
+std::vector<ImNodes::Ez::SlotInfo> BevelNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> BevelNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void BevelNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Distance##bevel", &m_core.m_distance, 0.0f, 0.5f);
+  Hint("Width of the bevel ramp around the mask (UV units)");
+  if (!m_core.m_curve.empty())
+    ImGui::TextDisabled("curve: %d points", (int)m_core.m_curve.size());
   ImGui::PopItemWidth();
 }

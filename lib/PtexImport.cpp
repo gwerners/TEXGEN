@@ -130,6 +130,7 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"math_v3", {"A", "B"}},
       {"noise_anisotropic", {}},
       {"height_to_offset", {"Height"}},
+      {"bevel", {"In"}},
       {"tiler_advanced",
        {"In", "Mask", "Color1", "Color2", "TrX", "TrY", "Rot", "ScX",
         "ScY"}},
@@ -597,6 +598,17 @@ bool convertParams(const std::string &type, const json &p,
            {"seed", numOr(p, "seed", 0.0f)}};
     return true;
   }
+  if (type == "bevel") {
+    typeName = "Bevel";
+    json curve = json::array();
+    auto bj = p.value("bevel", json::object());
+    if (bj.contains("points") && bj["points"].is_array())
+      for (auto &pt : bj["points"])
+        curve.push_back({numOr(pt, "x", 0.0f), numOr(pt, "y", 0.0f),
+                         numOr(pt, "ls", 0.0f), numOr(pt, "rs", 0.0f)});
+    out = {{"distance", numOr(p, "distance", 0.1f)}, {"curve", curve}};
+    return true;
+  }
   if (type == "sphere") {
     typeName = "Sphere";
     out = size3();
@@ -842,9 +854,12 @@ bool isIgnorable(const std::string &type) {
 // buffer/reroute are lossless plumbing; the tone/sharpen family defaults
 // close to identity and is approximated by a wire.
 bool isPassthrough(const std::string &type) {
+  // variations_* re-evaluate their upstream with a shifted seed, which
+  // a baked-texture pipeline cannot do — every output = the input.
   static const std::set<std::string> s = {
       "buffer",     "reroute", "supersample",
-      "auto_tones", "tonality", "sharpen", "denoiser"};
+      "auto_tones", "tonality", "sharpen", "denoiser",
+      "variations_greyscale", "variations_color"};
   return s.count(type) > 0;
 }
 
@@ -1129,7 +1144,7 @@ GraphResult convertGraph(json mmNodes, json mmConns,
         "remap", "tile2x2", "normal_map_convert", "custom_uv",
         "smooth_curvature", "smooth_curvature2", "occlusion2", "hbao",
         "rotate", "tones_range", "math_v3", "tiler_advanced",
-        "height_to_offset"};
+        "height_to_offset", "bevel"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));

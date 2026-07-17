@@ -153,3 +153,20 @@ void MMTilerAdvanced(GenTexture &out, GenTexture *outColor1,
 // offsets to [0, 1], so strong pushes saturate.
 void MMHeightToOffset(GenTexture &outX, GenTexture &outY,
                       const GenTexture &in, sF32 target);
+
+// Control point of an MM curve widget (x, y, left/right slopes).
+struct MMCurvePoint {
+  sF32 x, y, ls, rs;
+};
+
+// Piecewise cubic Hermite curve through MM control points; clamps to
+// the end values outside [first.x, last.x]. Identity when empty.
+sF32 MMCurveEval(const MMCurvePoint *pts, sInt n, sF32 x);
+
+// Bevel (bevel.mmg = dilate + tonality): grows the white areas
+// (gray >= 0.5) of the mask outward with a linear ramp over
+// 'distance' (UV units) using an exact toroidal Euclidean distance
+// transform, then reshapes the ramp with the curve. Soft masks are
+// thresholded, which sharpens interiors slightly vs MM's dilate.
+void MMBevel(GenTexture &out, const GenTexture &in, sF32 distance,
+             const MMCurvePoint *curve, sInt nCurve);

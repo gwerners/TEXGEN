@@ -5,7 +5,9 @@
 
 #include <cstdio>
 
-GraphRunner::GraphRunner() { m_thread = std::thread(&GraphRunner::loop, this); }
+GraphRunner::GraphRunner() {
+  m_thread = std::thread(&GraphRunner::loop, this);
+}
 
 GraphRunner::~GraphRunner() {
   {
@@ -28,7 +30,8 @@ void GraphRunner::request(nlohmann::json project) {
   m_cv.notify_all();
 }
 
-void GraphRunner::requestNode(nlohmann::json project, int changedId,
+void GraphRunner::requestNode(nlohmann::json project,
+                              int changedId,
                               bool propagate) {
   {
     std::lock_guard<std::mutex> lk(m_mx);
@@ -47,7 +50,7 @@ void GraphRunner::requestNode(nlohmann::json project, int changedId,
   m_cv.notify_all();
 }
 
-bool GraphRunner::poll(Result &out) {
+bool GraphRunner::poll(Result& out) {
   std::lock_guard<std::mutex> lk(m_mx);
   if (!m_hasDone)
     return false;
@@ -57,7 +60,7 @@ bool GraphRunner::poll(Result &out) {
   return true;
 }
 
-void GraphRunner::pollStream(std::vector<NodeResult> &out) {
+void GraphRunner::pollStream(std::vector<NodeResult>& out) {
   std::lock_guard<std::mutex> lk(m_mx);
   while (!m_stream.empty()) {
     out.push_back(std::move(m_stream.front()));
@@ -67,10 +70,10 @@ void GraphRunner::pollStream(std::vector<NodeResult> &out) {
 
 // Node ids/types + connections; params excluded, so a param-only edit
 // keeps the signature and stays on the incremental path.
-static std::string topoSig(const nlohmann::json &p) {
+static std::string topoSig(const nlohmann::json& p) {
   std::string s;
   if (p.contains("nodes"))
-    for (auto &n : p["nodes"]) {
+    for (auto& n : p["nodes"]) {
       s += std::to_string(n.value("id", -1));
       s += ':';
       s += n.value("typeName", std::string());
@@ -86,7 +89,7 @@ void GraphRunner::loop() {
   GraphEval ev;
   bool evValid = false;
   std::string sig;
-  std::set<int> carryDirty; // dirty ids from an interrupted cascade
+  std::set<int> carryDirty;  // dirty ids from an interrupted cascade
 
   for (;;) {
     Job job;
@@ -140,7 +143,7 @@ void GraphRunner::loop() {
           continue;
         NodeResult nr;
         nr.nodeId = id;
-        if (const auto *outs = ev.nodeOutputs(id))
+        if (const auto* outs = ev.nodeOutputs(id))
           nr.outputs = *outs;
         {
           std::lock_guard<std::mutex> lk(m_mx);
@@ -157,7 +160,7 @@ void GraphRunner::loop() {
 
       Result res;
       res.ok = true;
-      GenTexture *fin = ev.finalOutput();
+      GenTexture* fin = ev.finalOutput();
       if (fin && fin->Data) {
         res.finalOutput = *fin;
         res.hasFinal = true;
@@ -189,7 +192,7 @@ void GraphRunner::loop() {
     carryDirty.clear();
     if (ran) {
       res.ok = true;
-      for (auto &nj : job.project["nodes"]) {
+      for (auto& nj : job.project["nodes"]) {
         int id = nj.value("id", -1);
         std::string type = nj.value("typeName", std::string());
         auto core = getCoreNodeRegistry().create(type);
@@ -198,13 +201,13 @@ void GraphRunner::loop() {
         auto outs = core->outputSlotNames();
         std::vector<GenTexture> texs(outs.size());
         for (size_t i = 0; i < outs.size(); i++) {
-          GenTexture *t = ev.outputOf(id, outs[i]);
+          GenTexture* t = ev.outputOf(id, outs[i]);
           if (t && t->Data)
             texs[i] = *t;
         }
         res.outputs.emplace(id, std::move(texs));
       }
-      GenTexture *fin = ev.finalOutput();
+      GenTexture* fin = ev.finalOutput();
       if (fin && fin->Data) {
         res.finalOutput = *fin;
         res.hasFinal = true;
