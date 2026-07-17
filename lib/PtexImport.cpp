@@ -78,6 +78,7 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"decompose", {"In"}},
       {"invert", {"In"}},
       {"greyscale", {"In"}},
+      {"tones", {"In"}},
       {"tones_step", {"In"}},
       {"tones_map", {"In"}},
       {"brightness_contrast", {"In"}},

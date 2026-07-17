@@ -21,3 +21,10 @@ add_executable(texgen_render
 )
 target_link_libraries(texgen_render PRIVATE texgen)
 target_compile_options(texgen_render PRIVATE -w)
+
+# texgen_debug: dumps every node's output as PNG (chain auditing)
+add_executable(texgen_debug
+  texgen_debug.cpp
+)
+target_link_libraries(texgen_debug PRIVATE texgen)
+target_compile_options(texgen_debug PRIVATE -w)
