@@ -147,6 +147,18 @@ void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
                     sInt nStops, sF32 repeat, sF32 rotateDeg, bool mirror,
                     sInt shape = 0);
 
+// Box (box.mmg): depth of a rotated 3D box raycast straight down onto
+// the UV plane (0 outside, brighter = nearer face).
+void MMBox(GenTexture &out, sF32 cx, sF32 cy, sF32 cz, sF32 sx, sF32 sy,
+           sF32 sz, sF32 rx, sF32 ry, sF32 rz);
+
+// Wavelet noise (wavelet_noise.mmg): oriented sine wavelets
+// accumulated over octaves; type > 0 shears the lattice per octave,
+// type < 0 scales it.
+void MMWaveletNoise(GenTexture &out, sF32 scaleX, sF32 scaleY,
+                    sInt iterations, sF32 persistence, sF32 seed,
+                    sF32 frequency, sF32 offset, sF32 type);
+
 // Weave (weave.mmg): woven stripes pattern; widthMap (optional,
 // grayscale) scales the stripe width per pixel.
 void MMWeave(GenTexture &out, sInt columns, sInt rows, sF32 width,

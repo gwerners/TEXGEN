@@ -736,6 +736,69 @@ class DilateCoreNode : public CoreNode {
 };
 
 // ============================================================
+// BoxCoreNode — raycast box depth (box.mmg)
+// ============================================================
+class BoxCoreNode : public CoreNode {
+ public:
+  BoxCoreNode() {}
+  std::string typeName() const override { return "Box"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx = 3, m_heightIdx = 3;
+  float m_cx = 0.5f, m_cy = 0.5f, m_cz = 0.0f;
+  float m_sx = 0.5f, m_sy = 0.5f, m_sz = 0.5f;
+  float m_rx = 0.0f, m_ry = 0.0f, m_rz = 0.0f;
+};
+
+// ============================================================
+// WaveletNoiseCoreNode — oriented wavelet noise (wavelet_noise.mmg)
+// ============================================================
+class WaveletNoiseCoreNode : public CoreNode {
+ public:
+  WaveletNoiseCoreNode() {}
+  std::string typeName() const override { return "WaveletNoise"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx = 3, m_heightIdx = 3;
+  float m_scaleX = 4.0f, m_scaleY = 4.0f;
+  int m_iterations = 3;
+  float m_persistence = 0.5f;
+  float m_frequency = 1.0f, m_offset = 0.0f;
+  float m_type = -3.0f;  // >0 shears per octave, <0 scales (MM "Mult 3")
+  float m_seed = 0.0f;
+};
+
+// ============================================================
+// BinarySmoothCoreNode — threshold+blur+ramp (binary_smooth.mmg)
+// ============================================================
+class BinarySmoothCoreNode : public CoreNode {
+ public:
+  BinarySmoothCoreNode() {}
+  std::string typeName() const override { return "BinarySmooth"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_size = 1024.0f;  // reference resolution (2^size in MM)
+  float m_smooth = 60.0f;  // blur sigma in texels
+  float m_offset = 0.5f;
+  float m_bevel = 0.0f;
+};
+
+// ============================================================
 // WeaveCoreNode / Weave2CoreNode — woven patterns (weave/weave2.mmg)
 // ============================================================
 class WeaveCoreNode : public CoreNode {

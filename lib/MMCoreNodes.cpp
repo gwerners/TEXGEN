@@ -2181,6 +2181,118 @@ void BevelCoreNode::execute(const std::vector<GenTexture*>& inputs,
 }
 
 // ============================================================
+// BoxCoreNode / WaveletNoiseCoreNode / BinarySmoothCoreNode
+// ============================================================
+
+std::vector<std::string> BoxCoreNode::inputSlotNames() const {
+  return {};
+}
+std::vector<std::string> BoxCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json BoxCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
+          {"cx", m_cx}, {"cy", m_cy}, {"cz", m_cz},
+          {"sx", m_sx}, {"sy", m_sy}, {"sz", m_sz},
+          {"rx", m_rx}, {"ry", m_ry}, {"rz", m_rz}};
+}
+
+void BoxCoreNode::loadParams(const nlohmann::json& j) {
+  auto f = [&](const char* k, float& v) {
+    if (j.contains(k))
+      v = j[k];
+  };
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  f("cx", m_cx); f("cy", m_cy); f("cz", m_cz);
+  f("sx", m_sx); f("sy", m_sy); f("sz", m_sz);
+  f("rx", m_rx); f("ry", m_ry); f("rz", m_rz);
+}
+
+void BoxCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                          std::vector<GenTexture>& outputs) {
+  (void)inputs;
+  outputs.resize(1);
+  outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
+  MMBox(outputs[0], m_cx, m_cy, m_cz, m_sx, m_sy, m_sz, m_rx, m_ry, m_rz);
+}
+
+std::vector<std::string> WaveletNoiseCoreNode::inputSlotNames() const {
+  return {};
+}
+std::vector<std::string> WaveletNoiseCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json WaveletNoiseCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
+          {"scaleX", m_scaleX},     {"scaleY", m_scaleY},
+          {"iterations", m_iterations}, {"persistence", m_persistence},
+          {"frequency", m_frequency},   {"offset", m_offset},
+          {"type", m_type},         {"seed", m_seed}};
+}
+
+void WaveletNoiseCoreNode::loadParams(const nlohmann::json& j) {
+  auto f = [&](const char* k, float& v) {
+    if (j.contains(k))
+      v = j[k];
+  };
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("iterations"))
+    m_iterations = j["iterations"];
+  f("scaleX", m_scaleX); f("scaleY", m_scaleY);
+  f("persistence", m_persistence);
+  f("frequency", m_frequency); f("offset", m_offset);
+  f("type", m_type); f("seed", m_seed);
+}
+
+void WaveletNoiseCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                   std::vector<GenTexture>& outputs) {
+  (void)inputs;
+  outputs.resize(1);
+  outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
+  MMWaveletNoise(outputs[0], m_scaleX, m_scaleY, m_iterations,
+                 m_persistence, m_seed, m_frequency, m_offset, m_type);
+}
+
+std::vector<std::string> BinarySmoothCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> BinarySmoothCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json BinarySmoothCoreNode::saveParams() const {
+  return {{"size", m_size},     {"smooth", m_smooth},
+          {"offset", m_offset}, {"bevel", m_bevel}};
+}
+
+void BinarySmoothCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("size"))
+    m_size = j["size"];
+  if (j.contains("smooth"))
+    m_smooth = j["smooth"];
+  if (j.contains("offset"))
+    m_offset = j["offset"];
+  if (j.contains("bevel"))
+    m_bevel = j["bevel"];
+}
+
+void BinarySmoothCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                   std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMBinarySmooth(outputs[0], *in, m_size, m_smooth, m_offset, m_bevel);
+}
+
+// ============================================================
 // WeaveCoreNode / Weave2CoreNode
 // ============================================================
 

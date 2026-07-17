@@ -972,6 +972,125 @@ void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
   }
 }
 
+void MMBox(GenTexture &out, sF32 cx, sF32 cy, sF32 cz, sF32 sx, sF32 sy,
+           sF32 sz, sF32 rx, sF32 ry, sF32 rz) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 ax = rx * 0.01745329251f, ay = ry * 0.01745329251f,
+             az = rz * 0.01745329251f;
+  // column-major mat3 product r = Rx * Ry * Rz, exactly as the GLSL
+  sF32 m[3][3]; // m[col][row]
+  {
+    const sF32 X[3][3] = {{1, 0, 0},
+                          {0, cosf(ax), -sinf(ax)},
+                          {0, sinf(ax), cosf(ax)}};
+    const sF32 Y[3][3] = {{cosf(ay), 0, -sinf(ay)},
+                          {0, 1, 0},
+                          {sinf(ay), 0, cosf(ay)}};
+    const sF32 Z[3][3] = {{cosf(az), -sinf(az), 0},
+                          {sinf(az), cosf(az), 0},
+                          {0, 0, 1}};
+    sF32 t[3][3];
+    for (sInt c = 0; c < 3; c++) // t = X * Y
+      for (sInt r = 0; r < 3; r++) {
+        t[c][r] = 0.0f;
+        for (sInt k = 0; k < 3; k++)
+          t[c][r] += X[k][r] * Y[c][k];
+      }
+    for (sInt c = 0; c < 3; c++) // m = t * Z
+      for (sInt r = 0; r < 3; r++) {
+        m[c][r] = 0.0f;
+        for (sInt k = 0; k < 3; k++)
+          m[c][r] += t[k][r] * Z[c][k];
+      }
+  }
+  auto mul = [&](const sF32 v[3], sF32 o[3]) {
+    for (sInt r = 0; r < 3; r++)
+      o[r] = m[0][r] * v[0] + m[1][r] * v[1] + m[2][r] * v[2];
+  };
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w, v = (py + 0.5f) / h;
+      const sF32 ro0[3] = {u - cx, v - cy, 1.0f - cz};
+      const sF32 rd0[3] = {0.0000001f, 0.0000001f, -1.0f};
+      sF32 ro[3], rd[3];
+      mul(ro0, ro);
+      mul(rd0, rd);
+      sF32 tN = -1e30f, tF = 1e30f;
+      const sF32 rad[3] = {sx, sy, sz};
+      for (sInt i = 0; i < 3; i++) {
+        const sF32 mi = 1.0f / rd[i];
+        const sF32 ni = mi * ro[i];
+        const sF32 ki = fabsf(mi) * rad[i];
+        const sF32 t1 = -ni - ki, t2 = -ni + ki;
+        tN = t1 > tN ? t1 : tN;
+        tF = t2 < tF ? t2 : tF;
+      }
+      const sF32 d = (tN > tF || tF < 0.0f) ? 1.0f : tN;
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = p.g = p.b = to16(1.0f - d);
+      p.a = 65535;
+    }
+}
+
+void MMWaveletNoise(GenTexture &out, sF32 scaleX, sF32 scaleY,
+                    sInt iterations, sF32 persistence, sF32 seed,
+                    sF32 frequency, sF32 offset, sF32 type) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  auto wavelet = [&](sF32 ux, sF32 uy, sF32 szx, sF32 szy, sF32 s) -> sF32 {
+    ux = glslMod(ux, szx);
+    uy = glslMod(uy, szy);
+    const sF32 seedx = glslFract(floorf(ux) * 0.1236754f + s);
+    const sF32 seedy = glslFract(floorf(uy) * 0.1236754f + s);
+    ux = glslFract(ux);
+    uy = glslFract(uy);
+    sF32 rux = ux - 0.5f, ruy = uy - 0.5f;
+    const sF32 a = mmRand(seedx, seedy) * 6.28f;
+    const sF32 ca = cosf(a), sa = sinf(a);
+    const sF32 rxx = ca * rux + sa * ruy;
+    const sF32 len =
+        sqrtf((ux - 0.5f) * (ux - 0.5f) + (uy - 0.5f) * (uy - 0.5f));
+    const sF32 att = 1.0f - 2.0f * len;
+    return (0.5f * sinf(rxx * 6.28f * frequency + offset) + 0.5f) *
+           (att > 0.0f ? att : 0.0f);
+  };
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w, v = (py + 0.5f) / h;
+      sF32 rv = 0.0f, acc = 0.0f, q = 1.0f, s = seed;
+      Vec2 seed2 = mmRand2(seed, seed);
+      sF32 lux = u * scaleX, luy = v * scaleY;
+      sF32 szx = scaleX, szy = scaleY;
+      for (sInt i = 0; i < iterations; i++) {
+        rv += q * wavelet(lux, luy, szx, szy, s);
+        rv += q * wavelet(lux + 0.5f, luy + 0.5f, szx, szy, s + 0.1f);
+        acc += q;
+        if (type > 0.0f) {
+          lux += type * u;
+          luy += type * v;
+          szx += type;
+          szy += type;
+        } else {
+          lux *= -type;
+          luy *= -type;
+          szx *= -type;
+          szy *= -type;
+        }
+        lux += seed2.x;
+        luy += seed2.y;
+        seed2 = mmRand2(seed2.x, seed2.y);
+        q *= persistence;
+        s += 0.1f;
+      }
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = p.g = p.b = to16(acc > 0.0f ? rv / acc : 0.0f);
+      p.a = 65535;
+    }
+}
+
 void MMWeave(GenTexture &out, sInt columns, sInt rows, sF32 width,
              const GenTexture *widthMap) {
   if (!out.Data)

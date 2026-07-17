@@ -1253,6 +1253,74 @@ void BevelNode::renderParams() {
   ImGui::PopItemWidth();
 }
 
+std::vector<ImNodes::Ez::SlotInfo> BoxNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> BoxNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void BoxNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##box", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##box", &m_core.m_heightIdx, s_sizesStr);
+  SliderFloatW("CX##box", &m_core.m_cx, -0.5f, 1.5f);
+  SliderFloatW("CY##box", &m_core.m_cy, -0.5f, 1.5f);
+  SliderFloatW("CZ##box", &m_core.m_cz, -1.0f, 1.0f);
+  SliderFloatW("SX##box", &m_core.m_sx, 0.0f, 1.0f);
+  SliderFloatW("SY##box", &m_core.m_sy, 0.0f, 1.0f);
+  SliderFloatW("SZ##box", &m_core.m_sz, 0.0f, 1.0f);
+  SliderFloatW("RX##box", &m_core.m_rx, -180.0f, 180.0f);
+  SliderFloatW("RY##box", &m_core.m_ry, -180.0f, 180.0f);
+  SliderFloatW("RZ##box", &m_core.m_rz, -180.0f, 180.0f);
+  Hint("Depth of a rotated 3D box seen from above");
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> WaveletNoiseNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> WaveletNoiseNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void WaveletNoiseNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##wav", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##wav", &m_core.m_heightIdx, s_sizesStr);
+  SliderFloatW("ScaleX##wav", &m_core.m_scaleX, 1.0f, 32.0f);
+  SliderFloatW("ScaleY##wav", &m_core.m_scaleY, 1.0f, 32.0f);
+  SliderIntW("Octaves##wav", &m_core.m_iterations, 1, 10);
+  SliderFloatW("Persistence##wav", &m_core.m_persistence, 0.0f, 1.0f);
+  SliderFloatW("Frequency##wav", &m_core.m_frequency, 0.0f, 8.0f);
+  SliderFloatW("Offset##wav", &m_core.m_offset, 0.0f, 6.28f);
+  SliderFloatW("Type##wav", &m_core.m_type, -4.0f, 8.0f);
+  Hint("> 0 shears the lattice per octave, < 0 scales it");
+  SliderFloatW("Seed##wav", &m_core.m_seed, 0.0f, 10.0f);
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> BinarySmoothNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> BinarySmoothNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void BinarySmoothNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Smooth##bsm", &m_core.m_smooth, 0.0f, 256.0f);
+  Hint("Blur width in texels before the ramp");
+  SliderFloatW("Offset##bsm", &m_core.m_offset, 0.0f, 1.0f);
+  SliderFloatW("Bevel##bsm", &m_core.m_bevel, 0.0f, 1.0f);
+  Hint("Ramp width (0 = hard step)");
+  SliderFloatW("Size##bsm", &m_core.m_size, 16.0f, 4096.0f);
+  Hint("Reference resolution for the blur width");
+  ImGui::PopItemWidth();
+}
+
 std::vector<ImNodes::Ez::SlotInfo> WeaveNode::inputSlotInfos() const {
   return {{"WidthMap", 1}};
 }

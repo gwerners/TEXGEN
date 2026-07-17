@@ -192,6 +192,12 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
 void MMNormalBlend(GenTexture &out, const GenTexture *fg,
                    const GenTexture *bg, const GenTexture *mask, sF32 amount);
 
+// Binary Smooth (binary_smooth.mmg): hard threshold at 0.5, gaussian
+// blur of 'smooth' texels (at a 'sizePx' reference resolution), then
+// a tones_step ramp centered at 'offset' with width 'bevel'.
+void MMBinarySmooth(GenTexture &out, const GenTexture &in, sF32 sizePx,
+                    sF32 smoothPx, sF32 offset, sF32 bevel);
+
 // Edge Detect 2 (edge_detect_2.mmg): 4-neighbour laplacian scaled by
 // size, max of the RGB channels, clamped.
 void MMEdgeDetect2(GenTexture &out, const GenTexture &in, sF32 sizePx);

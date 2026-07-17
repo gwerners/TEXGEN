@@ -86,6 +86,13 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
     return std::make_unique<NormalBlendNode>();
   };
   registry["ColorNoise"] = []() { return std::make_unique<ColorNoiseNode>(); };
+  registry["Box"] = []() { return std::make_unique<BoxNode>(); };
+  registry["WaveletNoise"] = []() {
+    return std::make_unique<WaveletNoiseNode>();
+  };
+  registry["BinarySmooth"] = []() {
+    return std::make_unique<BinarySmoothNode>();
+  };
   registry["Weave"] = []() { return std::make_unique<WeaveNode>(); };
   registry["Weave2"] = []() { return std::make_unique<Weave2Node>(); };
   registry["EdgeDetect2"] = []() {

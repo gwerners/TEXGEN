@@ -127,6 +127,9 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"hbao", {"Height"}},
       {"occlusion", {"Height"}},
       {"noise2", {"Density"}},
+      {"binary_smooth", {"In"}},
+      {"box", {}},
+      {"wavelet_noise", {}},
       {"edge_detect_2", {"In"}},
       {"smooth_minmax", {"A", "B"}},
       {"weave", {"WidthMap"}},
@@ -803,6 +806,48 @@ bool convertParams(const std::string &type, const json &p,
     out["mode"] = 0;
     return true;
   }
+  if (type == "box") {
+    typeName = "Box";
+    out = size3();
+    out["cx"] = numOr(p, "cx", 0.5f);
+    out["cy"] = numOr(p, "cy", 0.5f);
+    out["cz"] = numOr(p, "cz", 0.0f);
+    out["sx"] = numOr(p, "sx", 0.5f);
+    out["sy"] = numOr(p, "sy", 0.5f);
+    out["sz"] = numOr(p, "sz", 0.5f);
+    out["rx"] = numOr(p, "rx", 0.0f);
+    out["ry"] = numOr(p, "ry", 0.0f);
+    out["rz"] = numOr(p, "rz", 0.0f);
+    return true;
+  }
+  if (type == "wavelet_noise") {
+    typeName = "WaveletNoise";
+    out = size3();
+    out["scaleX"] = numOr(p, "scale_x", 4.0f);
+    out["scaleY"] = numOr(p, "scale_y", 4.0f);
+    out["iterations"] = intOr(p, "iterations", 3);
+    out["persistence"] = numOr(p, "persistence", 0.5f);
+    out["frequency"] = numOr(p, "frequency", 1.0f);
+    out["offset"] = numOr(p, "offset", 0.0f);
+    // 'type' is an enum INDEX into {Add 1, Add 2, Add 3, Mult 2, Mult 3}
+    {
+      static const float typeVals[5] = {1.0f, 2.0f, 3.0f, -2.0f, -3.0f};
+      int ti = intOr(p, "type", 4);
+      out["type"] = typeVals[ti < 0 ? 0 : (ti > 4 ? 4 : ti)];
+    }
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "binary_smooth") {
+    // graph params: size (exponent), smooth (texels), offset, bevel
+    typeName = "BinarySmooth";
+    int szExp = intOr(p, "size", 10);
+    out = {{"size", (float)(1 << (szExp < 4 ? 4 : (szExp > 12 ? 12 : szExp)))},
+           {"smooth", numOr(p, "smooth", 60.0f)},
+           {"offset", numOr(p, "offset", 0.5f)},
+           {"bevel", numOr(p, "bevel", 0.0f)}};
+    return true;
+  }
   if (type == "edge_detect_2") {
     typeName = "EdgeDetect2";
     int szExp = intOr(p, "size", 9);
@@ -1370,7 +1415,8 @@ GraphResult convertGraph(json mmNodes, json mmConns,
         "rotate", "tones_range", "math_v3", "tiler_advanced",
         "height_to_offset", "bevel", "dilate", "normal_blend",
         "directional_blur", "occlusion", "edge_detect_2",
-        "fill_to_gradient", "fill_to_gradient2", "fill_to_size2"};
+        "fill_to_gradient", "fill_to_gradient2", "fill_to_size2",
+        "binary_smooth"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));

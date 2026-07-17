@@ -1047,6 +1047,43 @@ static void emitNode(std::ostringstream& ss,
     }
   }
 
+  else if (type == "Box") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMBox(" << v << ", " << pf(p, "cx", 0.5f) << ", "
+       << pf(p, "cy", 0.5f) << ", " << pf(p, "cz", 0.0f) << ", "
+       << pf(p, "sx", 0.5f) << ", " << pf(p, "sy", 0.5f) << ", "
+       << pf(p, "sz", 0.5f) << ", " << pf(p, "rx", 0.0f) << ", "
+       << pf(p, "ry", 0.0f) << ", " << pf(p, "rz", 0.0f) << ");\n";
+  }
+
+  else if (type == "WaveletNoise") {
+    int w = sizeFromIdx(p.value("widthIdx", 3));
+    int h = sizeFromIdx(p.value("heightIdx", 3));
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
+    ss << "    MMWaveletNoise(" << v << ", " << pf(p, "scaleX", 4.0f) << ", "
+       << pf(p, "scaleY", 4.0f) << ", " << p.value("iterations", 3) << ", "
+       << pf(p, "persistence", 0.5f) << ", " << pf(p, "seed", 0.0f) << ", "
+       << pf(p, "frequency", 1.0f) << ", " << pf(p, "offset", 0.0f) << ", "
+       << pf(p, "type", -3.0f) << ");\n";
+  }
+
+  else if (type == "BinarySmooth") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMBinarySmooth(" << v << ", " << in << ", "
+         << pf(p, "size", 1024.0f) << ", " << pf(p, "smooth", 60.0f) << ", "
+         << pf(p, "offset", 0.5f) << ", " << pf(p, "bevel", 0.0f) << ");\n";
+    }
+  }
+
   else if (type == "Weave") {
     int w = sizeFromIdx(p.value("widthIdx", 3));
     int h = sizeFromIdx(p.value("heightIdx", 3));

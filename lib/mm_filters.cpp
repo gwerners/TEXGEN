@@ -1396,6 +1396,39 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
     }
 }
 
+void MMBinarySmooth(GenTexture &out, const GenTexture &in, sF32 sizePx,
+                    sF32 smoothPx, sF32 offset, sF32 bevel) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  GenTexture th;
+  th.Init(w, h);
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      sF32 c[4];
+      sampleRGBA(in, (px + 0.5f) / w, (py + 0.5f) / h, c);
+      const sF32 g = (c[0] + c[1] + c[2]) / 3.0f;
+      Pixel &p = th.Data[(size_t)py * w + px];
+      p.r = p.g = p.b = g > 0.5f ? 65535 : 0;
+      p.a = 65535;
+    }
+  GenTexture bl;
+  bl.Init(w, h);
+  const sF32 s = smoothPx / (sizePx > 1.0f ? sizePx : 256.0f);
+  bl.Blur(th, s, s, 2, 3);
+  // tones_step: linear ramp of width 'bevel' centered at 'offset'
+  const sF32 bw = bevel > 1e-6f ? bevel : 1e-6f;
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      const Pixel &b = bl.Data[(size_t)py * w + px];
+      const sF32 g = b.r / 65535.0f;
+      const sF32 v = clamp01((g - offset) / bw + 0.5f);
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = p.g = p.b = to16(v);
+      p.a = 65535;
+    }
+}
+
 void MMEdgeDetect2(GenTexture &out, const GenTexture &in, sF32 sizePx) {
   if (!out.Data || !in.Data)
     return;
