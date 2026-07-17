@@ -1078,8 +1078,7 @@ static void emitNode(std::ostringstream& ss,
     std::string base = !fg.empty() ? fg : bg;
     ss << "    GenTexture " << v << ";\n";
     ss << "    " << v << ".Init("
-       << (base.empty() ? "256, 256"
-                        : base + ".XRes, " + base + ".YRes")
+       << (base.empty() ? "256, 256" : base + ".XRes, " + base + ".YRes")
        << ");\n";
     auto ref = [](const std::string& s) {
       return s.empty() ? std::string("(const GenTexture*)0") : "&" + s;
@@ -1095,8 +1094,7 @@ static void emitNode(std::ostringstream& ss,
     if (mask.empty()) {
       ss << "    " << v << ".Init(256, 256);\n";
     } else {
-      ss << "    " << v << ".Init(" << mask << ".XRes, " << mask
-         << ".YRes);\n";
+      ss << "    " << v << ".Init(" << mask << ".XRes, " << mask << ".YRes);\n";
       ss << "    MMDilate(" << v << ", " << mask << ", "
          << (src.empty() ? std::string("(const GenTexture*)0") : "&" + src)
          << ", " << pf(p, "length", 0.27f) << ", " << pf(p, "fill", 0.0f)
