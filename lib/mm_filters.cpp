@@ -855,8 +855,11 @@ void MMCustomUV(GenTexture &out, const GenTexture &in, const GenTexture &map,
       ru = ru * sj / sx + 0.5f;
       rv = rv * sj / sy + 0.5f;
 
-      // get_from_tileset(inputs, seed + map.z, uv)
-      sF32 su = ru, sv = rv;
+      // get_from_tileset(inputs, seed + map.z, uv) — MM clamps the
+      // final uv to [0,1] even for a single input, so out-of-range
+      // transforms sample the image edge instead of wrapping around
+      // (a sphere's black border, not the middle of the sphere).
+      sF32 su = clamp01(ru), sv = clamp01(rv);
       if (inputs > 1) {
         sF32 pick[2];
         tilerRand2(seed + m[2], seed + m[2], pick);
