@@ -81,6 +81,10 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
     return std::make_unique<HeightToOffsetNode>();
   };
   registry["Bevel"] = []() { return std::make_unique<BevelNode>(); };
+  registry["Dilate"] = []() { return std::make_unique<DilateNode>(); };
+  registry["NormalBlend"] = []() {
+    return std::make_unique<NormalBlendNode>();
+  };
   registry["TilerAdvanced"] = []() {
     return std::make_unique<TilerAdvancedNode>();
   };

@@ -170,3 +170,24 @@ sF32 MMCurveEval(const MMCurvePoint *pts, sInt n, sF32 x);
 // thresholded, which sharpens interiors slightly vs MM's dilate.
 void MMBevel(GenTexture &out, const GenTexture &in, sF32 distance,
              const MMCurvePoint *curve, sInt nCurve);
+
+// Dilate (dilate.mmg): spreads the source colors outward from the
+// white (gray >= 0.5) areas of the mask with a ramp over 'length'
+// (UV units). Each pixel takes the source color at its nearest white
+// pixel (exact toroidal EDT), scaled by mix(ramp, 1, fill).
+// metric: 0 euclidean (exact), 1 manhattan, 2 chebyshev — the last
+// two are measured to the euclidean-nearest site, a close
+// approximation of MM's scanline passes. Null source = white
+// (grayscale ramp output, matching MM's default_color).
+void MMDilate(GenTexture &out, const GenTexture &mask,
+              const GenTexture *source, sF32 length, sF32 fill, sInt metric);
+
+// Normal Blend (normal_blend.mmg): reoriented normal mapping — the
+// foreground normal detail is rotated onto the background normal.
+// amount is scaled per pixel by the optional grayscale mask. MM's
+// shader is written for its "Default" normal format (Z stored
+// inverted, flat = 0); our maps are OpenGL-style (flat = blue), so
+// this applies the same whiteout RNM in our convention. Missing
+// inputs default to the flat normal (0.5, 0.5, 1).
+void MMNormalBlend(GenTexture &out, const GenTexture *fg,
+                   const GenTexture *bg, const GenTexture *mask, sF32 amount);

@@ -136,6 +136,12 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
       {"Bevel",
        {"Filter", "Distance-ramp bevel around mask edges with a profile "
                   "curve"}},
+      {"Dilate",
+       {"Filter", "Spreads the source colors outward from the white areas "
+                  "of a mask"}},
+      {"NormalBlend",
+       {"Filter", "Blends a detail normal map onto a base normal map "
+                  "(reoriented normal mapping)"}},
       // Combiners
       {"Blend",
        {"Combine", "Blends two inputs with selectable mode and opacity"}},
@@ -246,6 +252,8 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<AnisotropicNoiseCoreNode>(r);
     registerType<HeightToOffsetCoreNode>(r);
     registerType<BevelCoreNode>(r);
+    registerType<DilateCoreNode>(r);
+    registerType<NormalBlendCoreNode>(r);
     registerType<TilerAdvancedCoreNode>(r);
     registerType<DotNoiseCoreNode>(r);
     registerType<ScratchesCoreNode>(r);

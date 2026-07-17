@@ -1046,6 +1046,39 @@ static void emitNode(std::ostringstream& ss,
     }
   }
 
+  else if (type == "NormalBlend") {
+    std::string fg = srcVar(conns, id, "Foreground");
+    std::string bg = srcVar(conns, id, "Background");
+    std::string mk = srcVar(conns, id, "Mask");
+    std::string base = !fg.empty() ? fg : bg;
+    ss << "    GenTexture " << v << ";\n";
+    ss << "    " << v << ".Init("
+       << (base.empty() ? "256, 256"
+                        : base + ".XRes, " + base + ".YRes")
+       << ");\n";
+    auto ref = [](const std::string& s) {
+      return s.empty() ? std::string("(const GenTexture*)0") : "&" + s;
+    };
+    ss << "    MMNormalBlend(" << v << ", " << ref(fg) << ", " << ref(bg)
+       << ", " << ref(mk) << ", " << pf(p, "amount", 0.5f) << ");\n";
+  }
+
+  else if (type == "Dilate") {
+    std::string mask = srcVar(conns, id, "Mask");
+    std::string src = srcVar(conns, id, "Source");
+    ss << "    GenTexture " << v << ";\n";
+    if (mask.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << mask << ".XRes, " << mask
+         << ".YRes);\n";
+      ss << "    MMDilate(" << v << ", " << mask << ", "
+         << (src.empty() ? std::string("(const GenTexture*)0") : "&" + src)
+         << ", " << pf(p, "length", 0.27f) << ", " << pf(p, "fill", 0.0f)
+         << ", " << p.value("metric", 0) << ");\n";
+    }
+  }
+
   else if (type == "AnisotropicNoise") {
     int w = sizeFromIdx(p.value("widthIdx", 3));
     int h = sizeFromIdx(p.value("heightIdx", 3));

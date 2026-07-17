@@ -716,6 +716,42 @@ class BevelCoreNode : public CoreNode {
 };
 
 // ============================================================
+// DilateCoreNode — spread source colors from a mask (dilate.mmg)
+// ============================================================
+class DilateCoreNode : public CoreNode {
+ public:
+  DilateCoreNode() {}
+  std::string typeName() const override { return "Dilate"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_length = 0.27f;
+  float m_fill = 0.0f;
+  int m_metric = 0;  // 0 euclidean, 1 manhattan, 2 chebyshev
+};
+
+// ============================================================
+// NormalBlendCoreNode — reoriented normal mapping (normal_blend.mmg)
+// ============================================================
+class NormalBlendCoreNode : public CoreNode {
+ public:
+  NormalBlendCoreNode() {}
+  std::string typeName() const override { return "NormalBlend"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_amount = 0.5f;
+};
+
+// ============================================================
 // AnisotropicNoiseCoreNode — stripe noise (noise_anisotropic.mmg)
 // ============================================================
 class AnisotropicNoiseCoreNode : public CoreNode {

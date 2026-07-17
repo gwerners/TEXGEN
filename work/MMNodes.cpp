@@ -1250,3 +1250,35 @@ void BevelNode::renderParams() {
     ImGui::TextDisabled("curve: %d points", (int)m_core.m_curve.size());
   ImGui::PopItemWidth();
 }
+
+std::vector<ImNodes::Ez::SlotInfo> NormalBlendNode::inputSlotInfos() const {
+  return {{"Foreground", 1}, {"Background", 1}, {"Mask", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> NormalBlendNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void NormalBlendNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Amount##nblend", &m_core.m_amount, 0.0f, 1.0f);
+  Hint("How much of the foreground normal detail is applied");
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> DilateNode::inputSlotInfos() const {
+  return {{"Mask", 1}, {"Source", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> DilateNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void DilateNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Length##dilate", &m_core.m_length, 0.0f, 1.0f);
+  Hint("How far the white areas spread (UV units)");
+  SliderFloatW("Fill##dilate", &m_core.m_fill, 0.0f, 1.0f);
+  Hint("0 = fade to black with distance, 1 = flat fill with the source color");
+  ImGui::Combo("Metric##dilate", &m_core.m_metric,
+               "Euclidean\0Manhattan\0Chebyshev\0");
+  ImGui::PopItemWidth();
+}

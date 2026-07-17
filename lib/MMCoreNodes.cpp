@@ -2176,3 +2176,75 @@ void BevelCoreNode::execute(const std::vector<GenTexture*>& inputs,
   outputs[0].Init(in->XRes, in->YRes);
   MMBevel(outputs[0], *in, m_distance, m_curve.data(), (int)m_curve.size());
 }
+
+// ============================================================
+// NormalBlendCoreNode
+// ============================================================
+
+std::vector<std::string> NormalBlendCoreNode::inputSlotNames() const {
+  return {"Foreground", "Background", "Mask"};
+}
+std::vector<std::string> NormalBlendCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json NormalBlendCoreNode::saveParams() const {
+  return {{"amount", m_amount}};
+}
+
+void NormalBlendCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("amount"))
+    m_amount = j["amount"];
+}
+
+void NormalBlendCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                  std::vector<GenTexture>& outputs) {
+  GenTexture* fg = inputs.size() > 0 && inputs[0] && inputs[0]->Data
+                       ? inputs[0]
+                       : nullptr;
+  GenTexture* bg = inputs.size() > 1 && inputs[1] && inputs[1]->Data
+                       ? inputs[1]
+                       : nullptr;
+  GenTexture* mask = inputs.size() > 2 && inputs[2] && inputs[2]->Data
+                         ? inputs[2]
+                         : nullptr;
+  const int w = fg ? fg->XRes : (bg ? bg->XRes : 256);
+  const int h = fg ? fg->YRes : (bg ? bg->YRes : 256);
+  outputs.resize(1);
+  outputs[0].Init(w, h);
+  MMNormalBlend(outputs[0], fg, bg, mask, m_amount);
+}
+
+// ============================================================
+// DilateCoreNode
+// ============================================================
+
+std::vector<std::string> DilateCoreNode::inputSlotNames() const {
+  return {"Mask", "Source"};
+}
+std::vector<std::string> DilateCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json DilateCoreNode::saveParams() const {
+  return {{"length", m_length}, {"fill", m_fill}, {"metric", m_metric}};
+}
+
+void DilateCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("length"))
+    m_length = j["length"];
+  if (j.contains("fill"))
+    m_fill = j["fill"];
+  if (j.contains("metric"))
+    m_metric = j["metric"];
+}
+
+void DilateCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                             std::vector<GenTexture>& outputs) {
+  GenTexture* mask = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  GenTexture* src = inputs.size() > 1 ? inputs[1] : nullptr;
+  outputs.resize(1);
+  outputs[0].Init(mask->XRes, mask->YRes);
+  MMDilate(outputs[0], *mask, (src && src->Data) ? src : nullptr, m_length,
+           m_fill, m_metric);
+}

@@ -1220,7 +1220,9 @@ sF32 MMCurveEval(const MMCurvePoint *pts, sInt n, sF32 x) {
 }
 
 // 1D squared-distance transform (Felzenszwalb & Huttenlocher).
-static void mmDt1d(const sF32 *f, sF32 *d, sInt *v, sF32 *z, sInt n) {
+// 'a' (optional) receives the argmin site index per output sample.
+static void mmDt1d(const sF32 *f, sF32 *d, sInt *v, sF32 *z, sInt n,
+                   sInt *a = nullptr) {
   sInt k = 0;
   v[0] = 0;
   z[0] = -1e20f;
@@ -1250,6 +1252,8 @@ static void mmDt1d(const sF32 *f, sF32 *d, sInt *v, sF32 *z, sInt n) {
       k++;
     const sF32 dq = (sF32)(q - v[k]);
     d[q] = dq * dq + f[v[k]];
+    if (a)
+      a[q] = v[k];
   }
 }
 
@@ -1305,6 +1309,131 @@ void MMBevel(GenTexture &out, const GenTexture &in, sF32 distance,
       const sF32 g = clamp01(MMCurveEval(curve, nCurve, ramp));
       Pixel &px = out.Data[idx];
       px.r = px.g = px.b = to16(g);
+      px.a = 65535;
+    }
+}
+
+void MMDilate(GenTexture &out, const GenTexture &mask,
+              const GenTexture *source, sF32 length, sF32 fill, sInt metric) {
+  if (!out.Data || !mask.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 INF = 1e18f;
+
+  // nearest-site squared EDT to the gray >= 0.5 region; toroidal via
+  // 3x tiling. The vertical pass records the column-nearest site row,
+  // the horizontal pass the winning site column — together they name
+  // the exact euclidean-nearest white pixel.
+  std::vector<sF32> col((size_t)w * h);
+  std::vector<sInt> dyv((size_t)w * h), dxh((size_t)w * h);
+  bool any = false;
+  {
+    const sInt n3 = (h > w ? h : w) * 3;
+    std::vector<sF32> f(n3), d(n3), z(n3 + 1);
+    std::vector<sInt> v(n3), a(n3);
+    for (sInt x = 0; x < w; x++) {
+      for (sInt rep = 0; rep < 3; rep++)
+        for (sInt y = 0; y < h; y++) {
+          sF32 c[4];
+          sampleRGBA(mask, (x + 0.5f) / w, (y + 0.5f) / h, c);
+          const sF32 g = (c[0] + c[1] + c[2]) / 3.0f;
+          if (g >= 0.5f)
+            any = true;
+          f[rep * h + y] = g >= 0.5f ? 0.0f : INF;
+        }
+      mmDt1d(f.data(), d.data(), v.data(), z.data(), 3 * h, a.data());
+      for (sInt y = 0; y < h; y++) {
+        col[(size_t)y * w + x] = d[h + y];
+        dyv[(size_t)y * w + x] = a[h + y] - (h + y);
+      }
+    }
+    for (sInt y = 0; y < h; y++) {
+      for (sInt rep = 0; rep < 3; rep++)
+        for (sInt x = 0; x < w; x++)
+          f[rep * w + x] = col[(size_t)y * w + x];
+      mmDt1d(f.data(), d.data(), v.data(), z.data(), 3 * w, a.data());
+      for (sInt x = 0; x < w; x++)
+        dxh[(size_t)y * w + x] = a[w + x] - (w + x);
+    }
+  }
+
+  const sF32 fillA = clamp01(fill);
+  for (sInt y = 0; y < h; y++)
+    for (sInt x = 0; x < w; x++) {
+      const size_t idx = (size_t)y * w + x;
+      Pixel &px = out.Data[idx];
+      if (!any) {
+        px.r = px.g = px.b = 0;
+        px.a = 65535;
+        continue;
+      }
+      const sInt dx = dxh[idx];
+      const sInt xs = ((x + dx) % w + w) % w;
+      const sInt dy = dyv[(size_t)y * w + xs];
+      const sInt ys = ((y + dy) % h + h) % h;
+      const sF32 du = (sF32)(dx < 0 ? -dx : dx) / (sF32)w;
+      const sF32 dv = (sF32)(dy < 0 ? -dy : dy) / (sF32)h;
+      sF32 md;
+      if (metric == 1)
+        md = du + dv;
+      else if (metric == 2)
+        md = du > dv ? du : dv;
+      else
+        md = sqrtf(du * du + dv * dv);
+      sF32 ramp;
+      if (length > 1e-6f)
+        ramp = clamp01(1.0f - md / length);
+      else
+        ramp = md <= 0.0f ? 1.0f : 0.0f;
+      const sF32 fac = ramp + (1.0f - ramp) * fillA;
+      sF32 c[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+      if (source && source->Data)
+        sampleRGBA(*source, (xs + 0.5f) / w, (ys + 0.5f) / h, c);
+      px.r = to16(clamp01(c[0]) * fac);
+      px.g = to16(clamp01(c[1]) * fac);
+      px.b = to16(clamp01(c[2]) * fac);
+      px.a = 65535;
+    }
+}
+
+void MMNormalBlend(GenTexture &out, const GenTexture *fg,
+                   const GenTexture *bg, const GenTexture *mask, sF32 amount) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  for (sInt y = 0; y < h; y++)
+    for (sInt x = 0; x < w; x++) {
+      const sF32 su = (x + 0.5f) / w, sv = (y + 0.5f) / h;
+      sF32 n1[4] = {0.5f, 0.5f, 1.0f, 1.0f};
+      sF32 n2[4] = {0.5f, 0.5f, 1.0f, 1.0f};
+      if (fg && fg->Data)
+        sampleRGBA(*fg, su, sv, n1);
+      if (bg && bg->Data)
+        sampleRGBA(*bg, su, sv, n2);
+      sF32 a = clamp01(amount);
+      if (mask && mask->Data) {
+        sF32 m[4];
+        sampleRGBA(*mask, su, sv, m);
+        a *= clamp01((m[0] + m[1] + m[2]) / 3.0f);
+      }
+      // whiteout RNM (normal_blend.mmg minus its Default-format z
+      // inversion): flat foreground (t = 0,0,2) is an exact identity
+      const sF32 tx = 2.0f * n1[0] - 1.0f, ty = 2.0f * n1[1] - 1.0f,
+                 tz = 2.0f * n1[2];
+      const sF32 ux = 1.0f - 2.0f * n2[0], uy = 1.0f - 2.0f * n2[1],
+                 uz = 2.0f * n2[2] - 1.0f;
+      const sF32 dot = tx * ux + ty * uy + tz * uz;
+      const sF32 div = (tz > -1e-6f && tz < 1e-6f) ? 1e-6f : tz;
+      sF32 r[3] = {tx * dot / div - ux, ty * dot / div - uy,
+                   tz * dot / div - uz};
+      const sF32 b[3] = {2.0f * n2[0] - 1.0f, 2.0f * n2[1] - 1.0f,
+                         2.0f * n2[2] - 1.0f};
+      for (sInt i = 0; i < 3; i++)
+        r[i] = b[i] + (r[i] - b[i]) * a;
+      Pixel &px = out.Data[(size_t)y * w + x];
+      px.r = to16(clamp01(r[0] * 0.5f + 0.5f));
+      px.g = to16(clamp01(r[1] * 0.5f + 0.5f));
+      px.b = to16(clamp01(r[2] * 0.5f + 0.5f));
       px.a = 65535;
     }
 }

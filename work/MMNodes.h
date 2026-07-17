@@ -196,6 +196,20 @@ class BevelNode : public UiNode<BevelCoreNode> {
   void renderParams() override;
 };
 
+class NormalBlendNode : public UiNode<NormalBlendCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class DilateNode : public UiNode<DilateCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
 class AnisotropicNoiseNode : public UiNode<AnisotropicNoiseCoreNode> {
  public:
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
