@@ -480,10 +480,10 @@ bool convertParams(const std::string &type, const json &p,
     return true;
   }
   if (type == "math" || type == "math_v3") {
-    // math_v3 shares the first 20 ops (vector ops 20+ fall back to add)
+    // math_v3 shares the first 20 ops (its vector ops 20+ fall back to add)
     typeName = "MathOp";
     int op = intOr(p, "op", 0);
-    if (op > 19)
+    if (op > 36 || (type == "math_v3" && op > 19))
       op = 0;
     out = {{"op", op},
            {"def1", numOr(p, "default_in1", numOr(p, "d_in1_x", 0.0f))},

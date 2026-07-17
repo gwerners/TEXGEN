@@ -44,6 +44,11 @@ int main(int argc, char *argv[]) {
 
   mkdir(argv[2], 0755);
 
+  {
+    std::ofstream cj(std::string(argv[2]) + "/converted.json");
+    cj << j.dump(1);
+  }
+
   GraphEval ev;
   if (!ev.load(j)) {
     fprintf(stderr, "load failed\n");
