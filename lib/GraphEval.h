@@ -3,6 +3,7 @@
 // Used by headlessEvaluate() and by SubgraphCoreNode (nested graphs).
 // No UI dependencies.
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -27,7 +28,9 @@ class GraphEval {
 
   // Topological sort + execute. "Output" nodes are not executed (they
   // write files); the texture feeding the last one is remembered instead.
-  bool run();
+  // The optional progress callback fires after each executed node with
+  // (done, total) — used by async runners to report evaluation state.
+  bool run(const std::function<void(int, int)> &progress = {});
 
   // Output texture of a node's slot after run() (nullptr if absent).
   GenTexture *outputOf(int nodeId, const std::string &slot);

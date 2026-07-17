@@ -211,7 +211,7 @@ GenTexture *GraphEval::outputOf(int nodeId, const std::string &slot) {
   return nullptr;
 }
 
-bool GraphEval::run() {
+bool GraphEval::run(const std::function<void(int, int)> &progress) {
   // Kahn topological sort over real nodes
   std::map<int, int> inDeg;
   std::map<int, std::vector<int>> adj;
@@ -252,8 +252,11 @@ bool GraphEval::run() {
       sorted.push_back(id);
   }
 
+  const int total = (int)sorted.size();
+  int done = 0;
   for (int id : sorted) {
     ENode &en = m_nodes[id];
+    done++;
     if (en.core->typeName() == "Output") {
       for (auto &c : m_conns) {
         if (c.toId == id && c.toSlot == "In") {
@@ -275,6 +278,8 @@ bool GraphEval::run() {
       }
     }
     en.core->execute(inputs, en.outputs);
+    if (progress)
+      progress(done, total);
   }
   return true;
 }

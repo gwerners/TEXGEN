@@ -52,10 +52,15 @@ void GraphRunner::loop() {
     }
 
     Result res;
+    m_progDone = 0;
+    m_progTotal = 0;
     {
       GraphEval ev;
       bool loaded = ev.load(job);
-      bool ran = loaded && ev.run();
+      bool ran = loaded && ev.run([this](int done, int total) {
+        m_progDone = done;
+        m_progTotal = total;
+      });
       if (!loaded)
         fprintf(stderr, "GraphRunner: load failed\n");
       else if (!ran)

@@ -34,6 +34,10 @@ class GraphRunner {
   // True while a run is executing or queued.
   bool busy() const { return m_busy.load(); }
 
+  // Evaluation progress of the current run (nodes done / total).
+  int progressDone() const { return m_progDone.load(); }
+  int progressTotal() const { return m_progTotal.load(); }
+
   // Moves a finished result out; returns false if none is ready.
   bool poll(Result& out);
 
@@ -49,4 +53,6 @@ class GraphRunner {
   bool m_hasDone = false;
   bool m_quit = false;
   std::atomic<bool> m_busy{false};
+  std::atomic<int> m_progDone{0};
+  std::atomic<int> m_progTotal{0};
 };

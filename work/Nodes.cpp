@@ -1262,6 +1262,51 @@ void NodeGraph::draw() {
     ImGui::EndPopup();
   }
 
+  // Evaluation overlay: animated spinner + node progress (top-right)
+  if (m_evaluating && m_runner) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImVec2 winPos = ImGui::GetWindowPos();
+    ImVec2 winSize = ImGui::GetWindowSize();
+    const float pillW = 190.0f, pillH = 34.0f, margin = 8.0f;
+    ImVec2 p0(winPos.x + winSize.x - pillW - margin, winPos.y + 34.0f);
+    ImVec2 p1(p0.x + pillW, p0.y + pillH);
+
+    dl->AddRectFilled(p0, p1, IM_COL32(22, 24, 30, 235), pillH * 0.5f);
+    dl->AddRect(p0, p1, IM_COL32(90, 140, 220, 180), pillH * 0.5f, 0, 1.5f);
+
+    // spinner: 3/4 arc rotating with time
+    const float t = (float)ImGui::GetTime();
+    ImVec2 c(p0.x + 19.0f, p0.y + pillH * 0.5f);
+    const float start = t * 5.0f;
+    dl->PathClear();
+    dl->PathArcTo(c, 8.0f, start, start + 4.7f, 20);
+    dl->PathStroke(IM_COL32(120, 180, 255, 255), 0, 3.0f);
+
+    // label with real progress when available
+    int done = m_runner->progressDone();
+    int total = m_runner->progressTotal();
+    char label[64];
+    if (total > 0)
+      snprintf(label, sizeof(label), "Evaluating %d/%d", done, total);
+    else
+      snprintf(label, sizeof(label), "Evaluating...");
+    dl->AddText(ImVec2(c.x + 15.0f, p0.y + 5.0f),
+                IM_COL32(225, 228, 235, 255), label);
+
+    // thin progress bar along the pill bottom
+    if (total > 0) {
+      const float barX0 = c.x + 15.0f;
+      const float barX1 = p1.x - 12.0f;
+      const float barY = p1.y - 9.0f;
+      dl->AddRectFilled(ImVec2(barX0, barY), ImVec2(barX1, barY + 3.0f),
+                        IM_COL32(60, 65, 80, 255), 1.5f);
+      const float f = (float)done / (float)total;
+      dl->AddRectFilled(ImVec2(barX0, barY),
+                        ImVec2(barX0 + (barX1 - barX0) * f, barY + 3.0f),
+                        IM_COL32(120, 180, 255, 255), 1.5f);
+    }
+  }
+
   // Minimap overlay
   {
     auto* canvas = ImNodes::GetCurrentCanvas();
