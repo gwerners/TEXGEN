@@ -9,11 +9,11 @@
 #include <string>
 #include <vector>
 
-#include <nlohmann/json.hpp>
 #include "CoreNode.h"
+#include <nlohmann/json.hpp>
 
 class GraphEval {
- public:
+public:
   // Instantiate cores from the registry and load params.
   // Remote nodes are applied (their link values patch target params).
   bool load(const nlohmann::json &project);
@@ -38,7 +38,30 @@ class GraphEval {
   // Texture feeding the last "Output" node (nullptr if none).
   GenTexture *finalOutput();
 
- private:
+  // --- incremental evaluation (interactive editors) ---
+  // After a full run(), a param-only edit can be applied in place and
+  // just the affected nodes re-executed against the cached upstream
+  // outputs — no full graph rebuild.
+
+  // Reload every node's params from a snapshot with the same topology
+  // (same node ids and types). Returns false on a mismatch, in which
+  // case the caller must fall back to load() + run().
+  bool updateAllParams(const nlohmann::json &project);
+
+  // Re-execute a single node using the cached outputs of its inputs.
+  bool runNode(int nodeId);
+
+  // All loaded nodes in execution (topological) order.
+  std::vector<int> executionOrder();
+
+  // Nodes strictly downstream of nodeId, in execution order.
+  std::vector<int> downstreamOf(int nodeId);
+
+  // Cached outputs of a node (nullptr if unknown).
+  const std::vector<GenTexture> *nodeOutputs(int nodeId) const;
+
+private:
+  void execNode(int id);
   struct ENode {
     std::unique_ptr<CoreNode> core;
     std::vector<std::string> inSlots;

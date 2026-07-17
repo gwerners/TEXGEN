@@ -1,6 +1,7 @@
 #include "GraphEval.h"
 
 #include <queue>
+#include <set>
 
 #include "CoreNodeRegistry.h"
 
@@ -45,8 +46,7 @@ nlohmann::json flattenSubgraphs(const nlohmann::json &project) {
   while (found && guard++ < 32) {
     found = false;
     nlohmann::json nodes = nlohmann::json::array();
-    nlohmann::json conns =
-        out.value("connections", nlohmann::json::array());
+    nlohmann::json conns = out.value("connections", nlohmann::json::array());
 
     // next free id
     int nextId = 0;
@@ -175,9 +175,8 @@ bool GraphEval::load(const nlohmann::json &rawProject) {
     for (auto &c : project["connections"]) {
       if (!c.contains("fromId") || !c.contains("toId"))
         continue;
-      addConnection(c.value("fromId", -1),
-                    c.value("fromSlot", std::string()), c.value("toId", -1),
-                    c.value("toSlot", std::string()));
+      addConnection(c.value("fromId", -1), c.value("fromSlot", std::string()),
+                    c.value("toId", -1), c.value("toSlot", std::string()));
     }
   }
   return true;
@@ -187,8 +186,8 @@ void GraphEval::injectInput(int virtualId, GenTexture *tex) {
   m_injected[virtualId] = tex;
 }
 
-void GraphEval::addConnection(int fromId, const std::string &fromSlot,
-                              int toId, const std::string &toSlot) {
+void GraphEval::addConnection(int fromId, const std::string &fromSlot, int toId,
+                              const std::string &toSlot) {
   m_conns.push_back({fromId, fromSlot, toId, toSlot});
 }
 
@@ -211,7 +210,7 @@ GenTexture *GraphEval::outputOf(int nodeId, const std::string &slot) {
   return nullptr;
 }
 
-bool GraphEval::run(const std::function<void(int, int)> &progress) {
+std::vector<int> GraphEval::executionOrder() {
   // Kahn topological sort over real nodes
   std::map<int, int> inDeg;
   std::map<int, std::vector<int>> adj;
@@ -251,37 +250,100 @@ bool GraphEval::run(const std::function<void(int, int)> &progress) {
     if (!foundId)
       sorted.push_back(id);
   }
+  return sorted;
+}
 
+void GraphEval::execNode(int id) {
+  ENode &en = m_nodes[id];
+  if (en.core->typeName() == "Output") {
+    for (auto &c : m_conns) {
+      if (c.toId == id && c.toSlot == "In") {
+        m_outputSrcId = c.fromId;
+        m_outputSrcSlot = c.fromSlot;
+      }
+    }
+    return;
+  }
+  std::vector<GenTexture *> inputs(en.inSlots.size(), nullptr);
+  for (size_t i = 0; i < en.inSlots.size(); i++) {
+    for (auto &c : m_conns) {
+      if (c.toId != id || c.toSlot != en.inSlots[i])
+        continue;
+      GenTexture *src = outputOf(c.fromId, c.fromSlot);
+      if (src && src->Data)
+        inputs[i] = src;
+      break;
+    }
+  }
+  en.core->execute(inputs, en.outputs);
+}
+
+bool GraphEval::run(const std::function<void(int, int)> &progress) {
+  auto sorted = executionOrder();
   const int total = (int)sorted.size();
   int done = 0;
   for (int id : sorted) {
-    ENode &en = m_nodes[id];
+    execNode(id);
     done++;
-    if (en.core->typeName() == "Output") {
-      for (auto &c : m_conns) {
-        if (c.toId == id && c.toSlot == "In") {
-          m_outputSrcId = c.fromId;
-          m_outputSrcSlot = c.fromSlot;
-        }
-      }
-      continue;
-    }
-    std::vector<GenTexture *> inputs(en.inSlots.size(), nullptr);
-    for (size_t i = 0; i < en.inSlots.size(); i++) {
-      for (auto &c : m_conns) {
-        if (c.toId != id || c.toSlot != en.inSlots[i])
-          continue;
-        GenTexture *src = outputOf(c.fromId, c.fromSlot);
-        if (src && src->Data)
-          inputs[i] = src;
-        break;
-      }
-    }
-    en.core->execute(inputs, en.outputs);
     if (progress)
       progress(done, total);
   }
   return true;
+}
+
+bool GraphEval::updateAllParams(const nlohmann::json &rawProject) {
+  nlohmann::json project = applyRemotes(rawProject);
+  if (!project.contains("nodes"))
+    return false;
+  size_t matched = 0;
+  for (auto &n : project["nodes"]) {
+    int id = n.value("id", -1);
+    auto it = m_nodes.find(id);
+    if (it == m_nodes.end())
+      continue; // unknown/legacy type that load() also skipped
+    if (it->second.core->typeName() != n.value("typeName", std::string()))
+      return false;
+    try {
+      it->second.core->loadParams(n.value("params", nlohmann::json::object()));
+    } catch (const std::exception &) {
+    }
+    matched++;
+  }
+  return matched == m_nodes.size();
+}
+
+bool GraphEval::runNode(int nodeId) {
+  if (!m_nodes.count(nodeId))
+    return false;
+  execNode(nodeId);
+  return true;
+}
+
+std::vector<int> GraphEval::downstreamOf(int nodeId) {
+  std::map<int, std::vector<int>> adj;
+  for (auto &c : m_conns)
+    if (m_nodes.count(c.fromId) && m_nodes.count(c.toId))
+      adj[c.fromId].push_back(c.toId);
+  std::set<int> reach;
+  std::queue<int> q;
+  q.push(nodeId);
+  while (!q.empty()) {
+    int cur = q.front();
+    q.pop();
+    for (int next : adj[cur])
+      if (next != nodeId && reach.insert(next).second)
+        q.push(next);
+  }
+  std::vector<int> out;
+  for (int id : executionOrder())
+    if (reach.count(id))
+      out.push_back(id);
+  return out;
+}
+
+const std::vector<GenTexture> *GraphEval::nodeOutputs(int nodeId) const {
+  auto it = m_nodes.find(nodeId);
+  return it == m_nodes.end() ? nullptr : &it->second.outputs;
 }
 
 GenTexture *GraphEval::finalOutput() {

@@ -746,9 +746,18 @@ std::vector<GraphNode*> NodeGraph::getDownstreamNodes(GraphNode* start) {
 
 void NodeGraph::refreshNode(GraphNode* node) {
   if (m_runner) {
-    if (node->texNode()->typeName() == "Remote")
+    if (node->texNode()->typeName() == "Remote") {
+      // Remote edits patch OTHER nodes' params, so the dirty set is
+      // unknown here — let the worker do a full run.
       applyRemoteNode(node, false);
-    m_runner->request(save());
+      m_runner->request(save());
+    } else {
+      // Param-level change: the worker re-runs just this node first,
+      // then streams its downstream cone. Structural changes (this is
+      // also called on connect/disconnect) fall back to a full run
+      // via the worker's topology check.
+      m_runner->requestNode(save(), node->texNode()->id, m_autoPropagate);
+    }
     m_evaluating = true;
     return;
   }
@@ -985,6 +994,27 @@ static bool rectContains(ImVec2 rmin, ImVec2 rmax, ImVec2 p) {
 void NodeGraph::pollRunner() {
   if (!m_runner)
     return;
+
+  // Per-node results streamed by incremental (cascade) runs — applied
+  // as they land so the user watches the change ripple through.
+  std::vector<GraphRunner::NodeResult> stream;
+  m_runner->pollStream(stream);
+  for (auto& nr : stream) {
+    for (auto* gn : m_nodes) {
+      if (gn->texNode()->id != nr.nodeId)
+        continue;
+      gn->cachedOutputs = std::move(nr.outputs);
+      gn->executed = true;
+      if (!gn->cachedOutputs.empty() && gn->cachedOutputs[0].Data) {
+        if (gn->hasPreview && gn->previewTex.id != 0)
+          UnloadTexture(gn->previewTex);
+        gn->previewTex = LoadTextureFromGenTexture(gn->cachedOutputs[0]);
+        gn->hasPreview = (gn->previewTex.id != 0);
+      }
+      break;
+    }
+  }
+
   GraphRunner::Result res;
   if (!m_runner->poll(res)) {
     m_evaluating = m_runner->busy();
@@ -1286,6 +1316,13 @@ void NodeGraph::draw() {
 
     ImGui::Separator();
 
+    if (ImGui::MenuItem("Auto Propagate Changes", nullptr, m_autoPropagate))
+      m_autoPropagate = !m_autoPropagate;
+    if (ImGui::MenuItem("Propagate Now", nullptr, false, m_runner != nullptr))
+      generate();
+
+    ImGui::Separator();
+
     if (ImGui::MenuItem("Reset Zoom"))
       ImNodes::GetCurrentCanvas()->Zoom = 1;
 
@@ -1335,6 +1372,24 @@ void NodeGraph::draw() {
                         ImVec2(barX0 + (barX1 - barX0) * f, barY + 3.0f),
                         IM_COL32(120, 180, 255, 255), 1.5f);
     }
+  }
+
+  // Reminder that param edits are NOT cascading right now
+  if (!m_autoPropagate) {
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImVec2 winPos = ImGui::GetWindowPos();
+    ImVec2 winSize = ImGui::GetWindowSize();
+    const char* txt = "auto propagate off";
+    ImVec2 ts = ImGui::CalcTextSize(txt);
+    const float pad = 7.0f, margin = 8.0f;
+    ImVec2 p0(winPos.x + winSize.x - ts.x - pad * 2.0f - margin,
+              winPos.y + 34.0f + (m_evaluating && m_runner ? 40.0f : 0.0f));
+    ImVec2 p1(p0.x + ts.x + pad * 2.0f, p0.y + ts.y + 8.0f);
+    dl->AddRectFilled(p0, p1, IM_COL32(45, 36, 16, 225), (p1.y - p0.y) * 0.5f);
+    dl->AddRect(p0, p1, IM_COL32(220, 170, 60, 160), (p1.y - p0.y) * 0.5f, 0,
+                1.2f);
+    dl->AddText(ImVec2(p0.x + pad, p0.y + 4.0f), IM_COL32(235, 200, 120, 255),
+                txt);
   }
 
   // Minimap overlay

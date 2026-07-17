@@ -144,6 +144,10 @@ class NodeGraph {
   std::map<std::string, NodeFactory> m_registry;
   GraphRunner* m_runner = nullptr;
   bool m_evaluating = false;
+  // When true, a param edit re-runs the node's downstream cone (one
+  // node at a time, streamed); when false only the edited node
+  // refreshes and "Propagate Now" runs the rest on demand.
+  bool m_autoPropagate = true;
   void pollRunner();  // apply finished worker results (main thread)
   int m_nextId = 0;
   GenTexture m_lastOutput;
