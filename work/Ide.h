@@ -20,15 +20,15 @@ class Ide {
   ~Ide() {};
   void loadTexture();
   void unLoadTextures();
+  // project helpers (public so harnesses/scripts can drive the Ide)
+  void doSave(const std::string& path);
+  void doLoad(const std::string& path);
+  void doImport(const std::string& path);
   void draw();
 
  private:
   // refresh the bottom-panel texture from the graph output
   void refreshOutput();
-  // save/load/import with thumbnail + output refresh
-  void doSave(const std::string& path);
-  void doLoad(const std::string& path);
-  void doImport(const std::string& path);
 
  private:
   ImFont* LoadCustomFonts(const std::string& fontPath);
@@ -44,6 +44,7 @@ class Ide {
   ImFont* m_firaCodeRegular;
 
   char m_saveFilename[256];
+  std::string m_currentName = "untitled";  // stem of the loaded project
   char m_outputFilename[256];
   char m_exportName[128];
   Texture2D m_outputTexture;

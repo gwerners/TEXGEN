@@ -1080,18 +1080,16 @@ static void emitNode(std::ostringstream& ss,
       ss << "    " << v << "_Out.Init(256, 256); " << v
          << "_Color.Init(256, 256);\n";
     } else {
-      ss << "    " << v << "_Out.Init(" << in << ".XRes, " << in
-         << ".YRes); " << v << "_Color.Init(" << in << ".XRes, " << in
-         << ".YRes);\n";
-      ss << "    MMAddTiler(" << v << "_Out, &" << v << "_Color, " << in
-         << ", "
+      ss << "    " << v << "_Out.Init(" << in << ".XRes, " << in << ".YRes); "
+         << v << "_Color.Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMAddTiler(" << v << "_Out, &" << v << "_Color, " << in << ", "
          << (mask.empty() ? std::string("(const GenTexture*)0") : "&" + mask)
          << ", " << pf(p, "tx", 4.0f) << ", " << pf(p, "ty", 4.0f) << ", "
          << p.value("overlap", 1) << ", " << pf(p, "scaleX", 1.0f) << ", "
-         << pf(p, "scaleY", 1.0f) << ", " << pf(p, "fixedOffset", 0.5f)
-         << ", " << pf(p, "offset", 0.5f) << ", " << pf(p, "rotate", 0.0f)
-         << ", " << pf(p, "scale", 0.0f) << ", " << pf(p, "value", 0.5f)
-         << ", " << pf(p, "seed", 0.0f) << ");\n";
+         << pf(p, "scaleY", 1.0f) << ", " << pf(p, "fixedOffset", 0.5f) << ", "
+         << pf(p, "offset", 0.5f) << ", " << pf(p, "rotate", 0.0f) << ", "
+         << pf(p, "scale", 0.0f) << ", " << pf(p, "value", 0.5f) << ", "
+         << pf(p, "seed", 0.0f) << ");\n";
     }
   }
 
@@ -1154,9 +1152,9 @@ static void emitNode(std::ostringstream& ss,
        << "_Horizontal.Init(" << w << ", " << h << "); " << v
        << "_Vertical.Init(" << w << ", " << h << ");\n";
     ss << "    MMWeave2(&" << v << "_Out, &" << v << "_Horizontal, &" << v
-       << "_Vertical, " << p.value("columns", 4) << ", "
-       << p.value("rows", 4) << ", " << pf(p, "widthX", 0.8f) << ", "
-       << pf(p, "widthY", 0.8f) << ", " << pf(p, "stitch", 1.0f) << ", "
+       << "_Vertical, " << p.value("columns", 4) << ", " << p.value("rows", 4)
+       << ", " << pf(p, "widthX", 0.8f) << ", " << pf(p, "widthY", 0.8f) << ", "
+       << pf(p, "stitch", 1.0f) << ", "
        << (wm.empty() ? std::string("(const GenTexture*)0") : "&" + wm)
        << ");\n";
   }
@@ -1215,8 +1213,7 @@ static void emitNode(std::ostringstream& ss,
          << (stops.empty() ? 2 : (int)stops.size()) << ", "
          << p.value("mode", 0) << ", " << p.value("layers", 1) << ", "
          << pf(p, "rotate", 0.0f) << ", " << pf(p, "rndRotate", 0.0f) << ", "
-         << pf(p, "rndOffset", 0.0f) << ", " << pf(p, "seed", 0.0f)
-         << "); }\n";
+         << pf(p, "rndOffset", 0.0f) << ", " << pf(p, "seed", 0.0f) << "); }\n";
     }
   }
 

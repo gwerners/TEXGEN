@@ -121,9 +121,17 @@ void Ide::refreshOutput() {
   }
 }
 
+static std::string pathStem(const std::string& path) {
+  size_t slash = path.find_last_of("/\\");
+  std::string base = slash == std::string::npos ? path : path.substr(slash + 1);
+  size_t dot = base.find_last_of('.');
+  return dot == std::string::npos ? base : base.substr(0, dot);
+}
+
 void Ide::doSave(const std::string& path) {
   if (!saveProject(path))
     return;
+  m_currentName = pathStem(path);
   if (g_nodeGraph) {
     GenTexture* lastOut = g_nodeGraph->getLastOutput();
     if (lastOut && lastOut->Data)
@@ -134,6 +142,7 @@ void Ide::doSave(const std::string& path) {
 
 void Ide::doLoad(const std::string& path) {
   if (loadProject(path) && g_nodeGraph) {
+    m_currentName = pathStem(path);
     g_nodeGraph->generate();
     refreshOutput();
   }
@@ -141,6 +150,7 @@ void Ide::doLoad(const std::string& path) {
 
 void Ide::doImport(const std::string& path) {
   if (importPtexProject(path) && g_nodeGraph) {
+    m_currentName = pathStem(path);
     g_nodeGraph->generate();
     refreshOutput();
   }
@@ -194,8 +204,8 @@ void Ide::draw() {
                                 &right_id);
 
     ImGui::DockBuilderDockWindow("Left Panel", left_id);
-    ImGui::DockBuilderDockWindow("Bottom Panel", bottom_id);
-    ImGui::DockBuilderDockWindow("Right Panel", right_id);
+    ImGui::DockBuilderDockWindow("Preview###Bottom Panel", bottom_id);
+    ImGui::DockBuilderDockWindow("Graph###Right Panel", right_id);
 
     ImGui::DockBuilderFinish(dockspace_id);
 
@@ -223,6 +233,7 @@ void Ide::draw() {
     delete g_nodeGraph;
     g_nodeGraph = new NodeGraph();
     g_nodeGraph->setRunner(&m_runner);
+    m_currentName = "untitled";
     refreshOutput();
   }
   ImGui::SameLine();
@@ -265,6 +276,12 @@ void Ide::draw() {
   ImGui::Spacing();
 
   // ── Project ──────────────────────────────────────────────
+  ImGui::Separator();
+  ImGui::Text("Project: %s", m_currentName.c_str());
+  if (ImGui::IsItemHovered())
+    ImGui::SetTooltip("%s", m_saveFilename);
+  ImGui::Separator();
+
   if (ImGui::CollapsingHeader("Project", ImGuiTreeNodeFlags_DefaultOpen)) {
     ImGui::PushItemWidth(-1);
     ImGui::InputText("##projectfile", m_saveFilename, sizeof(m_saveFilename));
@@ -335,7 +352,7 @@ void Ide::draw() {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(displaySize);
   }
-  ImGui::Begin("Bottom Panel", nullptr,
+  ImGui::Begin("Preview###Bottom Panel", nullptr,
                m_isBottomFullscreen ? ImGuiWindowFlags_NoDocking : 0);
 
   TitleBarMaxButton("bottom", m_isBottomFullscreen, m_resetLayout);
@@ -401,8 +418,13 @@ void Ide::draw() {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(displaySize);
   }
-  ImGui::Begin("Right Panel", nullptr,
-               m_isRightFullscreen ? ImGuiWindowFlags_NoDocking : 0);
+  // the graph tab is titled after the loaded material (### keeps the
+  // docking ID stable while the visible name changes)
+  {
+    std::string rightTitle = m_currentName + "###Right Panel";
+    ImGui::Begin(rightTitle.c_str(), nullptr,
+                 m_isRightFullscreen ? ImGuiWindowFlags_NoDocking : 0);
+  }
 
   TitleBarMaxButton("right", m_isRightFullscreen, m_resetLayout);
 

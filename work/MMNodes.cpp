@@ -1342,8 +1342,7 @@ void BoxNode::renderParams() {
 std::vector<ImNodes::Ez::SlotInfo> WaveletNoiseNode::inputSlotInfos() const {
   return {};
 }
-std::vector<ImNodes::Ez::SlotInfo> WaveletNoiseNode::outputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> WaveletNoiseNode::outputSlotInfos() const {
   return {{"Out", 1}};
 }
 
@@ -1366,8 +1365,7 @@ void WaveletNoiseNode::renderParams() {
 std::vector<ImNodes::Ez::SlotInfo> BinarySmoothNode::inputSlotInfos() const {
   return {{"In", 1}};
 }
-std::vector<ImNodes::Ez::SlotInfo> BinarySmoothNode::outputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> BinarySmoothNode::outputSlotInfos() const {
   return {{"Out", 1}};
 }
 
@@ -1438,8 +1436,7 @@ void EdgeDetect2Node::renderParams() {
 std::vector<ImNodes::Ez::SlotInfo> SmoothMinMaxNode::inputSlotInfos() const {
   return {{"A", 1}, {"B", 1}};
 }
-std::vector<ImNodes::Ez::SlotInfo> SmoothMinMaxNode::outputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> SmoothMinMaxNode::outputSlotInfos() const {
   return {{"Out", 1}};
 }
 
@@ -1453,12 +1450,10 @@ void SmoothMinMaxNode::renderParams() {
   ImGui::PopItemWidth();
 }
 
-std::vector<ImNodes::Ez::SlotInfo> FillToGradientNode::inputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> FillToGradientNode::inputSlotInfos() const {
   return {{"Fill", 1}};
 }
-std::vector<ImNodes::Ez::SlotInfo> FillToGradientNode::outputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> FillToGradientNode::outputSlotInfos() const {
   return {{"Out", 1}};
 }
 

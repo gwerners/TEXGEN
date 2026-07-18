@@ -133,8 +133,7 @@ void MaterialLibrary::tick() {
   // keep the worker pool full
   const unsigned hw = std::thread::hardware_concurrency();
   const int workers = hw > 4 ? 4 : (hw > 1 ? (int)hw - 1 : 1);
-  while (m_building && (int)m_inflight.size() < workers &&
-         !m_queue.empty()) {
+  while (m_building && (int)m_inflight.size() < workers && !m_queue.empty()) {
     std::string path = m_queue.front();
     m_queue.pop_front();
     if (fs::exists(thumbPath(path))) {

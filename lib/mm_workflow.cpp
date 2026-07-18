@@ -418,12 +418,21 @@ void MMShadePreview(GenTexture &out, const GenTexture *albedo,
       const sF32 diffScale = intensity * ndl * occ;
       const sF32 specScale = intensity * spec * occ;
       const sF32 ambScale = ambient * occ;
+      // fake environment reflection: sky/ground gradient sampled by
+      // the view reflection, so polished metals read silver instead
+      // of black (the CPU analogue of the 3D preview's fake env).
+      // For dielectrics F0 = 0.04 keeps this nearly invisible.
+      const sF32 rUp = 2.0f * nz * ny; // reflect (0,0,1), up component
+      sF32 envT = (rUp + 0.2f) / 0.8f;
+      envT = clamp01(envT);
+      const sF32 env = 0.45f + 0.4f * envT;
+      const sF32 envScale = env * (1.0f - 0.75f * rough) * occ;
       sF32 rgb[3];
       for (int k = 0; k < 3; k++) {
         const sF32 diffCol = alb[k] * (1.0f - metal);
         const sF32 specCol = 0.04f + (alb[k] - 0.04f) * metal;
-        rgb[k] =
-            alb[k] * ambScale + diffCol * diffScale + specCol * specScale;
+        rgb[k] = alb[k] * ambScale + diffCol * diffScale +
+                 specCol * (specScale + envScale);
       }
       if (emission && emission->Data) {
         sF32 em[4];
