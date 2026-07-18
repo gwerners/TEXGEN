@@ -99,11 +99,11 @@ Node types by category (the in-editor menu lists all of them with descriptions):
 
 | Category | Examples |
 |----------|----------|
-| **Generator** | Voronoi (F1/edge/color/fill), FBM (perlin/cellular variants), Bricks, Weave, Crystal, Scratches, Shape, Sphere, DotNoise, ColorNoise, WaveletNoise, AnisotropicNoise, Gradient (linear/radial/circular), Pattern |
+| **Generator** | Voronoi (F1/edge/color/fill), FBM (perlin/cellular variants), Bricks, Weave/Weave2, Crystal, Scratches, Shape, Sphere, Box, DotNoise, ColorNoise, WaveletNoise, AnisotropicNoise, Gradient (linear/radial/circular), Pattern |
 | **Vector (AGG)** | Line, Circle, Rect, Polygon, Text, Arc, Bezier, DashLine, Gradient shapes |
 | **SDF** | Shape primitives, boolean/smooth ops, transforms, render |
-| **Filter** | Blur, DirectionalBlur, SlopeBlur, Warp, MultiWarp, Bevel, Dilate, EdgeDetect, Emboss, Colorize, Levels, Transform2D, Tiler, TilerAdvanced, AddTiler, NormalMap, NormalBlend, Fill family (region UVs, random colors, gradients, sizes), AmbientOcclusion, MakeTileable, CustomUV, Mirror, Remap |
-| **Combine** | Blend (15 modes), MathOp (37 ops), SmoothMinMax, Combine/Decompose, Tile2x2, LayerMix |
+| **Filter** | Blur, DirectionalBlur, SlopeBlur, Warp, MultiWarp, DirectionalWarp, WarpDilate, Bevel, Dilate, EdgeDetect, EdgeDetect2, Emboss, Colorize, Levels, AutoTones, BinarySmooth, AnisotropicKuwahara, Transform2D, Tiler, TilerAdvanced, AddTiler, NormalMap, NormalBlend, Fill family (region UVs, random colors, gradients, sizes, from-colors), AmbientOcclusion, MakeTileable, CustomUV, Mirror, Remap |
+| **Combine** | Blend (15 modes), Mingle (dual-warp blend), MathOp (37 ops), SmoothMinMax, Combine/Decompose, Tile2x2, LayerMix |
 | **Material** | Material (PBR multi-map + lit preview), WorkflowOutput |
 | **Structure** | Subgraph, Remote, Comment, Output |
 
