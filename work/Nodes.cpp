@@ -1037,6 +1037,38 @@ void NodeGraph::load(const nlohmann::json& j) {
   }
 }
 
+void NodeGraph::loadRenderCache(const std::string& dir) {
+  if (!fs::exists(dir))
+    return;
+
+  std::string outPath = dir + "/output.png";
+  if (fs::exists(outPath) && LoadGenTextureFromFile(outPath, m_lastOutput)) {
+    m_hasOutput = true;
+    m_changeCount++;
+  }
+
+  for (auto* gn : m_nodes) {
+    char fname[64];
+    snprintf(fname, sizeof(fname), "/%03d_%s.png", gn->texNode()->id,
+             gn->texNode()->typeName().c_str());
+    std::string nodePath = dir + fname;
+    if (!fs::exists(nodePath))
+      continue;
+    GenTexture tex;
+    if (!LoadGenTextureFromFile(nodePath, tex))
+      continue;
+    auto outNames = gn->texNode()->outputSlotNames();
+    gn->cachedOutputs.assign(outNames.empty() ? 1 : outNames.size(),
+                             GenTexture{});
+    gn->cachedOutputs[0] = std::move(tex);
+    gn->executed = true;
+    if (gn->hasPreview && gn->previewTex.id != 0)
+      UnloadTexture(gn->previewTex);
+    gn->previewTex = LoadTextureFromGenTexture(gn->cachedOutputs[0]);
+    gn->hasPreview = (gn->previewTex.id != 0);
+  }
+}
+
 // ============================================================
 // draw - ImNodes canvas with z-order overlap fix
 // ============================================================

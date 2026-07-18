@@ -157,37 +157,15 @@ void Ide::writeCache(const std::string& path) {
 }
 
 // Loads the render cache written by writeCache()/buildThumbnail() into
-// the bottom preview and each node's preview texture — no evaluation.
+// the graph's outputs (NodeGraph::loadRenderCache) — no evaluation. The
+// bottom preview and Preview3D both key off changeCount(), which that
+// call bumps, so they pick it up the same way they would a real render.
 // Silently does nothing when a project has no cache yet (never built, or
 // the .ptex was just imported): previews just stay empty until the user
 // explicitly renders (toolbar Generate, or the Library's build buttons).
 void Ide::loadCachedRender(const std::string& path) {
-  std::string dir = cacheDir(path);
-  if (!fs::exists(dir))
-    return;
-
-  std::string outPath = dir + "/output.png";
-  if (fs::exists(outPath)) {
-    if (m_hasOutputTexture && m_outputTexture.id != 0)
-      UnloadTexture(m_outputTexture);
-    m_outputTexture = LoadTexture(outPath.c_str());
-    m_hasOutputTexture = (m_outputTexture.id != 0);
-  }
-
-  if (!g_nodeGraph)
-    return;
-  for (auto* gn : g_nodeGraph->nodes()) {
-    char fname[64];
-    snprintf(fname, sizeof(fname), "/%03d_%s.png", gn->texNode()->id,
-             gn->texNode()->typeName().c_str());
-    std::string nodePath = dir + fname;
-    if (!fs::exists(nodePath))
-      continue;
-    if (gn->hasPreview && gn->previewTex.id != 0)
-      UnloadTexture(gn->previewTex);
-    gn->previewTex = LoadTexture(nodePath.c_str());
-    gn->hasPreview = (gn->previewTex.id != 0);
-  }
+  if (g_nodeGraph)
+    g_nodeGraph->loadRenderCache(cacheDir(path));
 }
 
 void Ide::doSave(const std::string& path) {

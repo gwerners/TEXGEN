@@ -34,4 +34,9 @@ std::string readFile(bool debug, const std::string& filename);
 
 Texture2D LoadTextureFromGenTexture(GenTexture tex);
 
+// Reverse of LoadTextureFromGenTexture: reads an image file (PNG, via
+// raylib) straight into a GenTexture's 16-bit pixel data. Returns false
+// if the file can't be opened/decoded.
+bool LoadGenTextureFromFile(const std::string& path, GenTexture& out);
+
 #endif  // UTILS_H

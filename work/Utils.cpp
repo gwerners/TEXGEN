@@ -69,3 +69,20 @@ Texture2D LoadTextureFromGenTexture(GenTexture tex) {
   texture.format = format;
   return texture;
 }
+
+bool LoadGenTextureFromFile(const std::string& path, GenTexture& out) {
+  Image img = LoadImage(path.c_str());
+  if (img.data == nullptr)
+    return false;
+  if (img.format != PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
+    ImageFormat(&img, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+
+  out.Init(img.width, img.height);
+  const sU8* px = (const sU8*)img.data;
+  for (sInt i = 0; i < out.NPixels; i++) {
+    out.Data[i].Init(px[i * 4 + 0], px[i * 4 + 1], px[i * 4 + 2],
+                     px[i * 4 + 3]);
+  }
+  UnloadImage(img);
+  return true;
+}

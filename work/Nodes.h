@@ -125,6 +125,13 @@ class NodeGraph {
   void load(const nlohmann::json& j);
   void clear();
 
+  // Loads a render cache written by Ide::writeCache()/MaterialLibrary::
+  // buildThumbnail() ("<dir>/output.png" + one "<dir>/<id>_<typeName>.png"
+  // per node) into cachedOutputs/previewTex and getLastOutput(), without
+  // evaluating anything — bumps changeCount() so preview consumers (the
+  // bottom panel, Preview3D) pick it up. No-op if dir doesn't exist.
+  void loadRenderCache(const std::string& dir);
+
   GenTexture* getInputImageForSlot(GraphNode* node, int slotIdx);
 
   // Undo/Redo
