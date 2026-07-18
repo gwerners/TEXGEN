@@ -79,9 +79,6 @@ void main() {
         vec3 T = normalize(fragTangent.xyz - N * dot(fragTangent.xyz, N));
         vec3 B = cross(N, T) * fragTangent.w;
         vec3 nm = texture(normalMap, uv).rgb * 2.0 - 1.0;
-        // our maps encode +G as image-up while the mesh V axis grows
-        // the other way; flip G to match
-        nm.y = -nm.y;
         N = normalize(mat3(T, B, N) * nm);
     }
     vec3 V = normalize(viewPos - fragPos);

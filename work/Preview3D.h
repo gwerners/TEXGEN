@@ -36,6 +36,18 @@ class Preview3D {
   bool m_autoRotate = true;
   float m_displace = 0.12f;
   float m_tiling = 2.0f;
+
+ public:
+  // test hook: pin the view (shape 0 sphere/1 cube/2 plane) so
+  // harnesses can take deterministic screenshots
+  void setTestView(int shape, float tiling, bool spin, float dist) {
+    m_shape = shape;
+    m_tiling = tiling;
+    m_autoRotate = spin;
+    m_dist = dist;
+  }
+
+ private:
   double m_lastUpload = -1.0;
   int m_lastChangeCount = -1;
 
