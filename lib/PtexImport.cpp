@@ -1963,6 +1963,24 @@ GraphResult convertGraph(json mmNodes, json mmConns,
     if (!changed)
       break;
   }
+
+  // an input slot takes exactly one connection; rewriting passes can
+  // occasionally leave a stale duplicate behind — the last one written
+  // (the most-processed edge) wins
+  {
+    std::map<std::pair<int, std::string>, size_t> lastIdx;
+    for (size_t i = 0; i < res.conns.size(); i++)
+      lastIdx[{res.conns[i]["toId"].get<int>(),
+               res.conns[i]["toSlot"].get<std::string>()}] = i;
+    if (lastIdx.size() != res.conns.size()) {
+      json kept = json::array();
+      for (size_t i = 0; i < res.conns.size(); i++)
+        if (lastIdx[{res.conns[i]["toId"].get<int>(),
+                     res.conns[i]["toSlot"].get<std::string>()}] == i)
+          kept.push_back(res.conns[i]);
+      res.conns = kept;
+    }
+  }
   return res;
 }
 
