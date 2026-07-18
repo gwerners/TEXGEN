@@ -1,6 +1,5 @@
 #include "GraphRunner.h"
 
-#include "CoreNodeRegistry.h"
 #include "GraphEval.h"
 
 #include <cstdio>
@@ -194,18 +193,14 @@ void GraphRunner::loop() {
       res.ok = true;
       for (auto& nj : job.project["nodes"]) {
         int id = nj.value("id", -1);
-        std::string type = nj.value("typeName", std::string());
-        auto core = getCoreNodeRegistry().create(type);
-        if (!core)
-          continue;
-        auto outs = core->outputSlotNames();
-        std::vector<GenTexture> texs(outs.size());
-        for (size_t i = 0; i < outs.size(); i++) {
-          GenTexture* t = ev.outputOf(id, outs[i]);
-          if (t && t->Data)
-            texs[i] = *t;
-        }
-        res.outputs.emplace(id, std::move(texs));
+        // Read the already-loaded/evaluated node's own outputs instead of
+        // querying outputSlotNames() on a freshly-constructed default
+        // instance: a bare Subgraph core reports ZERO output slots (it
+        // only knows its ports once its actual inner graph is loaded),
+        // which silently dropped every Subgraph node's preview here.
+        const std::vector<GenTexture>* outs = ev.nodeOutputs(id);
+        if (outs)
+          res.outputs.emplace(id, *outs);
       }
       GenTexture* fin = ev.finalOutput();
       if (fin && fin->Data) {

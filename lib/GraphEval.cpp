@@ -364,19 +364,19 @@ int dumpNodePreviews(const nlohmann::json &project, GraphEval &ev,
     std::string type = nj.value("typeName", std::string());
     if (type == "Output" || type == "Comment" || type == "Remote")
       continue;
-    auto core = getCoreNodeRegistry().create(type);
-    if (!core)
-      continue;
-    auto outs = core->outputSlotNames();
-    if (outs.empty())
-      continue;
-    GenTexture *tex = ev.outputOf(id, outs[0]);
-    if (!tex || !tex->Data)
+    // Read the already-loaded/evaluated node's own outputs instead of
+    // querying outputSlotNames() on a freshly-constructed default
+    // instance: a bare Subgraph core reports ZERO output slots (it only
+    // knows its ports once its actual inner graph is loaded), which
+    // silently dropped every Subgraph node — and everything nested
+    // inside it — from the cache.
+    const std::vector<GenTexture> *outs = ev.nodeOutputs(id);
+    if (!outs || outs->empty() || !(*outs)[0].Data)
       continue;
     char path[1024];
     snprintf(path, sizeof(path), "%s/%03d_%s.png", outDir.c_str(), id,
              type.c_str());
-    SaveImage(*tex, path);
+    SaveImage(const_cast<GenTexture &>((*outs)[0]), path);
     saved++;
   }
   return saved;
