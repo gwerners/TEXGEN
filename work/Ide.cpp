@@ -203,7 +203,7 @@ void Ide::draw() {
     ImGui::DockBuilderSplitNode(right_id, ImGuiDir_Down, 0.3f, &bottom_id,
                                 &right_id);
 
-    ImGui::DockBuilderDockWindow("Left Panel", left_id);
+    ImGui::DockBuilderDockWindow("Project###Left Panel", left_id);
     ImGui::DockBuilderDockWindow("Preview###Bottom Panel", bottom_id);
     ImGui::DockBuilderDockWindow("Graph###Right Panel", right_id);
 
@@ -223,7 +223,7 @@ void Ide::draw() {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(displaySize);
   }
-  ImGui::Begin("Left Panel", nullptr,
+  ImGui::Begin("Project###Left Panel", nullptr,
                m_isLeftFullscreen ? ImGuiWindowFlags_NoDocking : 0);
 
   TitleBarMaxButton("left", m_isLeftFullscreen, m_resetLayout);
