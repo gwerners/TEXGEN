@@ -1,65 +1,13 @@
 #include "AllNodes.h"
 #include <imgui.h>
+#include "UiWidgets.h"
 #include <cstring>
 #include "FileDialog.h"
 #include "Utils.h"
 
 static const char* s_sizesStr = "32\00064\000128\000256\000512\0001024\000";
 
-static bool SliderIntW(const char* label,
-                       int* v,
-                       int mn,
-                       int mx,
-                       int step = 1) {
-  bool changed = ImGui::SliderInt(label, v, mn, mx);
-  if (ImGui::IsItemHovered()) {
-    float wheel = ImGui::GetIO().MouseWheel;
-    if (wheel != 0.0f) {
-      *v += (int)wheel * step;
-      *v = sClamp(*v, mn, mx);
-      changed = true;
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
-      *v = sMin(*v + step, mx);
-      changed = true;
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
-      *v = sMax(*v - step, mn);
-      changed = true;
-    }
-  }
-  return changed;
-}
 
-static bool SliderFloatW(const char* label,
-                         float* v,
-                         float mn,
-                         float mx,
-                         float step = 0.0f) {
-  bool changed = ImGui::SliderFloat(label, v, mn, mx);
-  if (ImGui::IsItemHovered()) {
-    if (step <= 0.0f)
-      step = (mx - mn) * 0.01f;
-    float wheel = ImGui::GetIO().MouseWheel;
-    if (wheel != 0.0f) {
-      *v += wheel * step;
-      if (*v < mn)
-        *v = mn;
-      if (*v > mx)
-        *v = mx;
-      changed = true;
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
-      *v = sMin(*v + step, mx);
-      changed = true;
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
-      *v = sMax(*v - step, mn);
-      changed = true;
-    }
-  }
-  return changed;
-}
 
 // ============================================================
 // ColorNode

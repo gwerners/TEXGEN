@@ -1181,10 +1181,9 @@ static void emitNode(std::ostringstream& ss,
     ss << "    " << v << ".Init(" << w << ", " << h << ");\n";
     ss << "    MMShardFBM(" << v << ", " << pf(p, "sx", 7.0f) << ", "
        << pf(p, "sy", 7.0f) << ", " << p.value("folds", 0) << ", "
-       << p.value("octaves", 4) << ", " << pf(p, "persistence", 0.5f)
-       << ", " << pf(p, "sharp", 0.7f) << ", " << pf(p, "offset", 0.0f)
-       << ", " << pf(p, "seed", 0.0f) << ", " << ref(sm) << ", " << ref(om)
-       << ");\n";
+       << p.value("octaves", 4) << ", " << pf(p, "persistence", 0.5f) << ", "
+       << pf(p, "sharp", 0.7f) << ", " << pf(p, "offset", 0.0f) << ", "
+       << pf(p, "seed", 0.0f) << ", " << ref(sm) << ", " << ref(om) << ");\n";
   }
 
   else if (type == "BricksUneven") {
@@ -1195,9 +1194,9 @@ static void emitNode(std::ostringstream& ss,
        << "_Color.Init(" << w << ", " << h << ");\n";
     ss << "    MMBricksUneven(" << v << "_Out, &" << v << "_Color, "
        << p.value("iterations", 8) << ", " << pf(p, "minSize", 0.3f) << ", "
-       << pf(p, "randomness", 0.5f) << ", " << pf(p, "mortar", 0.05f)
-       << ", " << pf(p, "round", 0.0f) << ", " << pf(p, "bevel", 0.05f)
-       << ", " << pf(p, "seed", 0.0f) << ");\n";
+       << pf(p, "randomness", 0.5f) << ", " << pf(p, "mortar", 0.05f) << ", "
+       << pf(p, "round", 0.0f) << ", " << pf(p, "bevel", 0.05f) << ", "
+       << pf(p, "seed", 0.0f) << ");\n";
   }
 
   else if (type == "CircleSplatter") {
@@ -1209,21 +1208,18 @@ static void emitNode(std::ostringstream& ss,
       ss << "    " << v << "_Out.Init(256, 256); " << v
          << "_Color.Init(256, 256); " << v << "_UV.Init(256, 256);\n";
     } else {
-      ss << "    " << v << "_Out.Init(" << in << ".XRes, " << in
-         << ".YRes); " << v << "_Color.Init(" << in << ".XRes, " << in
-         << ".YRes); " << v << "_UV.Init(" << in << ".XRes, " << in
-         << ".YRes);\n";
-      ss << "    MMCircleSplatter(" << v << "_Out, &" << v << "_Color, &"
-         << v << "_UV, " << in << ", "
-         << (mask.empty() ? std::string("(const GenTexture*)0")
-                          : "&" + mask)
-         << ", " << p.value("count", 10) << ", " << p.value("rings", 1)
-         << ", " << pf(p, "scaleX", 1.0f) << ", " << pf(p, "scaleY", 1.0f)
-         << ", " << pf(p, "radius", 0.25f) << ", " << pf(p, "spiral", 0.0f)
-         << ", " << pf(p, "iRotate", 0.0f) << ", " << pf(p, "iScale", 0.0f)
-         << ", " << pf(p, "rotate", 0.0f) << ", " << pf(p, "scale", 0.0f)
-         << ", " << pf(p, "value", 0.5f) << ", " << pf(p, "seed", 0.0f)
-         << ");\n";
+      ss << "    " << v << "_Out.Init(" << in << ".XRes, " << in << ".YRes); "
+         << v << "_Color.Init(" << in << ".XRes, " << in << ".YRes); " << v
+         << "_UV.Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMCircleSplatter(" << v << "_Out, &" << v << "_Color, &" << v
+         << "_UV, " << in << ", "
+         << (mask.empty() ? std::string("(const GenTexture*)0") : "&" + mask)
+         << ", " << p.value("count", 10) << ", " << p.value("rings", 1) << ", "
+         << pf(p, "scaleX", 1.0f) << ", " << pf(p, "scaleY", 1.0f) << ", "
+         << pf(p, "radius", 0.25f) << ", " << pf(p, "spiral", 0.0f) << ", "
+         << pf(p, "iRotate", 0.0f) << ", " << pf(p, "iScale", 0.0f) << ", "
+         << pf(p, "rotate", 0.0f) << ", " << pf(p, "scale", 0.0f) << ", "
+         << pf(p, "value", 0.5f) << ", " << pf(p, "seed", 0.0f) << ");\n";
     }
   }
 

@@ -1,11 +1,8 @@
 #include "StructNodes.h"
 #include <imgui.h>
+#include "UiWidgets.h"
 #include <cstring>
 
-static void Hint(const char* text) {
-  if (ImGui::IsItemHovered())
-    ImGui::SetTooltip("%s", text);
-}
 
 // ============================================================
 // SubgraphNode

@@ -78,13 +78,16 @@ Built alongside the editor in `build/tests/`:
 | Ctrl+Z / Ctrl+Y | Undo / Redo (up to 50 levels) |
 | Ctrl+C / Ctrl+V | Copy / paste nodes with connections |
 
-### Sliders
+### Sliders (fine tuning)
 
 | Shortcut | Action |
 |----------|--------|
+| Click | Select the slider (highlighted frame) |
+| Arrow Up/Down | Step the selected/hovered slider by one increment |
+| Shift+Arrows | 10x finer step (float sliders) |
 | Scroll wheel (hover) | Increment/decrement value |
-| Arrow Up/Down (hover) | Increment/decrement value by one step |
-| Ctrl+Click | Type an exact value (can exceed min/max range) |
+| Ctrl+Click | Turn the slider into a text field: type an exact value |
+| Esc | Clear the slider selection |
 
 ## Interface
 

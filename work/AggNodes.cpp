@@ -1,5 +1,6 @@
 #include "AggNodes.h"
 #include <imgui.h>
+#include "UiWidgets.h"
 #include <cstring>
 
 static const char* s_blendModes =
@@ -12,47 +13,7 @@ static void renderBlendCombo(const char* id, int* blendMode) {
   ImGui::Combo(id, blendMode, s_blendModes);
 }
 
-static bool SliderFloatW(const char* label,
-                         float* v,
-                         float mn,
-                         float mx,
-                         float step = 0.0f) {
-  bool changed = ImGui::SliderFloat(label, v, mn, mx);
-  if (ImGui::IsItemHovered()) {
-    if (step <= 0.0f)
-      step = (mx - mn) * 0.01f;
-    float wheel = ImGui::GetIO().MouseWheel;
-    if (wheel != 0.0f) {
-      *v += wheel * step;
-      if (*v < mn)
-        *v = mn;
-      if (*v > mx)
-        *v = mx;
-      changed = true;
-    }
-  }
-  return changed;
-}
 
-static bool SliderIntW(const char* label,
-                       int* v,
-                       int mn,
-                       int mx,
-                       int step = 1) {
-  bool changed = ImGui::SliderInt(label, v, mn, mx);
-  if (ImGui::IsItemHovered()) {
-    float wheel = ImGui::GetIO().MouseWheel;
-    if (wheel != 0.0f) {
-      *v += (int)wheel * step;
-      if (*v < mn)
-        *v = mn;
-      if (*v > mx)
-        *v = mx;
-      changed = true;
-    }
-  }
-  return changed;
-}
 
 // ============================================================
 // AggLineNode

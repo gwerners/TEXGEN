@@ -1,5 +1,6 @@
 #include "MMNodes.h"
 #include <imgui.h>
+#include "UiWidgets.h"
 
 // ============================================================
 // Shared helpers (same conventions as AllNodes.cpp)
@@ -7,45 +8,8 @@
 
 static const char* s_sizesStr = "32\00064\000128\000256\000512\0001024\000";
 
-static bool SliderIntW(const char* label,
-                       int* v,
-                       int mn,
-                       int mx,
-                       int step = 1) {
-  bool changed = ImGui::SliderInt(label, v, mn, mx);
-  if (ImGui::IsItemHovered()) {
-    float wheel = ImGui::GetIO().MouseWheel;
-    if (wheel != 0.0f) {
-      *v += (int)wheel * step;
-      *v = sClamp(*v, mn, mx);
-      changed = true;
-    }
-  }
-  return changed;
-}
 
-static bool SliderFloatW(const char* label,
-                         float* v,
-                         float mn,
-                         float mx,
-                         float step = 0.0f) {
-  bool changed = ImGui::SliderFloat(label, v, mn, mx);
-  if (ImGui::IsItemHovered()) {
-    if (step <= 0.0f)
-      step = (mx - mn) * 0.01f;
-    float wheel = ImGui::GetIO().MouseWheel;
-    if (wheel != 0.0f) {
-      *v = sClamp(*v + wheel * step, mn, mx);
-      changed = true;
-    }
-  }
-  return changed;
-}
 
-static void Hint(const char* text) {
-  if (ImGui::IsItemHovered())
-    ImGui::SetTooltip("%s", text);
-}
 
 // ============================================================
 // VoronoiNode
@@ -1429,8 +1393,7 @@ void ShardFBMNode::renderParams() {
 std::vector<ImNodes::Ez::SlotInfo> BricksUnevenNode::inputSlotInfos() const {
   return {};
 }
-std::vector<ImNodes::Ez::SlotInfo> BricksUnevenNode::outputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> BricksUnevenNode::outputSlotInfos() const {
   return {{"Out", 1}, {"Color", 1}};
 }
 
@@ -1449,12 +1412,10 @@ void BricksUnevenNode::renderParams() {
   ImGui::PopItemWidth();
 }
 
-std::vector<ImNodes::Ez::SlotInfo> CircleSplatterNode::inputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> CircleSplatterNode::inputSlotInfos() const {
   return {{"In", 1}, {"Mask", 1}};
 }
-std::vector<ImNodes::Ez::SlotInfo> CircleSplatterNode::outputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> CircleSplatterNode::outputSlotInfos() const {
   return {{"Out", 1}, {"Color", 1}, {"UV", 1}};
 }
 
