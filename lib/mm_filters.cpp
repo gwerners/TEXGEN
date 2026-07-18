@@ -74,7 +74,10 @@ void MMNormalMap(GenTexture &out, const GenTexture &height, sF32 amount,
       s = grayAt(height, hx, hy + 1);     rvy += 2.0f * s;
       s = grayAt(height, hx, hy - 1);     rvy -= 2.0f * s;
 
-      sF32 vx = rvx * mult, vy = rvy * mult, vz;
+      // outward normal tilts AWAY from uphill: negate the gradient.
+      // (Validated with the lit-dome test: light at azimuth 135 must
+      // highlight the dome's upper-left slope.)
+      sF32 vx = -rvx * mult, vy = -rvy * mult, vz;
       switch (format) {
       case MMNormalOpenGL:
         vz = 1.0f;
