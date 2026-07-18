@@ -59,28 +59,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  int saved = 0;
-  for (auto &nj : j["nodes"]) {
-    int id = nj.value("id", -1);
-    std::string type = nj.value("typeName", std::string());
-    if (type == "Output" || type == "Comment" || type == "Remote")
-      continue;
-    // first output slot of this node type
-    auto core = getCoreNodeRegistry().create(type);
-    if (!core)
-      continue;
-    auto outs = core->outputSlotNames();
-    if (outs.empty())
-      continue;
-    GenTexture *tex = ev.outputOf(id, outs[0]);
-    if (!tex || !tex->Data)
-      continue;
-    char path[1024];
-    snprintf(path, sizeof(path), "%s/%03d_%s.png", argv[2], id,
-             type.c_str());
-    SaveImage(*tex, path);
-    saved++;
-  }
+  int saved = dumpNodePreviews(j, ev, argv[2]);
   printf("OK: %d node previews -> %s\n", saved, argv[2]);
   return 0;
 }

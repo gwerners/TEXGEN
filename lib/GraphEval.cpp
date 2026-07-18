@@ -1,9 +1,11 @@
 #include "GraphEval.h"
 
+#include <cstdio>
 #include <queue>
 #include <set>
 
 #include "CoreNodeRegistry.h"
+#include "texgen_utils.h"
 
 // ============================================================
 // JSON transforms
@@ -350,4 +352,32 @@ GenTexture *GraphEval::finalOutput() {
   if (m_outputSrcId < 0)
     return nullptr;
   return outputOf(m_outputSrcId, m_outputSrcSlot);
+}
+
+int dumpNodePreviews(const nlohmann::json &project, GraphEval &ev,
+                     const std::string &outDir) {
+  int saved = 0;
+  if (!project.contains("nodes"))
+    return saved;
+  for (auto &nj : project["nodes"]) {
+    int id = nj.value("id", -1);
+    std::string type = nj.value("typeName", std::string());
+    if (type == "Output" || type == "Comment" || type == "Remote")
+      continue;
+    auto core = getCoreNodeRegistry().create(type);
+    if (!core)
+      continue;
+    auto outs = core->outputSlotNames();
+    if (outs.empty())
+      continue;
+    GenTexture *tex = ev.outputOf(id, outs[0]);
+    if (!tex || !tex->Data)
+      continue;
+    char path[1024];
+    snprintf(path, sizeof(path), "%s/%03d_%s.png", outDir.c_str(), id,
+             type.c_str());
+    SaveImage(*tex, path);
+    saved++;
+  }
+  return saved;
 }

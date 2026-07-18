@@ -984,6 +984,12 @@ void NodeGraph::load(const nlohmann::json& j) {
     m_nodes.push_back(gn);
   }
 
+  // without this, the first draw() after a plain file load sees an empty
+  // m_lastParamsHash on every node and mistakes it for a param edit —
+  // pushing a spurious undo entry and rendering the whole graph (undo()/
+  // redo()/pasteClipboard() already do this after their own load() call)
+  syncParamHashes();
+
   if (!j.contains("connections"))
     return;
 
@@ -1072,6 +1078,12 @@ void NodeGraph::pollRunner() {
   m_evaluating = m_runner->busy();
   if (!res.ok)
     return;
+
+  // res.outputs is only populated by a full rebuild (the incremental
+  // cascade path streams per-node results via pollStream() instead) —
+  // a non-empty map here means every node's output is fresh.
+  if (!res.outputs.empty())
+    m_fullRunCount++;
 
   for (auto* gn : m_nodes) {
     auto it = res.outputs.find(gn->texNode()->id);

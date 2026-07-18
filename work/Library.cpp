@@ -1,7 +1,7 @@
 #include "Library.h"
 #include "Icons.h"
 
-#include "HeadlessEval.h"
+#include "GraphEval.h"
 #include "PtexImport.h"
 #include "texgen_utils.h"
 
@@ -15,13 +15,17 @@
 
 namespace fs = std::filesystem;
 
-namespace {
-
-const int THUMB_SIZE = 128;
-
 std::string thumbPath(const std::string& file) {
   return file + ".thumb.png";
 }
+
+std::string cacheDir(const std::string& file) {
+  return file + ".cache";
+}
+
+namespace {
+
+const int THUMB_SIZE = 128;
 
 // Box-downsample an evaluated output into a square thumbnail.
 void downsample(const GenTexture& src, GenTexture& dst, int side) {
@@ -205,10 +209,24 @@ bool MaterialLibrary::buildThumbnail(const std::string& file) {
     std::vector<std::string> skipped;
     j = ptexToTexgen(j, "thumb", &skipped);
   }
-  GenTexture out;
-  if (!headlessEvaluate(j, out) || !out.Data)
+  GraphEval ev;
+  if (!ev.load(j) || !ev.run())
     return false;
-  return saveThumbnail(out, file);
+  GenTexture* fin = ev.finalOutput();
+  if (!fin || !fin->Data)
+    return false;
+  if (!saveThumbnail(*fin, file))
+    return false;
+
+  // full-res render cache: the final output plus one PNG per node, so
+  // loading this project can show everything pre-rendered instead of
+  // re-evaluating (ids match NodeGraph::save() — j is NOT flattened).
+  std::string dir = cacheDir(file);
+  std::error_code ec;
+  fs::create_directories(dir, ec);
+  SaveImage(*fin, (dir + "/output.png").c_str());
+  dumpNodePreviews(j, ev, dir);
+  return true;
 }
 
 bool MaterialLibrary::draw(std::string& outPath, bool& outIsPtex) {

@@ -29,6 +29,12 @@ class Ide {
  private:
   // refresh the bottom-panel texture from the graph output
   void refreshOutput();
+  // write the on-disk render cache (full output + one PNG per node) from
+  // the graph's current in-memory outputs, next to the project file
+  void writeCache(const std::string& path);
+  // load the on-disk render cache into the bottom preview and node
+  // previews, without evaluating anything (used on project load)
+  void loadCachedRender(const std::string& path);
 
  private:
   ImFont* LoadCustomFonts(const std::string& fontPath);
@@ -45,6 +51,11 @@ class Ide {
 
   char m_saveFilename[256];
   std::string m_currentName = "untitled";  // stem of the loaded project
+  // Full path backing the currently loaded/saved project (independent of
+  // m_saveFilename, which only tracks the toolbar Save/Save-As target —
+  // doImport() never syncs that one). Empty for the in-memory default
+  // graph that was never saved/loaded from a real file.
+  std::string m_currentPath;
   char m_outputFilename[256];
   char m_exportName[128];
   Texture2D m_outputTexture;
@@ -53,6 +64,7 @@ class Ide {
   FileDialog m_loadDialog;
   FileDialog m_importDialog;
   int m_lastChangeCount = -1;
+  int m_lastFullRunCount = -1;
   Preview3D m_preview3d;
   bool m_preview3dOn = false;
   MaterialLibrary m_library;

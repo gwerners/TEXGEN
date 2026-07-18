@@ -4,6 +4,7 @@
 #include "Nodes.h"
 #include "ProjectIO.h"
 #include "Utils.h"
+#include "texgen_utils.h"
 
 #include <imgui_impl_raylib.h>
 #include <imgui_internal.h>
@@ -12,9 +13,13 @@
 #include <fmt/color.h>
 #include <fmt/format.h>
 
+#include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <map>
 #include <vector>
+
+namespace fs = std::filesystem;
 
 // Helper: render a maximize/restore button right-aligned in the title bar area.
 // Returns true if fullscreen state changed. Toggles fullscreen on first click,
@@ -128,14 +133,74 @@ static std::string pathStem(const std::string& path) {
   return dot == std::string::npos ? base : base.substr(0, dot);
 }
 
+// Writes the on-disk render cache (full output + one PNG per node) from
+// the graph's current in-memory outputs — mirrors the naming convention
+// MaterialLibrary::buildThumbnail uses for its headless cache, so either
+// path can populate the same "<path>.cache/" folder.
+void Ide::writeCache(const std::string& path) {
+  if (!g_nodeGraph)
+    return;
+  std::string dir = cacheDir(path);
+  std::error_code ec;
+  fs::create_directories(dir, ec);
+  GenTexture* lastOut = g_nodeGraph->getLastOutput();
+  if (lastOut && lastOut->Data)
+    SaveImage(*lastOut, (dir + "/output.png").c_str());
+  for (auto* gn : g_nodeGraph->nodes()) {
+    if (gn->cachedOutputs.empty() || !gn->cachedOutputs[0].Data)
+      continue;
+    char fname[64];
+    snprintf(fname, sizeof(fname), "/%03d_%s.png", gn->texNode()->id,
+             gn->texNode()->typeName().c_str());
+    SaveImage(gn->cachedOutputs[0], (dir + fname).c_str());
+  }
+}
+
+// Loads the render cache written by writeCache()/buildThumbnail() into
+// the bottom preview and each node's preview texture — no evaluation.
+// Silently does nothing when a project has no cache yet (never built, or
+// the .ptex was just imported): previews just stay empty until the user
+// explicitly renders (toolbar Generate, or the Library's build buttons).
+void Ide::loadCachedRender(const std::string& path) {
+  std::string dir = cacheDir(path);
+  if (!fs::exists(dir))
+    return;
+
+  std::string outPath = dir + "/output.png";
+  if (fs::exists(outPath)) {
+    if (m_hasOutputTexture && m_outputTexture.id != 0)
+      UnloadTexture(m_outputTexture);
+    m_outputTexture = LoadTexture(outPath.c_str());
+    m_hasOutputTexture = (m_outputTexture.id != 0);
+  }
+
+  if (!g_nodeGraph)
+    return;
+  for (auto* gn : g_nodeGraph->nodes()) {
+    char fname[64];
+    snprintf(fname, sizeof(fname), "/%03d_%s.png", gn->texNode()->id,
+             gn->texNode()->typeName().c_str());
+    std::string nodePath = dir + fname;
+    if (!fs::exists(nodePath))
+      continue;
+    if (gn->hasPreview && gn->previewTex.id != 0)
+      UnloadTexture(gn->previewTex);
+    gn->previewTex = LoadTexture(nodePath.c_str());
+    gn->hasPreview = (gn->previewTex.id != 0);
+  }
+}
+
 void Ide::doSave(const std::string& path) {
   if (!saveProject(path))
     return;
   m_currentName = pathStem(path);
+  m_currentPath = path;
   if (g_nodeGraph) {
     GenTexture* lastOut = g_nodeGraph->getLastOutput();
-    if (lastOut && lastOut->Data)
+    if (lastOut && lastOut->Data) {
       MaterialLibrary::saveThumbnail(*lastOut, path);
+      writeCache(path);
+    }
     m_library.invalidate();
   }
 }
@@ -143,16 +208,16 @@ void Ide::doSave(const std::string& path) {
 void Ide::doLoad(const std::string& path) {
   if (loadProject(path) && g_nodeGraph) {
     m_currentName = pathStem(path);
-    g_nodeGraph->generate();
-    refreshOutput();
+    m_currentPath = path;
+    loadCachedRender(path);
   }
 }
 
 void Ide::doImport(const std::string& path) {
   if (importPtexProject(path) && g_nodeGraph) {
     m_currentName = pathStem(path);
-    g_nodeGraph->generate();
-    refreshOutput();
+    m_currentPath = path;
+    loadCachedRender(path);
   }
 }
 
@@ -234,6 +299,7 @@ void Ide::draw() {
     g_nodeGraph = new NodeGraph();
     g_nodeGraph->setRunner(&m_runner);
     m_currentName = "untitled";
+    m_currentPath.clear();
     refreshOutput();
   }
   ImGui::SameLine();
@@ -432,6 +498,16 @@ void Ide::draw() {
   createNodeCanvas();
 
   ImGui::End();
+
+  // A full graph run just landed (pollRunner() inside createNodeCanvas()
+  // above) — refresh the on-disk render cache so the next load shows it
+  // pre-rendered. Skip for a project that was never saved/loaded from a
+  // real file (the default in-memory "untitled" graph).
+  if (g_nodeGraph && g_nodeGraph->fullRunCount() != m_lastFullRunCount) {
+    m_lastFullRunCount = g_nodeGraph->fullRunCount();
+    if (!m_currentPath.empty())
+      writeCache(m_currentPath);
+  }
 
   // ------------------------------------------------------------------
   // Hint bar - contextual help at the bottom of the screen

@@ -90,3 +90,12 @@ nlohmann::json applyRemotes(const nlohmann::json &project);
 // ids and rewiring boundary connections. Pure JSON transform (used by
 // the C exporter; headless/GUI evaluate subgraphs natively).
 nlohmann::json flattenSubgraphs(const nlohmann::json &project);
+
+// Dumps every top-level node's first output slot as
+// "<outDir>/<id>_<typeName>.png" (id zero-padded to 3 digits), skipping
+// types with no texture output (Output/Comment/Remote/etc). project must
+// already have been run() on ev — used to persist a per-step render
+// cache (MaterialLibrary) and for graph-chain auditing (texgen_debug).
+// Returns the number of files written.
+int dumpNodePreviews(const nlohmann::json &project, GraphEval &ev,
+                     const std::string &outDir);

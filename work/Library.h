@@ -15,6 +15,15 @@
 
 struct GenTexture;
 
+// "<file>.thumb.png" — the small (128px) grid thumbnail next to a project.
+std::string thumbPath(const std::string& file);
+
+// "<file>.cache" — folder holding the full-res "output.png" plus one PNG
+// per node ("<id>_<typeName>.png", same convention as tests/texgen_debug)
+// written whenever a thumbnail is (re)built, so loading a project can show
+// everything pre-rendered instead of triggering a fresh evaluation.
+std::string cacheDir(const std::string& file);
+
 class MaterialLibrary {
  public:
   MaterialLibrary();

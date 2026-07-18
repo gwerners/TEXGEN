@@ -109,6 +109,12 @@ class NodeGraph {
   // Change counter — increments whenever the graph output changes
   int changeCount() const { return m_changeCount; }
 
+  // Increments only when a FULL graph run lands (every node's output is
+  // fresh) — as opposed to an incremental param-edit cascade, which only
+  // touches part of the graph. Used to know when the on-disk render
+  // cache should be refreshed.
+  int fullRunCount() const { return m_fullRunCount; }
+
   // Contextual hint for the status bar (hovered node, shortcuts...)
   const std::string& hintText() const { return m_hintText; }
 
@@ -153,6 +159,7 @@ class NodeGraph {
   GenTexture m_lastOutput;
   bool m_hasOutput = false;
   int m_changeCount = 0;
+  int m_fullRunCount = 0;
   std::string m_hintText;
 
   void syncParamHashes();
