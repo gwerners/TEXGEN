@@ -100,6 +100,14 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
     return std::make_unique<AnisotropicKuwaharaNode>();
   };
   registry["Box"] = []() { return std::make_unique<BoxNode>(); };
+  registry["Cairo"] = []() { return std::make_unique<CairoNode>(); };
+  registry["ShardFBM"] = []() { return std::make_unique<ShardFBMNode>(); };
+  registry["BricksUneven"] = []() {
+    return std::make_unique<BricksUnevenNode>();
+  };
+  registry["CircleSplatter"] = []() {
+    return std::make_unique<CircleSplatterNode>();
+  };
   registry["WaveletNoise"] = []() {
     return std::make_unique<WaveletNoiseNode>();
   };

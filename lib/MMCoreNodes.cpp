@@ -2430,6 +2430,163 @@ void AddTilerCoreNode::execute(const std::vector<GenTexture*>& inputs,
 }
 
 // ============================================================
+// Cairo / ShardFBM / BricksUneven / CircleSplatter
+// ============================================================
+
+nlohmann::json CairoCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
+          {"sx", m_sx},             {"sy", m_sy},
+          {"angle", m_angle},       {"round", m_round}};
+}
+
+void CairoCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("sx"))
+    m_sx = j["sx"];
+  if (j.contains("sy"))
+    m_sy = j["sy"];
+  if (j.contains("angle"))
+    m_angle = j["angle"];
+  if (j.contains("round"))
+    m_round = j["round"];
+}
+
+void CairoCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                            std::vector<GenTexture>& outputs) {
+  (void)inputs;
+  outputs.resize(1);
+  outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
+  MMCairo(outputs[0], m_sx, m_sy, m_angle, m_round);
+}
+
+nlohmann::json ShardFBMCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
+          {"sx", m_sx},             {"sy", m_sy},
+          {"folds", m_folds},       {"octaves", m_octaves},
+          {"persistence", m_persistence}, {"sharp", m_sharp},
+          {"offset", m_offset},     {"seed", m_seed}};
+}
+
+void ShardFBMCoreNode::loadParams(const nlohmann::json& j) {
+  auto f = [&](const char* k, float& v) {
+    if (j.contains(k))
+      v = j[k];
+  };
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("folds"))
+    m_folds = j["folds"];
+  if (j.contains("octaves"))
+    m_octaves = j["octaves"];
+  f("sx", m_sx);
+  f("sy", m_sy);
+  f("persistence", m_persistence);
+  f("sharp", m_sharp);
+  f("offset", m_offset);
+  f("seed", m_seed);
+}
+
+void ShardFBMCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                               std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  outputs.resize(1);
+  outputs[0].Init(mmSizeFromIdx(m_widthIdx), mmSizeFromIdx(m_heightIdx));
+  MMShardFBM(outputs[0], m_sx, m_sy, m_folds, m_octaves, m_persistence,
+             m_sharp, m_offset, m_seed, get(0), get(1));
+}
+
+nlohmann::json BricksUnevenCoreNode::saveParams() const {
+  return {{"widthIdx", m_widthIdx}, {"heightIdx", m_heightIdx},
+          {"iterations", m_iterations}, {"minSize", m_minSize},
+          {"randomness", m_randomness}, {"mortar", m_mortar},
+          {"round", m_round},       {"bevel", m_bevel},
+          {"seed", m_seed}};
+}
+
+void BricksUnevenCoreNode::loadParams(const nlohmann::json& j) {
+  auto f = [&](const char* k, float& v) {
+    if (j.contains(k))
+      v = j[k];
+  };
+  if (j.contains("widthIdx"))
+    m_widthIdx = j["widthIdx"];
+  if (j.contains("heightIdx"))
+    m_heightIdx = j["heightIdx"];
+  if (j.contains("iterations"))
+    m_iterations = j["iterations"];
+  f("minSize", m_minSize);
+  f("randomness", m_randomness);
+  f("mortar", m_mortar);
+  f("round", m_round);
+  f("bevel", m_bevel);
+  f("seed", m_seed);
+}
+
+void BricksUnevenCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                   std::vector<GenTexture>& outputs) {
+  (void)inputs;
+  outputs.resize(2);
+  const int w = mmSizeFromIdx(m_widthIdx), h = mmSizeFromIdx(m_heightIdx);
+  outputs[0].Init(w, h);
+  outputs[1].Init(w, h);
+  MMBricksUneven(outputs[0], &outputs[1], m_iterations, m_minSize,
+                 m_randomness, m_mortar, m_round, m_bevel, m_seed);
+}
+
+nlohmann::json CircleSplatterCoreNode::saveParams() const {
+  return {{"count", m_count},   {"rings", m_rings},
+          {"scaleX", m_scaleX}, {"scaleY", m_scaleY},
+          {"radius", m_radius}, {"spiral", m_spiral},
+          {"iRotate", m_iRotate}, {"iScale", m_iScale},
+          {"rotate", m_rotate}, {"scale", m_scale},
+          {"value", m_value},   {"seed", m_seed}};
+}
+
+void CircleSplatterCoreNode::loadParams(const nlohmann::json& j) {
+  auto f = [&](const char* k, float& v) {
+    if (j.contains(k))
+      v = j[k];
+  };
+  if (j.contains("count"))
+    m_count = j["count"];
+  if (j.contains("rings"))
+    m_rings = j["rings"];
+  f("scaleX", m_scaleX);
+  f("scaleY", m_scaleY);
+  f("radius", m_radius);
+  f("spiral", m_spiral);
+  f("iRotate", m_iRotate);
+  f("iScale", m_iScale);
+  f("rotate", m_rotate);
+  f("scale", m_scale);
+  f("value", m_value);
+  f("seed", m_seed);
+}
+
+void CircleSplatterCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                     std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  GenTexture* mask = inputs.size() > 1 && inputs[1] && inputs[1]->Data
+                         ? inputs[1]
+                         : nullptr;
+  outputs.resize(3);
+  outputs[0].Init(in->XRes, in->YRes);
+  outputs[1].Init(in->XRes, in->YRes);
+  outputs[2].Init(in->XRes, in->YRes);
+  MMCircleSplatter(outputs[0], &outputs[1], &outputs[2], *in, mask,
+                   m_count, m_rings, m_scaleX, m_scaleY, m_radius, m_spiral,
+                   m_iRotate, m_iScale, m_rotate, m_scale, m_value, m_seed);
+}
+
+// ============================================================
 // BoxCoreNode / WaveletNoiseCoreNode / BinarySmoothCoreNode
 // ============================================================
 

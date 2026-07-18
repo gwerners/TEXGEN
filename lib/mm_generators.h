@@ -157,6 +157,24 @@ void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
                     sInt nStops, sF32 repeat, sF32 rotateDeg, bool mirror,
                     sInt shape = 0);
 
+// Cairo tiling (cairo.mmg): pentagonal cairo pattern; round in [0,1]
+// softens the distance blend.
+void MMCairo(GenTexture &out, sF32 sx, sF32 sy, sF32 angleDeg, sF32 round);
+
+// Shard FBM (shard_fbm.mmg, adapted from ENDESGA's shadertoy): sharp
+// 3D shard noise accumulated over octaves. sharpMap/offsetMap
+// (optional, grayscale) modulate sharpness and the Z slice.
+void MMShardFBM(GenTexture &out, sF32 sx, sF32 sy, sInt folds,
+                sInt octaves, sF32 persistence, sF32 sharp, sF32 offset,
+                sF32 seed, const GenTexture *sharpMap,
+                const GenTexture *offsetMap);
+
+// Uneven bricks (bricks_uneven.mmg): recursive binary splits down to
+// min_size. outColor (optional) gets a random color per brick.
+void MMBricksUneven(GenTexture &out, GenTexture *outColor, sInt iterations,
+                    sF32 minSize, sF32 randomness, sF32 mortar,
+                    sF32 roundR, sF32 bevel, sF32 seed);
+
 // Box (box.mmg): depth of a rotated 3D box raycast straight down onto
 // the UV plane (0 outside, brighter = nearer face).
 void MMBox(GenTexture &out, sF32 cx, sF32 cy, sF32 cz, sF32 sx, sF32 sy,

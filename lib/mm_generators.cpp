@@ -1028,6 +1028,187 @@ void MMGradientRamp(GenTexture &out, const MMGradientStop *stops,
   }
 }
 
+void MMCairo(GenTexture &out, sF32 sx, sF32 sy, sF32 angleDeg, sF32 round) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 angle = angleDeg * 0.01745329251f;
+  const sF32 k = 200.0f - 190.0f * round;
+  const sF32 ca = cosf(angle), sa = sinf(angle);
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      sF32 ux = (px + 0.5f) / w * sx, uy = (py + 0.5f) / h * sy;
+      const sF32 cellx = floorf(ux), celly = floorf(uy);
+      const sF32 cornx = glslFract(ux) - 0.5f, corny = glslFract(uy) - 0.5f;
+      sF32 vx = 0.5f - fabsf(cornx), vy = 0.5f - fabsf(corny);
+      if (glslMod(cellx + celly, 2.0f) >= 0.5f) {
+        const sF32 t = vx;
+        vx = vy;
+        vy = t;
+      }
+      const sF32 side = -sa * vx + ca * vy;
+      const sF32 d1 = fabsf(side);
+      sF32 mx, my;
+      if (side <= 0.0f) {
+        mx = 1.0f - vx;
+        my = vy;
+      } else {
+        mx = vx;
+        my = 1.0f - vy;
+      }
+      const sF32 d2 = fabsf(-sa * mx + ca * my);
+      const sF32 d3 = fabsf(ca * vx + sa * vy);
+      const sF32 d4 = side <= 0.0f ? 0.5f - vy : 0.5f - vx;
+      const sF32 sum = exp2f(-k * d1) + exp2f(-k * d2) + exp2f(-k * d3) +
+                       exp2f(-k * d4);
+      const sF32 v = clamp01(-log2f(sum) / k);
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = p.g = p.b = to16(v);
+      p.a = 65535;
+    }
+}
+
+namespace {
+// shard_fbm's vec3 hash (fract(sin(dot)) style)
+inline void shardHash(sF32 px, sF32 py, sF32 pz, sF32 o[3]) {
+  const sF32 a = px * 127.1f + py * 311.7f + pz * 74.7f;
+  const sF32 b = px * 269.5f + py * 183.3f + pz * 246.1f;
+  const sF32 c = px * 113.5f + py * 271.9f + pz * 124.6f;
+  o[0] = glslFract(sinf(a) * 43758.5453123f);
+  o[1] = glslFract(sinf(b) * 43758.5453123f);
+  o[2] = glslFract(sinf(c) * 43758.5453123f);
+}
+
+sF32 shardNoise(sF32 px, sF32 py, sF32 pz, sF32 szx, sF32 szy, sF32 szz,
+                sF32 sharpness, sF32 seed) {
+  const sF32 ipx = floorf(px), ipy = floorf(py), ipz = floorf(pz);
+  const sF32 fpx = px - ipx, fpy = py - ipy, fpz = pz - ipz;
+  sF32 v = 0.0f, t = 0.0f;
+  for (sInt z = -1; z <= 1; z++)
+    for (sInt y = -2; y <= 2; y++)
+      for (sInt x = -2; x <= 2; x++) {
+        const sF32 iox = glslMod(ipx + x, szx);
+        const sF32 ioy = glslMod(ipy + y, szy);
+        const sF32 ioz = glslMod(ipz + z, szz);
+        sF32 hsh[3];
+        shardHash(iox + seed, ioy + seed, ioz + seed, hsh);
+        const sF32 rx = fpx - (x + hsh[0]);
+        const sF32 ry = fpy - (y + hsh[1]);
+        const sF32 rz = fpz - (z + hsh[2]);
+        const sF32 d = rx * rx + ry * ry + rz * rz;
+        const sF32 wgt = exp2f(-6.283185f * d);
+        sF32 h2[3];
+        shardHash(iox + 11.0f, ioy + 31.0f, ioz + 47.0f, h2);
+        const sF32 s = sharpness * (rx * (h2[0] - 0.5f) +
+                                    ry * (h2[1] - 0.5f) +
+                                    rz * (h2[2] - 0.5f));
+        v += wgt * s / sqrtf(1.0f + s * s);
+        t += wgt;
+      }
+  return t > 0.0f ? (v / t) * 0.5f + 0.5f : 0.5f;
+}
+} // namespace
+
+void MMShardFBM(GenTexture &out, sF32 sx, sF32 sy, sInt folds,
+                sInt octaves, sF32 persistence, sF32 sharp, sF32 offset,
+                sF32 seed, const GenTexture *sharpMap,
+                const GenTexture *offsetMap) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  auto grayOr = [&](const GenTexture *t, sF32 u, sF32 v, sF32 def) {
+    if (!t || !t->Data)
+      return def;
+    sF32 c[4];
+    sampleBilinearWrap(*t, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w, v = (py + 0.5f) / h;
+      const sF32 sharpness =
+          exp2f(grayOr(sharpMap, u, v, sharp) * sharp * 8.0f);
+      const sF32 z = grayOr(offsetMap, u, v, offset);
+      sF32 szx = sx, szy = sy, szz = 1.0f;
+      sF32 value = 0.0f, norm = 0.0f, scale = 1.0f;
+      for (sInt i = 0; i < octaves; i++) {
+        sF32 n = shardNoise(u * szx, v * szy, z * szz, szx, szy, szz,
+                            sharpness, seed);
+        for (sInt f = 0; f < folds; f++)
+          n = fabsf(2.0f * n - 1.0f);
+        value += n * scale;
+        norm += scale;
+        szx *= 2.0f;
+        szy *= 2.0f;
+        szz *= 2.0f;
+        scale *= persistence;
+      }
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = p.g = p.b = to16(norm > 0.0f ? value / norm : 0.0f);
+      p.a = 65535;
+    }
+}
+
+void MMBricksUneven(GenTexture &out, GenTexture *outColor, sInt iterations,
+                    sF32 minSize, sF32 randomness, sF32 mortar,
+                    sF32 roundR, sF32 bevel, sF32 seed) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (bevel < 0.00001f)
+    bevel = 0.00001f;
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w, v = (py + 0.5f) / h;
+      // oldbricks_uneven: recursive binary split containing (u, v)
+      sF32 ax = 0.0f, ay = 0.0f, bx = 1.0f, by = 1.0f;
+      for (sInt i = 0; i < iterations; i++) {
+        const sF32 szx = bx - ax, szy = by - ay;
+        if ((szx > szy ? szx : szy) < minSize)
+          break;
+        Vec2 r2 = mmRand2(mmRand(ax + bx, ay + by), seed);
+        sF32 x = mmRand(r2.x, r2.y) * randomness +
+                 (1.0f - randomness) * 0.5f;
+        if (szx > szy) {
+          x *= szx;
+          if (u > ax + x)
+            ax += x;
+          else
+            bx = ax + x;
+        } else {
+          x *= szy;
+          if (v > ay + x)
+            ay += x;
+          else
+            by = ay + x;
+        }
+      }
+      // oldbrick2: rounded-box mask inside the rect
+      const sF32 cx = 0.5f * (ax + bx), cy = 0.5f * (ay + by);
+      const sF32 dx = fabsf(u - cx) - 0.5f * (bx - ax) + roundR + mortar;
+      const sF32 dy = fabsf(v - cy) - 0.5f * (by - ay) + roundR + mortar;
+      const sF32 mx = dx > 0.0f ? dx : 0.0f;
+      const sF32 my = dy > 0.0f ? dy : 0.0f;
+      const sF32 dmax = dx > dy ? dx : dy;
+      sF32 dist = sqrtf(mx * mx + my * my) +
+                  (dmax < 0.0f ? dmax : 0.0f) - roundR;
+      const sF32 mask = clamp01(-dist / bevel);
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = p.g = p.b = to16(mask);
+      p.a = 65535;
+      if (outColor && outColor->Data) {
+        Vec2 sr = mmRand2(seed, seed);
+        sF32 rgb[3];
+        mmRand3(glslFract(ax) + sr.x, glslFract(ay) + sr.y, rgb);
+        Pixel &q = outColor->Data[(size_t)py * w + px];
+        q.r = to16(rgb[0]);
+        q.g = to16(rgb[1]);
+        q.b = to16(rgb[2]);
+        q.a = 65535;
+      }
+    }
+}
+
 void MMBox(GenTexture &out, sF32 cx, sF32 cy, sF32 cz, sF32 sx, sF32 sy,
            sF32 sz, sF32 rx, sF32 ry, sF32 rz) {
   if (!out.Data)

@@ -698,6 +698,114 @@ void MMAddTiler(GenTexture &out, GenTexture *outColor, const GenTexture &in,
   }
 }
 
+// Ring/spiral instance scatter (circle_splatter.mmg).
+void MMCircleSplatter(GenTexture &out, GenTexture *outColor,
+                      GenTexture *outUV, const GenTexture &in,
+                      const GenTexture *mask, sInt count, sInt rings,
+                      sF32 scaleX, sF32 scaleY, sF32 radius, sF32 spiral,
+                      sF32 iRotate, sF32 iScale, sF32 rotateDeg,
+                      sF32 scaleJitter, sF32 value, sF32 seed) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  if (count < 1)
+    count = 1;
+  if (rings < 1)
+    rings = 1;
+  if (scaleX < 1e-6f)
+    scaleX = 1e-6f;
+  if (scaleY < 1e-6f)
+    scaleY = 1e-6f;
+  auto grayIn = [&](sF32 u, sF32 v) -> sF32 {
+    sF32 c[4];
+    sampleRGBA(in, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+  auto maskAt = [&](sF32 u, sF32 v) -> sF32 {
+    if (!mask || !mask->Data)
+      return 1.0f;
+    sF32 c[4];
+    sampleRGBA(*mask, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+  for (sInt py = 0; py < h; py++) {
+    const sF32 uvy = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 uvx = (px + 0.5f) / w;
+      sF32 c = 0.0f;
+      sF32 rc[3] = {0, 0, 0}, ruv[3] = {0, 0, 0};
+      sF32 sd[2];
+      tilerRand2(seed, seed, sd);
+      for (sInt i = 0; i < count; i++) {
+        const sF32 a = -1.57079632679f +
+                       6.28318530718f * (sF32)i * rings / (sF32)count;
+        const sF32 ringsDist =
+            ceilf((sF32)(i + 1) * rings / (sF32)count) / (sF32)rings;
+        const sF32 spiralDist = (sF32)(i + 1) / (sF32)count;
+        const sF32 dist =
+            radius * (ringsDist + (spiralDist - ringsDist) * spiral);
+        const sF32 posX = dist * cosf(a);
+        const sF32 posY = dist * sinf(a);
+        const sF32 m = maskAt(glslFract2(posX - 0.5f) + 0.0f,
+                              glslFract2(posY - 0.5f) + 0.0f);
+        if (m <= 0.01f)
+          continue;
+        sF32 pvx = uvx - 0.5f - posX;
+        sF32 pvy = uvy - 0.5f - posY;
+        sF32 rc1[3];
+        tilerRand3(sd[0], sd[1], rc1);
+        tilerRand2(sd[0], sd[1], sd);
+        const sF32 angle = (sd[0] * 2.0f - 1.0f) * rotateDeg *
+                               0.01745329251f +
+                           (a + 1.57079632679f) * iRotate;
+        const sF32 ca = cosf(angle), sa = sinf(angle);
+        sF32 rx = ca * pvx + sa * pvy;
+        sF32 ry = -sa * pvx + ca * pvy;
+        const sF32 isc =
+            1.0f + ((sF32)(i + 1) / (sF32)(count + 1) - 1.0f) * iScale;
+        rx /= isc;
+        ry /= isc;
+        rx /= scaleX;
+        ry /= scaleY;
+        const sF32 sj = (sd[1] - 0.5f) * 2.0f * scaleJitter + 1.0f;
+        rx = rx * sj + 0.5f;
+        ry = ry * sj + 0.5f;
+        tilerRand2(sd[0], sd[1], sd);
+        if (rx < 0.0f || rx > 1.0f || ry < 0.0f || ry > 1.0f)
+          continue;
+        const sF32 c1 = grayIn(rx, ry) * m * (1.0f - value * sd[0]);
+        if (c1 >= c) {
+          c = c1;
+          rc[0] = rc1[0];
+          rc[1] = rc1[1];
+          rc[2] = rc1[2];
+          ruv[0] = rx;
+          ruv[1] = ry;
+          ruv[2] = sd[0];
+        }
+      }
+      const size_t idx = (size_t)py * w + px;
+      Pixel &p = out.Data[idx];
+      p.r = p.g = p.b = to16(c);
+      p.a = 65535;
+      if (outColor && outColor->Data) {
+        Pixel &q = outColor->Data[idx];
+        q.r = to16(rc[0]);
+        q.g = to16(rc[1]);
+        q.b = to16(rc[2]);
+        q.a = 65535;
+      }
+      if (outUV && outUV->Data) {
+        Pixel &q = outUV->Data[idx];
+        q.r = to16(ruv[0]);
+        q.g = to16(ruv[1]);
+        q.b = to16(ruv[2]);
+        q.a = 65535;
+      }
+    }
+  }
+}
+
 // Directional gaussian along the heightmap slope (slope_blur.mmg).
 void MMSlopeBlur(GenTexture &out, const GenTexture &in,
                  const GenTexture &height, sF32 size, sF32 sigma) {

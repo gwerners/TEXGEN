@@ -870,6 +870,93 @@ class AddTilerCoreNode : public CoreNode {
 };
 
 // ============================================================
+// CairoCoreNode / ShardFBMCoreNode / BricksUnevenCoreNode /
+// CircleSplatterCoreNode — easy-wave generators and scatter
+// ============================================================
+class CairoCoreNode : public CoreNode {
+ public:
+  CairoCoreNode() {}
+  std::string typeName() const override { return "Cairo"; }
+  std::vector<std::string> inputSlotNames() const override { return {}; }
+  std::vector<std::string> outputSlotNames() const override {
+    return {"Out"};
+  }
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx = 3, m_heightIdx = 3;
+  float m_sx = 4.0f, m_sy = 4.0f;
+  float m_angle = 30.0f, m_round = 0.0f;
+};
+
+class ShardFBMCoreNode : public CoreNode {
+ public:
+  ShardFBMCoreNode() {}
+  std::string typeName() const override { return "ShardFBM"; }
+  std::vector<std::string> inputSlotNames() const override {
+    return {"SharpMap", "OffsetMap"};
+  }
+  std::vector<std::string> outputSlotNames() const override {
+    return {"Out"};
+  }
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx = 3, m_heightIdx = 3;
+  float m_sx = 7.0f, m_sy = 7.0f;
+  int m_folds = 0, m_octaves = 4;
+  float m_persistence = 0.5f, m_sharp = 0.7f, m_offset = 0.0f;
+  float m_seed = 0.0f;
+};
+
+class BricksUnevenCoreNode : public CoreNode {
+ public:
+  BricksUnevenCoreNode() {}
+  std::string typeName() const override { return "BricksUneven"; }
+  std::vector<std::string> inputSlotNames() const override { return {}; }
+  std::vector<std::string> outputSlotNames() const override {
+    return {"Out", "Color"};
+  }
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_widthIdx = 3, m_heightIdx = 3;
+  int m_iterations = 8;
+  float m_minSize = 0.3f, m_randomness = 0.5f;
+  float m_mortar = 0.05f, m_round = 0.0f, m_bevel = 0.05f;
+  float m_seed = 0.0f;
+};
+
+class CircleSplatterCoreNode : public CoreNode {
+ public:
+  CircleSplatterCoreNode() {}
+  std::string typeName() const override { return "CircleSplatter"; }
+  std::vector<std::string> inputSlotNames() const override {
+    return {"In", "Mask"};
+  }
+  std::vector<std::string> outputSlotNames() const override {
+    return {"Out", "Color", "UV"};
+  }
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_count = 10, m_rings = 1;
+  float m_scaleX = 1.0f, m_scaleY = 1.0f;
+  float m_radius = 0.25f, m_spiral = 0.0f;
+  float m_iRotate = 0.0f, m_iScale = 0.0f;
+  float m_rotate = 0.0f, m_scale = 0.0f;
+  float m_value = 0.5f, m_seed = 0.0f;
+};
+
+// ============================================================
 // BoxCoreNode — raycast box depth (box.mmg)
 // ============================================================
 class BoxCoreNode : public CoreNode {

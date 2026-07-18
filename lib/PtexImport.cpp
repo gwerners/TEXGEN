@@ -213,6 +213,9 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"noise2", {"Density"}},
       {"binary_smooth", {"In"}},
       {"add_tiler", {"In", "Mask"}},
+      {"shard_fbm", {"SharpMap", "OffsetMap"}},
+      {"circle_splatter", {"In", "Mask"}},
+      {"bricks_uneven", {"", "", ""}}, // mortar/bevel/round maps N/A
       {"anisotropic_kuwahara", {"In"}},
       {"auto_tones", {"In"}},
       {"directional_warp", {"In", "AngleMap", "StrengthMap"}},
@@ -270,6 +273,8 @@ const std::map<std::string, std::vector<std::string>> &portsOut() {
       {"weave2", {"Out", "Horizontal", "Vertical"}},
       {"add_tiler", {"Out", "Color"}},
       {"mingle", {"Out", "Out2"}},
+      {"circle_splatter", {"Out", "Color", "UV"}},
+      {"bricks_uneven", {"Out", "Color"}},
   };
   return m;
 }
@@ -1025,6 +1030,56 @@ bool convertParams(const std::string &type, const json &p,
            {"scaleY", numOr(p, "scale_y", 1.0f)},
            {"fixedOffset", numOr(p, "fixed_offset", 0.5f)},
            {"offset", numOr(p, "offset", 0.5f)},
+           {"rotate", numOr(p, "rotate", 0.0f)},
+           {"scale", numOr(p, "scale", 0.0f)},
+           {"value", numOr(p, "value", 0.5f)},
+           {"seed", numOr(p, "seed", 0.0f)}};
+    return true;
+  }
+  if (type == "cairo") {
+    typeName = "Cairo";
+    out = size3();
+    out["sx"] = numOr(p, "sx", 4.0f);
+    out["sy"] = numOr(p, "sy", 4.0f);
+    out["angle"] = numOr(p, "angle", 30.0f);
+    out["round"] = numOr(p, "round", 0.0f);
+    return true;
+  }
+  if (type == "shard_fbm") {
+    typeName = "ShardFBM";
+    out = size3();
+    out["sx"] = numOr(p, "sx", 7.0f);
+    out["sy"] = numOr(p, "sy", 7.0f);
+    out["folds"] = intOr(p, "folds", 0);
+    out["octaves"] = intOr(p, "iter", 4);
+    out["persistence"] = numOr(p, "per", 0.5f);
+    out["sharp"] = numOr(p, "sharp", 0.7f);
+    out["offset"] = numOr(p, "off", 0.0f);
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "bricks_uneven") {
+    typeName = "BricksUneven";
+    out = size3();
+    out["iterations"] = intOr(p, "iterations", 8);
+    out["minSize"] = numOr(p, "min_size", 0.3f);
+    out["randomness"] = numOr(p, "randomness", 0.5f);
+    out["mortar"] = numOr(p, "mortar", 0.05f);
+    out["round"] = numOr(p, "round", 0.0f);
+    out["bevel"] = numOr(p, "bevel", 0.05f);
+    out["seed"] = numOr(p, "seed", 0.0f);
+    return true;
+  }
+  if (type == "circle_splatter") {
+    typeName = "CircleSplatter";
+    out = {{"count", intOr(p, "count", 10)},
+           {"rings", intOr(p, "rings", 1)},
+           {"scaleX", numOr(p, "scale_x", 1.0f)},
+           {"scaleY", numOr(p, "scale_y", 1.0f)},
+           {"radius", numOr(p, "radius", 0.25f)},
+           {"spiral", numOr(p, "spiral", 0.0f)},
+           {"iRotate", numOr(p, "i_rotate", 0.0f)},
+           {"iScale", numOr(p, "i_scale", 0.0f)},
            {"rotate", numOr(p, "rotate", 0.0f)},
            {"scale", numOr(p, "scale", 0.0f)},
            {"value", numOr(p, "value", 0.5f)},
@@ -1865,7 +1920,7 @@ GraphResult convertGraph(json mmNodes, json mmConns,
         "binary_smooth", "anisotropic_kuwahara", "auto_tones",
         "directional_warp", "warp_dilation_nobuf", "warp_dilation2_nobuf",
         "mingle", "gauss_blur_x", "gauss_blur_y", "bilateral_blur",
-        "fill_from_colors"};
+        "fill_from_colors", "circle_splatter", "shard_fbm"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));

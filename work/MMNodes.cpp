@@ -1383,6 +1383,101 @@ void AddTilerNode::renderParams() {
   ImGui::PopItemWidth();
 }
 
+std::vector<ImNodes::Ez::SlotInfo> CairoNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> CairoNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void CairoNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##cairo", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##cairo", &m_core.m_heightIdx, s_sizesStr);
+  SliderFloatW("SX##cairo", &m_core.m_sx, 1.0f, 32.0f);
+  SliderFloatW("SY##cairo", &m_core.m_sy, 1.0f, 32.0f);
+  SliderFloatW("Angle##cairo", &m_core.m_angle, 0.0f, 90.0f);
+  Hint("Pentagon split angle of the cairo tiling");
+  SliderFloatW("Round##cairo", &m_core.m_round, 0.0f, 1.0f);
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> ShardFBMNode::inputSlotInfos() const {
+  return {{"SharpMap", 1}, {"OffsetMap", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> ShardFBMNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void ShardFBMNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##shfbm", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##shfbm", &m_core.m_heightIdx, s_sizesStr);
+  SliderFloatW("ScaleX##shfbm", &m_core.m_sx, 1.0f, 32.0f);
+  SliderFloatW("ScaleY##shfbm", &m_core.m_sy, 1.0f, 32.0f);
+  SliderIntW("Octaves##shfbm", &m_core.m_octaves, 1, 10);
+  SliderIntW("Folds##shfbm", &m_core.m_folds, 0, 5);
+  SliderFloatW("Persistence##shfbm", &m_core.m_persistence, 0.0f, 1.0f);
+  SliderFloatW("Sharpness##shfbm", &m_core.m_sharp, 0.0f, 1.0f);
+  Hint("Shard edge sharpness (modulated by SharpMap)");
+  SliderFloatW("Offset##shfbm", &m_core.m_offset, 0.0f, 1.0f);
+  Hint("Z slice of the 3D noise (modulated by OffsetMap)");
+  SliderFloatW("Seed##shfbm", &m_core.m_seed, 0.0f, 10.0f);
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> BricksUnevenNode::inputSlotInfos() const {
+  return {};
+}
+std::vector<ImNodes::Ez::SlotInfo> BricksUnevenNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}, {"Color", 1}};
+}
+
+void BricksUnevenNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("W##bku", &m_core.m_widthIdx, s_sizesStr);
+  ImGui::Combo("H##bku", &m_core.m_heightIdx, s_sizesStr);
+  SliderIntW("Iterations##bku", &m_core.m_iterations, 1, 16);
+  Hint("Binary splits until bricks reach the minimum size");
+  SliderFloatW("MinSize##bku", &m_core.m_minSize, 0.02f, 1.0f);
+  SliderFloatW("Randomness##bku", &m_core.m_randomness, 0.0f, 1.0f);
+  SliderFloatW("Mortar##bku", &m_core.m_mortar, 0.0f, 0.2f);
+  SliderFloatW("Round##bku", &m_core.m_round, 0.0f, 0.2f);
+  SliderFloatW("Bevel##bku", &m_core.m_bevel, 0.0f, 0.2f);
+  SliderFloatW("Seed##bku", &m_core.m_seed, 0.0f, 10.0f);
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> CircleSplatterNode::inputSlotInfos()
+    const {
+  return {{"In", 1}, {"Mask", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> CircleSplatterNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}, {"Color", 1}, {"UV", 1}};
+}
+
+void CircleSplatterNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderIntW("Count##csp", &m_core.m_count, 1, 128);
+  SliderIntW("Rings##csp", &m_core.m_rings, 1, 16);
+  SliderFloatW("Radius##csp", &m_core.m_radius, 0.0f, 0.5f);
+  SliderFloatW("Spiral##csp", &m_core.m_spiral, 0.0f, 1.0f);
+  Hint("0 = concentric rings, 1 = spiral placement");
+  SliderFloatW("ScaleX##csp", &m_core.m_scaleX, 0.01f, 1.0f);
+  SliderFloatW("ScaleY##csp", &m_core.m_scaleY, 0.01f, 1.0f);
+  SliderFloatW("IRotate##csp", &m_core.m_iRotate, 0.0f, 1.0f);
+  Hint("Rotates instances to follow the ring tangent");
+  SliderFloatW("IScale##csp", &m_core.m_iScale, 0.0f, 1.0f);
+  Hint("Shrinks instances progressively along the sequence");
+  SliderFloatW("Rotate##csp", &m_core.m_rotate, 0.0f, 180.0f);
+  SliderFloatW("Scale##csp", &m_core.m_scale, 0.0f, 1.0f);
+  SliderFloatW("Value##csp", &m_core.m_value, 0.0f, 1.0f);
+  SliderFloatW("Seed##csp", &m_core.m_seed, 0.0f, 10.0f);
+  ImGui::PopItemWidth();
+}
+
 std::vector<ImNodes::Ez::SlotInfo> BoxNode::inputSlotInfos() const {
   return {};
 }

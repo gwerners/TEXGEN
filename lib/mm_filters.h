@@ -252,6 +252,16 @@ void MMSmoothMinMax(GenTexture &out, const GenTexture *in1,
                     const GenTexture *in2, sInt op, sF32 k, sF32 def1,
                     sF32 def2);
 
+// Circle Splatter (circle_splatter.mmg): scatters instances of the
+// input on rings (or a spiral) around the center. outColor/outUV
+// (optional) carry the topmost instance's random color and local UV.
+void MMCircleSplatter(GenTexture &out, GenTexture *outColor,
+                      GenTexture *outUV, const GenTexture &in,
+                      const GenTexture *mask, sInt count, sInt rings,
+                      sF32 scaleX, sF32 scaleY, sF32 radius, sF32 spiral,
+                      sF32 iRotate, sF32 iScale, sF32 rotateDeg,
+                      sF32 scaleJitter, sF32 value, sF32 seed);
+
 // Directional Blur (directional_blur.mmg): one-sided gaussian smear
 // of up to 51 taps along 'angle' (degrees, y flipped like MM), with
 // texel steps of 1/sizePx UV. sigma is in tap units and is modulated

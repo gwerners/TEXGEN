@@ -157,6 +157,12 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
       {"WarpDilate",
        {"Filter", "Smears bright values along the height map's slope"}},
       {"Box", {"Generator", "Depth of a rotated 3D box seen from above"}},
+      {"Cairo", {"Generator", "Pentagonal cairo tiling"}},
+      {"ShardFBM", {"Generator", "Sharp shard noise over octaves"}},
+      {"BricksUneven",
+       {"Generator", "Bricks from recursive uneven splits"}},
+      {"CircleSplatter",
+       {"Filter", "Scatters instances on rings or a spiral"}},
       {"WaveletNoise",
        {"Generator", "Oriented sine wavelets accumulated over octaves"}},
       {"BinarySmooth",
@@ -294,6 +300,10 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<FillFromColorsCoreNode>(r);
     registerType<WarpDilateCoreNode>(r);
     registerType<BoxCoreNode>(r);
+    registerType<CairoCoreNode>(r);
+    registerType<ShardFBMCoreNode>(r);
+    registerType<BricksUnevenCoreNode>(r);
+    registerType<CircleSplatterCoreNode>(r);
     registerType<WaveletNoiseCoreNode>(r);
     registerType<BinarySmoothCoreNode>(r);
     registerType<WeaveCoreNode>(r);
