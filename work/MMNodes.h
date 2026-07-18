@@ -196,6 +196,13 @@ class BevelNode : public UiNode<BevelCoreNode> {
   void renderParams() override;
 };
 
+class AutoTonesNode : public UiNode<AutoTonesCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
 class AnisotropicKuwaharaNode : public UiNode<AnisotropicKuwaharaCoreNode> {
  public:
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;

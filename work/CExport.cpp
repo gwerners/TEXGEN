@@ -1047,6 +1047,17 @@ static void emitNode(std::ostringstream& ss,
     }
   }
 
+  else if (type == "AutoTones") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMAutoTones(" << v << ", " << in << ");\n";
+    }
+  }
+
   else if (type == "AnisotropicKuwahara") {
     std::string in = srcVar(conns, id, "In");
     ss << "    GenTexture " << v << ";\n";

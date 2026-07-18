@@ -736,6 +736,21 @@ class DilateCoreNode : public CoreNode {
 };
 
 // ============================================================
+// AutoTonesCoreNode — full-range contrast stretch (auto_tones.mmg)
+// ============================================================
+class AutoTonesCoreNode : public CoreNode {
+ public:
+  AutoTonesCoreNode() {}
+  std::string typeName() const override { return "AutoTones"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override { return {}; }
+  void loadParams(const nlohmann::json&) override {}
+};
+
+// ============================================================
 // AnisotropicKuwaharaCoreNode — painterly filter
 // (anisotropic_kuwahara.mmg)
 // ============================================================

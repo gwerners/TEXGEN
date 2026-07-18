@@ -213,6 +213,7 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"binary_smooth", {"In"}},
       {"add_tiler", {"In", "Mask"}},
       {"anisotropic_kuwahara", {"In"}},
+      {"auto_tones", {"In"}},
       {"box", {}},
       {"wavelet_noise", {}},
       {"edge_detect_2", {"In"}},
@@ -910,6 +911,11 @@ bool convertParams(const std::string &type, const json &p,
     out["mode"] = 0;
     return true;
   }
+  if (type == "auto_tones") {
+    typeName = "AutoTones";
+    out = json::object();
+    return true;
+  }
   if (type == "anisotropic_kuwahara") {
     typeName = "AnisotropicKuwahara";
     int resExp = intOr(p, "resolution", 9);
@@ -1153,7 +1159,7 @@ bool isPassthrough(const std::string &type) {
   // a baked-texture pipeline cannot do — every output = the input.
   static const std::set<std::string> s = {
       "buffer",     "reroute", "supersample",
-      "auto_tones", "tonality", "sharpen", "denoiser",
+      "tonality", "sharpen", "denoiser",
       "variations_greyscale", "variations_color", "optional"};
   return s.count(type) > 0;
 }
@@ -1444,6 +1450,142 @@ void expandGraphMacros(json &nodes) {
   }
 }
 
+// ---- iterate_buffer unrolling ----
+// MM's iterate_buffer is a feedback loop: output 1 feeds the loop
+// body, input 1 receives its result, input 0 is the initial state and
+// output 0 the final result. A baked pipeline has no feedback, so the
+// body (nodes between output 1 and input 1) is cloned once per
+// iteration, chaining the state through the copies. Iterations are
+// capped at 32 (auto_tones-style reductions convert natively instead).
+void unrollIterateBuffers(json &nodes, json &conns) {
+  for (int guard = 0; guard < 8; guard++) {
+    std::string iname;
+    int iterations = 1;
+    for (auto &n : nodes)
+      if (n.value("type", std::string()) == "iterate_buffer") {
+        iname = n.value("name", std::string());
+        json p = n.value("parameters", json::object());
+        iterations = intOr(p, "iterations", 1);
+        break;
+      }
+    if (iname.empty())
+      return;
+    iterations = iterations < 1 ? 1 : (iterations > 32 ? 32 : iterations);
+
+    std::pair<std::string, int> init{"", 0}, loopRet{"", 0};
+    for (auto &c : conns)
+      if (c.value("to", std::string()) == iname) {
+        if (c.value("to_port", 0) == 0)
+          init = {c.value("from", std::string()), c.value("from_port", 0)};
+        else
+          loopRet = {c.value("from", std::string()), c.value("from_port", 0)};
+      }
+
+    // body = nodes reachable forward from output 1 that also reach
+    // input 1 (never crossing the iterate_buffer itself)
+    std::set<std::string> forward, backward;
+    {
+      std::vector<std::string> stack;
+      for (auto &c : conns)
+        if (c.value("from", std::string()) == iname &&
+            c.value("from_port", 0) == 1)
+          stack.push_back(c.value("to", std::string()));
+      while (!stack.empty()) {
+        std::string cur = stack.back();
+        stack.pop_back();
+        if (cur == iname || forward.count(cur))
+          continue;
+        forward.insert(cur);
+        for (auto &c : conns)
+          if (c.value("from", std::string()) == cur)
+            stack.push_back(c.value("to", std::string()));
+      }
+      if (!loopRet.first.empty())
+        stack.push_back(loopRet.first);
+      while (!stack.empty()) {
+        std::string cur = stack.back();
+        stack.pop_back();
+        if (cur == iname || backward.count(cur))
+          continue;
+        backward.insert(cur);
+        for (auto &c : conns)
+          if (c.value("to", std::string()) == cur)
+            stack.push_back(c.value("from", std::string()));
+      }
+    }
+    std::set<std::string> body;
+    for (auto &nm : forward)
+      if (backward.count(nm))
+        body.insert(nm);
+
+    json newNodes = json::array();
+    json newConns = json::array();
+    std::map<std::string, json> bodyNodes;
+    for (auto &n : nodes) {
+      const std::string nm = n.value("name", std::string());
+      if (nm == iname)
+        continue;
+      if (body.count(nm)) {
+        bodyNodes[nm] = n;
+        continue;
+      }
+      newNodes.push_back(n);
+    }
+
+    std::pair<std::string, int> state = init;
+    if (!loopRet.first.empty() && !body.empty()) {
+      auto cloneName = [&](const std::string &nm, int k) {
+        return nm + "@it" + std::to_string(k);
+      };
+      for (int k = 1; k <= iterations; k++) {
+        for (auto &kv : bodyNodes) {
+          json cl = kv.second;
+          cl["name"] = cloneName(kv.first, k);
+          newNodes.push_back(cl);
+        }
+        for (auto &c : conns) {
+          const std::string from = c.value("from", std::string());
+          const std::string to = c.value("to", std::string());
+          if (!body.count(to))
+            continue;
+          json c2 = c;
+          c2["to"] = cloneName(to, k);
+          if (from == iname) { // state feed (output 1)
+            c2["from"] = state.first;
+            c2["from_port"] = state.second;
+          } else if (body.count(from)) {
+            c2["from"] = cloneName(from, k);
+          } // outside sources stay shared
+          newConns.push_back(c2);
+        }
+        state = {cloneName(loopRet.first, k), loopRet.second};
+      }
+    }
+
+    for (auto &c : conns) {
+      const std::string from = c.value("from", std::string());
+      const std::string to = c.value("to", std::string());
+      if (to == iname || body.count(to))
+        continue; // handled above (or dropped with the loop)
+      json c2 = c;
+      if (from == iname) { // outputs 0 and 1 both resolve to the result
+        if (state.first.empty())
+          continue;
+        c2["from"] = state.first;
+        c2["from_port"] = state.second;
+      } else if (body.count(from)) {
+        // a body output consumed outside the loop = its final value
+        if (state.first.empty())
+          continue;
+        c2["from"] = from + "@it" + std::to_string(iterations);
+      }
+      newConns.push_back(c2);
+    }
+    nodes = newNodes;
+    conns = newConns;
+  }
+}
+
 struct GraphResult {
   json nodes = json::array();
   json conns = json::array();
@@ -1464,6 +1606,7 @@ GraphResult convertGraph(json mmNodes, json mmConns,
                          std::vector<std::string> *skipped) {
   GraphResult res;
   expandGraphMacros(mmNodes);
+  unrollIterateBuffers(mmNodes, mmConns);
   collapsePassthroughs(mmNodes, mmConns);
   expandLayeredBlends(mmNodes, mmConns);
 
@@ -1597,7 +1740,7 @@ GraphResult convertGraph(json mmNodes, json mmConns,
         "height_to_offset", "bevel", "dilate", "normal_blend",
         "directional_blur", "occlusion", "edge_detect_2",
         "fill_to_gradient", "fill_to_gradient2", "fill_to_size2",
-        "binary_smooth", "anisotropic_kuwahara"};
+        "binary_smooth", "anisotropic_kuwahara", "auto_tones"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));

@@ -1254,6 +1254,17 @@ void BevelNode::renderParams() {
   ImGui::PopItemWidth();
 }
 
+std::vector<ImNodes::Ez::SlotInfo> AutoTonesNode::inputSlotInfos() const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> AutoTonesNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void AutoTonesNode::renderParams() {
+  ImGui::TextDisabled("stretches luminance to [0, 1]");
+}
+
 std::vector<ImNodes::Ez::SlotInfo> AnisotropicKuwaharaNode::inputSlotInfos()
     const {
   return {{"In", 1}};

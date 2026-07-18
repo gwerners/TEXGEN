@@ -2181,6 +2181,25 @@ void BevelCoreNode::execute(const std::vector<GenTexture*>& inputs,
 }
 
 // ============================================================
+// AutoTonesCoreNode
+// ============================================================
+
+std::vector<std::string> AutoTonesCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> AutoTonesCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void AutoTonesCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMAutoTones(outputs[0], *in);
+}
+
+// ============================================================
 // AnisotropicKuwaharaCoreNode
 // ============================================================
 

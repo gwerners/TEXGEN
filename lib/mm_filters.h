@@ -204,6 +204,11 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
 void MMNormalBlend(GenTexture &out, const GenTexture *fg,
                    const GenTexture *bg, const GenTexture *mask, sF32 amount);
 
+// Auto Tones (auto_tones.mmg): stretches the image so its luminance
+// range covers [0, 1] exactly. MM computes the min/max with 13
+// iterate_buffer reduction passes; this is the converged result.
+void MMAutoTones(GenTexture &out, const GenTexture &in);
+
 // Anisotropic Kuwahara (anisotropic_kuwahara.mmg; adapted from
 // Garrett Gunnell's MIT-licensed implementation): painterly filter
 // steered by the blurred structure tensor. sizePx is the reference

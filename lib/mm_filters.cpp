@@ -1505,6 +1505,31 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
     }
 }
 
+void MMAutoTones(GenTexture &out, const GenTexture &in) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  sF32 lo = 1.0f, hi = 0.0f;
+  const sF32 s = 1.0f / 65535.0f;
+  for (sInt i = 0; i < in.NPixels; i++) {
+    const Pixel &p = in.Data[i];
+    const sF32 g = (p.r + p.g + p.b) * s / 3.0f;
+    lo = g < lo ? g : lo;
+    hi = g > hi ? g : hi;
+  }
+  const sF32 span = hi - lo > 1e-6f ? hi - lo : 1.0f;
+  for (sInt py = 0; py < h; py++)
+    for (sInt px = 0; px < w; px++) {
+      sF32 c[4];
+      sampleRGBA(in, (px + 0.5f) / w, (py + 0.5f) / h, c);
+      Pixel &o = out.Data[(size_t)py * w + px];
+      o.r = to16(clamp01((c[0] - lo) / span));
+      o.g = to16(clamp01((c[1] - lo) / span));
+      o.b = to16(clamp01((c[2] - lo) / span));
+      o.a = to16(c[3]);
+    }
+}
+
 void MMAnisotropicKuwahara(GenTexture &out, const GenTexture &in,
                            sF32 sizePx, sInt kernel, sF32 sharpness,
                            sF32 eccentricity, sF32 uniformity) {
