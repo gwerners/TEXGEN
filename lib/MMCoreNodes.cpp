@@ -2181,6 +2181,50 @@ void BevelCoreNode::execute(const std::vector<GenTexture*>& inputs,
 }
 
 // ============================================================
+// AnisotropicKuwaharaCoreNode
+// ============================================================
+
+std::vector<std::string> AnisotropicKuwaharaCoreNode::inputSlotNames()
+    const {
+  return {"In"};
+}
+std::vector<std::string> AnisotropicKuwaharaCoreNode::outputSlotNames()
+    const {
+  return {"Out"};
+}
+
+nlohmann::json AnisotropicKuwaharaCoreNode::saveParams() const {
+  return {{"size", m_size},
+          {"kernel", m_kernel},
+          {"sharpness", m_sharpness},
+          {"eccentricity", m_eccentricity},
+          {"uniformity", m_uniformity}};
+}
+
+void AnisotropicKuwaharaCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("size"))
+    m_size = j["size"];
+  if (j.contains("kernel"))
+    m_kernel = j["kernel"];
+  if (j.contains("sharpness"))
+    m_sharpness = j["sharpness"];
+  if (j.contains("eccentricity"))
+    m_eccentricity = j["eccentricity"];
+  if (j.contains("uniformity"))
+    m_uniformity = j["uniformity"];
+}
+
+void AnisotropicKuwaharaCoreNode::execute(
+    const std::vector<GenTexture*>& inputs,
+    std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMAnisotropicKuwahara(outputs[0], *in, m_size, m_kernel, m_sharpness,
+                        m_eccentricity, m_uniformity);
+}
+
+// ============================================================
 // AddTilerCoreNode
 // ============================================================
 

@@ -1505,6 +1505,218 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
     }
 }
 
+void MMAnisotropicKuwahara(GenTexture &out, const GenTexture &in,
+                           sF32 sizePx, sInt kernel, sF32 sharpness,
+                           sF32 eccentricity, sF32 uniformity) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 d = 1.0f / (sizePx > 1.0f ? sizePx : 256.0f);
+
+  auto rgbAt = [&](sF32 u, sF32 v, sF32 c[3]) {
+    sF32 t[4];
+    sampleRGBA(in, u, v, t);
+    c[0] = t[0];
+    c[1] = t[1];
+    c[2] = t[2];
+  };
+
+  // 1) structure tensor from RGB sobel (float precision — the tensor
+  //    values exceed the 16-bit texture range)
+  std::vector<sF32> txx((size_t)w * h), tyy((size_t)w * h),
+      txy((size_t)w * h);
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 c[3], sx[3] = {0, 0, 0}, sy[3] = {0, 0, 0};
+      static const sF32 ox[6] = {-1, -1, -1, 1, 1, 1};
+      static const sF32 oy[6] = {-1, 0, 1, -1, 0, 1};
+      static const sF32 wx[6] = {1, 2, 1, -1, -2, -1};
+      for (sInt k = 0; k < 6; k++) {
+        rgbAt(u + ox[k] * d, v + oy[k] * d, c);
+        for (sInt i = 0; i < 3; i++)
+          sx[i] += wx[k] * c[i];
+        rgbAt(u + oy[k] * d, v + ox[k] * d, c);
+        for (sInt i = 0; i < 3; i++)
+          sy[i] += wx[k] * c[i];
+      }
+      for (sInt i = 0; i < 3; i++) {
+        sx[i] *= 0.25f;
+        sy[i] *= 0.25f;
+      }
+      const size_t idx = (size_t)py * w + px;
+      txx[idx] = sx[0] * sx[0] + sx[1] * sx[1] + sx[2] * sx[2];
+      tyy[idx] = sy[0] * sy[0] + sy[1] * sy[1] + sy[2] * sy[2];
+      txy[idx] = sx[0] * sy[0] + sx[1] * sy[1] + sx[2] * sy[2];
+    }
+  }
+
+  // 2) gaussian blur of the tensor field, sigma = uniformity texels
+  //    at the reference resolution (scaled to our resolution)
+  {
+    const sF32 sigma = uniformity * (sF32)w * d;
+    if (sigma > 0.01f) {
+      const sInt rad = (sInt)(sigma * 3.0f) + 1;
+      std::vector<sF32> kern(rad + 1);
+      for (sInt i = 0; i <= rad; i++)
+        kern[i] = expf(-0.5f * (i / sigma) * (i / sigma));
+      auto blur1d = [&](std::vector<sF32> &f, bool horiz) {
+        std::vector<sF32> tmp = f;
+        for (sInt py = 0; py < h; py++)
+          for (sInt px = 0; px < w; px++) {
+            sF32 acc = 0.0f, wsum = 0.0f;
+            for (sInt i = -rad; i <= rad; i++) {
+              const sInt xx = horiz ? (px + i + w * 8) % w : px;
+              const sInt yy = horiz ? py : (py + i + h * 8) % h;
+              const sF32 kw = kern[i < 0 ? -i : i];
+              acc += tmp[(size_t)yy * w + xx] * kw;
+              wsum += kw;
+            }
+            f[(size_t)py * w + px] = acc / wsum;
+          }
+      };
+      blur1d(txx, true);
+      blur1d(txx, false);
+      blur1d(tyy, true);
+      blur1d(tyy, false);
+      blur1d(txy, true);
+      blur1d(txy, false);
+    }
+  }
+
+  // 3) main pass (Gunnell's 8-sector polynomial weighting)
+  const sF32 sharp = 3.0f + 15.0f * clamp01(sharpness);
+  const sInt kernelSize = kernel * 2 > 0 ? kernel * 2 : 0;
+  const sF32 alpha = 1.0f, hardness = 8.0f, zeroCross = 0.58f;
+  const sF32 zeta = kernelSize > 0 ? 1.0f / ((sF32)kernelSize / 2.0f) : 1.0f;
+  const sF32 ecc = 0.7f + 0.8f * clamp01(eccentricity * 0.5f);
+  const sF32 sinZC = sinf(zeroCross);
+  const sF32 eta = (zeta + cosf(zeroCross)) / (sinZC * sinZC);
+
+  for (sInt py = 0; py < h; py++) {
+    const sF32 uvY = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 uvX = (px + 0.5f) / w;
+      const size_t idx = (size_t)py * w + px;
+      const sF32 gx = txx[idx], gy = tyy[idx], gz = txy[idx];
+      const sF32 disc =
+          sqrtf(gy * gy - 2.0f * gx * gy + gx * gx + 4.0f * gz * gz);
+      const sF32 l1 = 0.5f * (gy + gx + disc);
+      const sF32 l2 = 0.5f * (gy + gx - disc);
+      sF32 vx = l1 - gx, vy = -gz;
+      const sF32 vlen = sqrtf(vx * vx + vy * vy);
+      if (vlen > 0.0f) {
+        vx /= vlen;
+        vy /= vlen;
+      } else {
+        vx = 0.0f;
+        vy = 1.0f;
+      }
+      const sF32 A = (l1 + l2 > 0.0f) ? (l1 - l2) / (l1 + l2) : 0.0f;
+
+      const sInt kernelRadius = kernelSize / 2;
+      auto clampf = [](sF32 x, sF32 lo, sF32 hi) {
+        return x < lo ? lo : (x > hi ? hi : x);
+      };
+      const sF32 a = kernelRadius * clampf((alpha + A) / alpha, 0.1f, 2.0f);
+      const sF32 b = kernelRadius * clampf(alpha / (alpha + A), 0.1f, 2.0f);
+      const sF32 cp = vx, sp = vy;
+      // SR = S * R with GLSL column-major mats
+      const sF32 s00 = 0.5f / a / ecc, s11 = 0.5f / b * ecc;
+      const sF32 sr00 = s00 * cp, sr01 = -s11 * sp;
+      const sF32 sr10 = s00 * sp, sr11 = s11 * cp;
+      const sInt maxX = (sInt)sqrtf(a * a * cp * cp + b * b * sp * sp);
+      const sInt maxY = (sInt)sqrtf(a * a * sp * sp + b * b * cp * cp);
+
+      sF32 m[8][4], s2[8][3];
+      for (sInt k = 0; k < 8; k++) {
+        m[k][0] = m[k][1] = m[k][2] = m[k][3] = 0.0f;
+        s2[k][0] = s2[k][1] = s2[k][2] = 0.0f;
+      }
+
+      for (sInt y = -maxY; y <= maxY; y++)
+        for (sInt x = -maxX; x <= maxX; x++) {
+          sF32 wvx = sr00 * (sF32)x + sr10 * (sF32)y;
+          sF32 wvy = sr01 * (sF32)x + sr11 * (sF32)y;
+          if (wvx * wvx + wvy * wvy > 0.125f)
+            continue;
+          sF32 c[3];
+          rgbAt(uvX + x * d, uvY + y * d, c);
+          for (sInt i = 0; i < 3; i++)
+            c[i] = clamp01(c[i]);
+          sF32 wgt[8], sum = 0.0f, z, vxx, vyy;
+          vxx = zeta - eta * wvx * wvx;
+          vyy = zeta - eta * wvy * wvy;
+          z = wvy + vxx > 0.0f ? wvy + vxx : 0.0f;
+          wgt[0] = z * z;
+          z = -wvx + vyy > 0.0f ? -wvx + vyy : 0.0f;
+          wgt[2] = z * z;
+          z = -wvy + vxx > 0.0f ? -wvy + vxx : 0.0f;
+          wgt[4] = z * z;
+          z = wvx + vyy > 0.0f ? wvx + vyy : 0.0f;
+          wgt[6] = z * z;
+          const sF32 rx = 0.70710678f * (wvx - wvy);
+          const sF32 ry = 0.70710678f * (wvx + wvy);
+          vxx = zeta - eta * rx * rx;
+          vyy = zeta - eta * ry * ry;
+          z = ry + vxx > 0.0f ? ry + vxx : 0.0f;
+          wgt[1] = z * z;
+          z = -rx + vyy > 0.0f ? -rx + vyy : 0.0f;
+          wgt[3] = z * z;
+          z = -ry + vxx > 0.0f ? -ry + vxx : 0.0f;
+          wgt[5] = z * z;
+          z = rx + vyy > 0.0f ? rx + vyy : 0.0f;
+          wgt[7] = z * z;
+          for (sInt k = 0; k < 8; k++)
+            sum += wgt[k];
+          if (sum <= 0.0f)
+            continue;
+          const sF32 g =
+              expf(-3.125f * (wvx * wvx + wvy * wvy)) / sum;
+          for (sInt k = 0; k < 8; k++) {
+            const sF32 wk = wgt[k] * g;
+            for (sInt i = 0; i < 3; i++) {
+              m[k][i] += c[i] * wk;
+              s2[k][i] += c[i] * c[i] * wk;
+            }
+            m[k][3] += wk;
+          }
+        }
+
+      sF32 res[4] = {0, 0, 0, 0};
+      for (sInt k = 0; k < 8; k++) {
+        if (m[k][3] <= 0.0f)
+          continue;
+        sF32 mean[3], var = 0.0f;
+        for (sInt i = 0; i < 3; i++) {
+          mean[i] = m[k][i] / m[k][3];
+          sF32 sv = s2[k][i] / m[k][3] - mean[i] * mean[i];
+          var += sv < 0.0f ? -sv : sv;
+        }
+        const sF32 wk =
+            1.0f / (1.0f + powf(hardness * 1000.0f * var, 0.5f * sharp));
+        for (sInt i = 0; i < 3; i++)
+          res[i] += mean[i] * wk;
+        res[3] += wk;
+      }
+      Pixel &p = out.Data[idx];
+      if (res[3] > 0.0f) {
+        p.r = to16(clamp01(res[0] / res[3]));
+        p.g = to16(clamp01(res[1] / res[3]));
+        p.b = to16(clamp01(res[2] / res[3]));
+      } else {
+        sF32 c[3];
+        rgbAt(uvX, uvY, c);
+        p.r = to16(c[0]);
+        p.g = to16(c[1]);
+        p.b = to16(c[2]);
+      }
+      p.a = 65535;
+    }
+  }
+}
+
 void MMBinarySmooth(GenTexture &out, const GenTexture &in, sF32 sizePx,
                     sF32 smoothPx, sF32 offset, sF32 bevel) {
   if (!out.Data || !in.Data)

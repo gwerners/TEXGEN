@@ -736,6 +736,28 @@ class DilateCoreNode : public CoreNode {
 };
 
 // ============================================================
+// AnisotropicKuwaharaCoreNode — painterly filter
+// (anisotropic_kuwahara.mmg)
+// ============================================================
+class AnisotropicKuwaharaCoreNode : public CoreNode {
+ public:
+  AnisotropicKuwaharaCoreNode() {}
+  std::string typeName() const override { return "AnisotropicKuwahara"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_size = 512.0f;  // reference resolution (2^resolution in MM)
+  int m_kernel = 6;
+  float m_sharpness = 1.0f;
+  float m_eccentricity = 1.0f;
+  float m_uniformity = 4.0f;
+};
+
+// ============================================================
 // AddTilerCoreNode — additive scatter (dirt.mmg's embedded tiler)
 // ============================================================
 class AddTilerCoreNode : public CoreNode {

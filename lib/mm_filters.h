@@ -204,6 +204,15 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
 void MMNormalBlend(GenTexture &out, const GenTexture *fg,
                    const GenTexture *bg, const GenTexture *mask, sF32 amount);
 
+// Anisotropic Kuwahara (anisotropic_kuwahara.mmg; adapted from
+// Garrett Gunnell's MIT-licensed implementation): painterly filter
+// steered by the blurred structure tensor. sizePx is the reference
+// resolution (texel step), kernel the half kernel size, uniformity
+// the tensor blur sigma in texels.
+void MMAnisotropicKuwahara(GenTexture &out, const GenTexture &in,
+                           sF32 sizePx, sInt kernel, sF32 sharpness,
+                           sF32 eccentricity, sF32 uniformity);
+
 // Binary Smooth (binary_smooth.mmg): hard threshold at 0.5, gaussian
 // blur of 'smooth' texels (at a 'sizePx' reference resolution), then
 // a tones_step ramp centered at 'offset' with width 'bevel'.

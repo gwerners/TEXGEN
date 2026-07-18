@@ -1254,6 +1254,29 @@ void BevelNode::renderParams() {
   ImGui::PopItemWidth();
 }
 
+std::vector<ImNodes::Ez::SlotInfo> AnisotropicKuwaharaNode::inputSlotInfos()
+    const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> AnisotropicKuwaharaNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void AnisotropicKuwaharaNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderIntW("Kernel##aniku", &m_core.m_kernel, 1, 16);
+  Hint("Half size of the painting kernel");
+  SliderFloatW("Sharpness##aniku", &m_core.m_sharpness, 0.0f, 1.0f);
+  SliderFloatW("Eccentricity##aniku", &m_core.m_eccentricity, 0.0f, 2.0f);
+  Hint("How elongated the brush strokes get");
+  SliderFloatW("Uniformity##aniku", &m_core.m_uniformity, 0.0f, 16.0f);
+  Hint("Blur of the orientation field (stroke coherence)");
+  SliderFloatW("Size##aniku", &m_core.m_size, 16.0f, 2048.0f);
+  Hint("Reference resolution for the texel steps");
+  ImGui::PopItemWidth();
+}
+
 std::vector<ImNodes::Ez::SlotInfo> AddTilerNode::inputSlotInfos() const {
   return {{"In", 1}, {"Mask", 1}};
 }

@@ -212,6 +212,7 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"noise2", {"Density"}},
       {"binary_smooth", {"In"}},
       {"add_tiler", {"In", "Mask"}},
+      {"anisotropic_kuwahara", {"In"}},
       {"box", {}},
       {"wavelet_noise", {}},
       {"edge_detect_2", {"In"}},
@@ -544,12 +545,25 @@ bool convertParams(const std::string &type, const json &p,
            {"brightness", 1.0f + numOr(p, "brightness", 0.0f)}};
     return true;
   }
-  if (type == "adjust_hsv" || type == "alter_hsv") {
+  if (type == "adjust_hsv") {
+    // adjust_hsv.mmg: hue adds, saturation/value MULTIPLY
     typeName = "HSCB";
     out = {{"hue", numOr(p, "hue", 0.0f)},
            {"sat", numOr(p, "saturation", 1.0f)},
            {"contrast", 1.0f},
            {"brightness", numOr(p, "value", 1.0f)}};
+    return true;
+  }
+  if (type == "alter_hsv") {
+    // alter_hsv.mmg is ADDITIVE: hsv += delta * all * (map - 0.5), and
+    // the unconnected map default of 1.0 makes the effect delta * 0.5.
+    // Approximated with multipliers around the midtones.
+    typeName = "HSCB";
+    float all = numOr(p, "all", 1.0f);
+    out = {{"hue", numOr(p, "hue", 0.1f) * 0.5f * all},
+           {"sat", 1.0f + numOr(p, "saturation", 0.1f) * 0.5f * all},
+           {"contrast", 1.0f},
+           {"brightness", 1.0f + numOr(p, "value", 0.1f) * 0.5f * all}};
     return true;
   }
   if (type == "gaussian_blur" || type == "fast_blur") {
@@ -894,6 +908,17 @@ bool convertParams(const std::string &type, const json &p,
     out["density"] = numOr(p, "density", 0.5f);
     out["seed"] = numOr(p, "seed", 0.0f);
     out["mode"] = 0;
+    return true;
+  }
+  if (type == "anisotropic_kuwahara") {
+    typeName = "AnisotropicKuwahara";
+    int resExp = intOr(p, "resolution", 9);
+    out = {{"size",
+            (float)(1 << (resExp < 4 ? 4 : (resExp > 12 ? 12 : resExp)))},
+           {"kernel", intOr(p, "size", 6)},
+           {"sharpness", numOr(p, "sharpness", 1.0f)},
+           {"eccentricity", numOr(p, "eccentricity", 1.0f)},
+           {"uniformity", numOr(p, "uniformity", 4.0f)}};
     return true;
   }
   if (type == "add_tiler") {
@@ -1572,7 +1597,7 @@ GraphResult convertGraph(json mmNodes, json mmConns,
         "height_to_offset", "bevel", "dilate", "normal_blend",
         "directional_blur", "occlusion", "edge_detect_2",
         "fill_to_gradient", "fill_to_gradient2", "fill_to_size2",
-        "binary_smooth"};
+        "binary_smooth", "anisotropic_kuwahara"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));
