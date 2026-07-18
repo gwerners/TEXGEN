@@ -480,6 +480,62 @@ void MMBlend(GenTexture &out, const GenTexture &a, const GenTexture &b,
   }
 }
 
+void MMMingle(GenTexture &out, GenTexture *out2, const GenTexture *in1,
+              const GenTexture *in2, const GenTexture *warp, sInt blendMode,
+              sF32 opacity, sF32 stepv, sF32 smoothv, sF32 warpX, sF32 warpY,
+              sF32 strength) {
+  if (!out.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  auto rgbaOr = [&](const GenTexture *t, sF32 u, sF32 v, sF32 c[4]) {
+    if (!t || !t->Data) {
+      c[0] = c[1] = c[2] = 0.0f;
+      c[3] = 1.0f;
+      return;
+    }
+    sampleBilinearWrap(*t, u, v, c);
+  };
+  auto sstep = [&](sF32 x) {
+    const sF32 e0 = stepv - smoothv, e1 = stepv + smoothv;
+    if (e1 - e0 < 1e-6f)
+      return x < e0 ? 0.0f : 1.0f;
+    sF32 t = clamp01((x - e0) / (e1 - e0));
+    return t * t * (3.0f - 2.0f * t);
+  };
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      sF32 wc[4];
+      rgbaOr(warp, u, v, wc);
+      const sF32 w1x = u + strength * warpX * wc[0];
+      const sF32 w1y = v - strength * warpY * wc[1];
+      const sF32 w2x = u - strength * warpX * wc[1];
+      const sF32 w2y = v + strength * warpY * wc[0];
+      const sF32 op = opacity * sstep(wc[2]);
+      sF32 c1[4], c2[4], rgb[3];
+      rgbaOr(in1, w1x, w1y, c1);
+      rgbaOr(in2, w2x, w2y, c2);
+      blendRGB(blendMode, u, v, c1, c2, op * c1[3], rgb);
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = to16(rgb[0]);
+      p.g = to16(rgb[1]);
+      p.b = to16(rgb[2]);
+      p.a = 65535;
+      if (out2 && out2->Data) {
+        rgbaOr(in1, w2x, w2y, c1);
+        rgbaOr(in2, w1x, w1y, c2);
+        blendRGB(blendMode, u, v, c1, c2, op * c1[3], rgb);
+        Pixel &q = out2->Data[(size_t)py * w + px];
+        q.r = to16(rgb[0]);
+        q.g = to16(rgb[1]);
+        q.b = to16(rgb[2]);
+        q.a = 65535;
+      }
+    }
+  }
+}
+
 // ============================================================
 // Warp (warp.mmg)
 // ============================================================

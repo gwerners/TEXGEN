@@ -932,6 +932,15 @@ std::vector<ImNodes::Ez::SlotInfo> FillNode::outputSlotInfos() const {
   return {{"Out", 1}};
 }
 
+std::vector<ImNodes::Ez::SlotInfo> FillFromColorsNode::inputSlotInfos()
+    const {
+  return {{"In", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> FillFromColorsNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
 std::vector<ImNodes::Ez::SlotInfo> FillToUVNode::inputSlotInfos() const {
   return {{"Fill", 1}};
 }
@@ -1251,6 +1260,68 @@ void BevelNode::renderParams() {
   Hint("Width of the bevel ramp around the mask (UV units)");
   if (!m_core.m_curve.empty())
     ImGui::TextDisabled("curve: %d points", (int)m_core.m_curve.size());
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> MingleNode::inputSlotInfos() const {
+  return {{"In1", 1}, {"In2", 1}, {"Warp", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> MingleNode::outputSlotInfos() const {
+  return {{"Out", 1}, {"Out2", 1}};
+}
+
+void MingleNode::renderParams() {
+  static const char* modes =
+      "Normal\0Dissolve\0Multiply\0Screen\0Overlay\0Hard Light\0Soft Light\0"
+      "Burn\0Dodge\0Lighten\0Darken\0Difference\0Additive\0AddSub\0"
+      "Linear Light\0";
+  ImGui::PushItemWidth(120);
+  ImGui::Combo("Mode##mingle", &m_core.m_blendMode, modes);
+  SliderFloatW("Opacity##mingle", &m_core.m_opacity, 0.0f, 1.0f);
+  SliderFloatW("Step##mingle", &m_core.m_step, 0.0f, 1.0f);
+  Hint("Blend mask threshold on the warp map's blue channel");
+  SliderFloatW("Smooth##mingle", &m_core.m_smooth, 0.0f, 1.0f);
+  SliderFloatW("WarpX##mingle", &m_core.m_warpX, -1.0f, 1.0f);
+  SliderFloatW("WarpY##mingle", &m_core.m_warpY, -1.0f, 1.0f);
+  SliderFloatW("Strength##mingle", &m_core.m_strength, 0.0f, 4.0f);
+  Hint("Warp distance driven by the warp map's R/G channels");
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> DirectionalWarpNode::inputSlotInfos()
+    const {
+  return {{"In", 1}, {"AngleMap", 1}, {"StrengthMap", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> DirectionalWarpNode::outputSlotInfos()
+    const {
+  return {{"Out", 1}};
+}
+
+void DirectionalWarpNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Angle##dwarp", &m_core.m_angle, -180.0f, 180.0f);
+  Hint("Warp direction (scaled per pixel by AngleMap)");
+  SliderFloatW("Strength##dwarp", &m_core.m_strength, 0.0f, 1.0f);
+  Hint("Shift distance, scaled by (StrengthMap - 0.5)");
+  ImGui::PopItemWidth();
+}
+
+std::vector<ImNodes::Ez::SlotInfo> WarpDilateNode::inputSlotInfos() const {
+  return {{"In", 1}, {"Height", 1}};
+}
+std::vector<ImNodes::Ez::SlotInfo> WarpDilateNode::outputSlotInfos() const {
+  return {{"Out", 1}};
+}
+
+void WarpDilateNode::renderParams() {
+  ImGui::PushItemWidth(120);
+  SliderFloatW("Distance##wdil", &m_core.m_dist, 0.0f, 1.0f);
+  Hint("How far the smear walks along the slope (UV units)");
+  SliderFloatW("Attenuation##wdil", &m_core.m_atten, 0.0f, 1.0f);
+  SliderFloatW("Angle##wdil", &m_core.m_angle, 0.0f, 360.0f);
+  Hint("0 = slope, 90 = contour cw, 270 = contour ccw");
+  SliderFloatW("Size##wdil", &m_core.m_size, 16.0f, 2048.0f);
+  Hint("Reference resolution: step = 1/size");
   ImGui::PopItemWidth();
 }
 

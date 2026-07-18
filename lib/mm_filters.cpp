@@ -1505,6 +1505,87 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
     }
 }
 
+void MMDirectionalWarp(GenTexture &out, const GenTexture &in,
+                       const GenTexture *angleMap,
+                       const GenTexture *strengthMap, sF32 angleDeg,
+                       sF32 strength) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  auto grayOr = [&](const GenTexture *t, sF32 u, sF32 v, sF32 def) {
+    if (!t || !t->Data)
+      return def;
+    sF32 c[4];
+    sampleRGBA(*t, u, v, c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+  for (sInt py = 0; py < h; py++) {
+    const sF32 v = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      const sF32 u = (px + 0.5f) / w;
+      const sF32 a =
+          angleDeg * grayOr(angleMap, u, v, 1.0f) * 0.01745329251f;
+      const sF32 s = (grayOr(strengthMap, u, v, 0.0f) - 0.5f) * strength;
+      sF32 c[4];
+      sampleRGBA(in, u + cosf(a) * s, v + sinf(a) * s, c);
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = to16(c[0]);
+      p.g = to16(c[1]);
+      p.b = to16(c[2]);
+      p.a = to16(c[3]);
+    }
+  }
+}
+
+void MMWarpDilate(GenTexture &out, const GenTexture &in,
+                  const GenTexture *hm, sF32 sizePx, sF32 dist, sF32 atten,
+                  sF32 angleDeg) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = out.XRes, h = out.YRes;
+  const sF32 e = 1.0f / (sizePx > 1.0f ? sizePx : 256.0f);
+  const sF32 ca = cosf(angleDeg * 0.01745329251f);
+  const sF32 sa = sinf(angleDeg * 0.01745329251f);
+  auto hmAt = [&](sF32 u, sF32 v) {
+    if (!hm || !hm->Data)
+      return 0.0f;
+    sF32 c[4];
+    sampleRGBA(*hm, glslFract2(u), glslFract2(v), c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+  auto inAt = [&](sF32 u, sF32 v) {
+    sF32 c[4];
+    sampleRGBA(in, glslFract2(u), glslFract2(v), c);
+    return (c[0] + c[1] + c[2]) / 3.0f;
+  };
+  const sInt maxSteps = 512;
+  for (sInt py = 0; py < h; py++) {
+    const sF32 uvY0 = (py + 0.5f) / h;
+    for (sInt px = 0; px < w; px++) {
+      sF32 u = (px + 0.5f) / w, v = uvY0;
+      sF32 val = 0.0f;
+      sInt steps = 0;
+      for (sF32 x = 0.0f; x <= dist && steps < maxSteps; x += e, steps++) {
+        const sF32 c =
+            inAt(u, v) * (1.0f - (dist > 1e-6f ? x / dist : 0.0f) * atten);
+        val = c > val ? c : val;
+        const sF32 dx = hmAt(u + e, v) - hmAt(u - e, v);
+        const sF32 dy = hmAt(u, v + e) - hmAt(u, v - e);
+        sF32 sx = ca * dx + sa * -dy;
+        sF32 sy = ca * dy + sa * dx;
+        const sF32 len = sqrtf(sx * sx + sy * sy);
+        if (len <= 0.0f)
+          break;
+        u += e * sx / len;
+        v += e * sy / len;
+      }
+      Pixel &p = out.Data[(size_t)py * w + px];
+      p.r = p.g = p.b = to16(val);
+      p.a = 65535;
+    }
+  }
+}
+
 void MMAutoTones(GenTexture &out, const GenTexture &in) {
   if (!out.Data || !in.Data)
     return;

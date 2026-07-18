@@ -613,6 +613,20 @@ class FillCoreNode : public CoreNode {
 };
 
 // ============================================================
+// FillFromColorsCoreNode — regions of equal color
+// (fill_from_colors.mmg)
+// ============================================================
+class FillFromColorsCoreNode : public CoreNode {
+ public:
+  FillFromColorsCoreNode() {}
+  std::string typeName() const override { return "FillFromColors"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+};
+
+// ============================================================
 // FillToUVCoreNode — per-region local UVs (fill_to_uv.mmg)
 // ============================================================
 class FillToUVCoreNode : public CoreNode {
@@ -733,6 +747,66 @@ class DilateCoreNode : public CoreNode {
   float m_length = 0.27f;
   float m_fill = 0.0f;
   int m_metric = 0;  // 0 euclidean, 1 manhattan, 2 chebyshev
+};
+
+// ============================================================
+// MingleCoreNode — dual-warp blend (community Mingle shader)
+// ============================================================
+class MingleCoreNode : public CoreNode {
+ public:
+  MingleCoreNode() {}
+  std::string typeName() const override { return "Mingle"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  int m_blendMode = 0;
+  float m_opacity = 1.0f;
+  float m_step = 0.5f, m_smooth = 0.5f;
+  float m_warpX = 0.5f, m_warpY = 0.5f;
+  float m_strength = 1.0f;
+};
+
+// ============================================================
+// DirectionalWarpCoreNode — fixed-direction shift
+// (directional_warp.mmg)
+// ============================================================
+class DirectionalWarpCoreNode : public CoreNode {
+ public:
+  DirectionalWarpCoreNode() {}
+  std::string typeName() const override { return "DirectionalWarp"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_angle = 0.0f;
+  float m_strength = 0.1f;
+};
+
+// ============================================================
+// WarpDilateCoreNode — slope-following smear (warp_dilation*.mmg)
+// ============================================================
+class WarpDilateCoreNode : public CoreNode {
+ public:
+  WarpDilateCoreNode() {}
+  std::string typeName() const override { return "WarpDilate"; }
+  std::vector<std::string> inputSlotNames() const override;
+  std::vector<std::string> outputSlotNames() const override;
+  void execute(const std::vector<GenTexture*>& inputs,
+               std::vector<GenTexture>& outputs) override;
+  nlohmann::json saveParams() const override;
+  void loadParams(const nlohmann::json& j) override;
+
+  float m_size = 1024.0f;  // step = 1/size
+  float m_dist = 0.1f;
+  float m_atten = 0.0f;
+  float m_angle = 0.0f;  // 0 slope, 90 contour cw, 270 contour ccw
 };
 
 // ============================================================

@@ -1593,6 +1593,21 @@ void FillCoreNode::execute(const std::vector<GenTexture*>& inputs,
   MMFill(outputs[0], *in);
 }
 
+std::vector<std::string> FillFromColorsCoreNode::inputSlotNames() const {
+  return {"In"};
+}
+std::vector<std::string> FillFromColorsCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+void FillFromColorsCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                     std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMFillFromColors(outputs[0], *in);
+}
+
 // ============================================================
 // FillToUVCoreNode
 // ============================================================
@@ -2178,6 +2193,129 @@ void BevelCoreNode::execute(const std::vector<GenTexture*>& inputs,
   outputs.resize(1);
   outputs[0].Init(in->XRes, in->YRes);
   MMBevel(outputs[0], *in, m_distance, m_curve.data(), (int)m_curve.size());
+}
+
+// ============================================================
+// MingleCoreNode
+// ============================================================
+
+std::vector<std::string> MingleCoreNode::inputSlotNames() const {
+  return {"In1", "In2", "Warp"};
+}
+std::vector<std::string> MingleCoreNode::outputSlotNames() const {
+  return {"Out", "Out2"};
+}
+
+nlohmann::json MingleCoreNode::saveParams() const {
+  return {{"blendMode", m_blendMode}, {"opacity", m_opacity},
+          {"step", m_step},           {"smooth", m_smooth},
+          {"warpX", m_warpX},         {"warpY", m_warpY},
+          {"strength", m_strength}};
+}
+
+void MingleCoreNode::loadParams(const nlohmann::json& j) {
+  auto f = [&](const char* k, float& v) {
+    if (j.contains(k))
+      v = j[k];
+  };
+  if (j.contains("blendMode"))
+    m_blendMode = j["blendMode"];
+  f("opacity", m_opacity);
+  f("step", m_step);
+  f("smooth", m_smooth);
+  f("warpX", m_warpX);
+  f("warpY", m_warpY);
+  f("strength", m_strength);
+}
+
+void MingleCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                             std::vector<GenTexture>& outputs) {
+  auto get = [&](size_t i) -> GenTexture* {
+    return (i < inputs.size() && inputs[i] && inputs[i]->Data) ? inputs[i]
+                                                               : nullptr;
+  };
+  GenTexture* a = get(0);
+  GenTexture* b = get(1);
+  GenTexture* wp = get(2);
+  GenTexture* base = a ? a : (b ? b : wp);
+  const int w = base ? base->XRes : 256, h = base ? base->YRes : 256;
+  outputs.resize(2);
+  outputs[0].Init(w, h);
+  outputs[1].Init(w, h);
+  MMMingle(outputs[0], &outputs[1], a, b, wp, m_blendMode, m_opacity,
+           m_step, m_smooth, m_warpX, m_warpY, m_strength);
+}
+
+// ============================================================
+// DirectionalWarpCoreNode / WarpDilateCoreNode
+// ============================================================
+
+std::vector<std::string> DirectionalWarpCoreNode::inputSlotNames() const {
+  return {"In", "AngleMap", "StrengthMap"};
+}
+std::vector<std::string> DirectionalWarpCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json DirectionalWarpCoreNode::saveParams() const {
+  return {{"angle", m_angle}, {"strength", m_strength}};
+}
+
+void DirectionalWarpCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("angle"))
+    m_angle = j["angle"];
+  if (j.contains("strength"))
+    m_strength = j["strength"];
+}
+
+void DirectionalWarpCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                      std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  GenTexture* am = inputs.size() > 1 && inputs[1] && inputs[1]->Data
+                       ? inputs[1]
+                       : nullptr;
+  GenTexture* sm = inputs.size() > 2 && inputs[2] && inputs[2]->Data
+                       ? inputs[2]
+                       : nullptr;
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMDirectionalWarp(outputs[0], *in, am, sm, m_angle, m_strength);
+}
+
+std::vector<std::string> WarpDilateCoreNode::inputSlotNames() const {
+  return {"In", "Height"};
+}
+std::vector<std::string> WarpDilateCoreNode::outputSlotNames() const {
+  return {"Out"};
+}
+
+nlohmann::json WarpDilateCoreNode::saveParams() const {
+  return {{"size", m_size},
+          {"dist", m_dist},
+          {"atten", m_atten},
+          {"angle", m_angle}};
+}
+
+void WarpDilateCoreNode::loadParams(const nlohmann::json& j) {
+  if (j.contains("size"))
+    m_size = j["size"];
+  if (j.contains("dist"))
+    m_dist = j["dist"];
+  if (j.contains("atten"))
+    m_atten = j["atten"];
+  if (j.contains("angle"))
+    m_angle = j["angle"];
+}
+
+void WarpDilateCoreNode::execute(const std::vector<GenTexture*>& inputs,
+                                 std::vector<GenTexture>& outputs) {
+  GenTexture* in = mmEnsure(inputs.size() > 0 ? inputs[0] : nullptr);
+  GenTexture* hm = inputs.size() > 1 && inputs[1] && inputs[1]->Data
+                       ? inputs[1]
+                       : nullptr;
+  outputs.resize(1);
+  outputs[0].Init(in->XRes, in->YRes);
+  MMWarpDilate(outputs[0], *in, hm, m_size, m_dist, m_atten, m_angle);
 }
 
 // ============================================================

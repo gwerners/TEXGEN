@@ -14,6 +14,11 @@
 // Connected components of the dark areas of 'in' -> fill map.
 void MMFill(GenTexture &out, const GenTexture &in);
 
+// Fill from colors (fill_from_colors.mmg): regions are connected
+// areas of IDENTICAL color instead of dark areas; every pixel belongs
+// to a region and carries its bbox.
+void MMFillFromColors(GenTexture &out, const GenTexture &in);
+
 // Local UVs inside each region (fill_to_uv.mmg): RG = position within
 // the region bbox (mode 0 stretches, 1 keeps the aspect square), B = a
 // per-region random value.

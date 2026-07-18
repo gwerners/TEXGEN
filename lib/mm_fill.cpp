@@ -194,6 +194,69 @@ void MMFill(GenTexture &out, const GenTexture &in) {
   }
 }
 
+void MMFillFromColors(GenTexture &out, const GenTexture &in) {
+  if (!out.Data || !in.Data)
+    return;
+  const sInt w = in.XRes, h = in.YRes;
+  const sInt n = w * h;
+
+  auto same = [&](sInt a, sInt b) {
+    const Pixel &p = in.Data[a];
+    const Pixel &q = in.Data[b];
+    return p.r == q.r && p.g == q.g && p.b == q.b;
+  };
+
+  // connected components over equal colors, 4-neighborhood with wrap
+  DSU dsu(n);
+  for (sInt y = 0; y < h; y++)
+    for (sInt x = 0; x < w; x++) {
+      const sInt i = y * w + x;
+      const sInt right = y * w + (x + 1) % w;
+      const sInt down = ((y + 1) % h) * w + x;
+      if (same(i, right))
+        dsu.unite(i, right);
+      if (same(i, down))
+        dsu.unite(i, down);
+    }
+
+  std::vector<sInt> compOf(n, -1);
+  std::vector<sInt> roots;
+  for (sInt i = 0; i < n; i++) {
+    sInt r = dsu.find(i);
+    if (compOf[r] < 0) {
+      compOf[r] = (sInt)roots.size();
+      roots.push_back(r);
+    }
+  }
+  const sInt nComp = (sInt)roots.size();
+  std::vector<std::vector<char>> cols(nComp, std::vector<char>(w, 0));
+  std::vector<std::vector<char>> rows(nComp, std::vector<char>(h, 0));
+  for (sInt y = 0; y < h; y++)
+    for (sInt x = 0; x < w; x++) {
+      const sInt c = compOf[dsu.find(y * w + x)];
+      cols[c][x] = 1;
+      rows[c][y] = 1;
+    }
+  std::vector<sF32> bbx(nComp), bby(nComp), bbw(nComp), bbh(nComp);
+  for (sInt c = 0; c < nComp; c++) {
+    sInt sx, szx, sy, szy;
+    wrappedExtent(cols[c], w, sx, szx);
+    wrappedExtent(rows[c], h, sy, szy);
+    bbx[c] = (sF32)sx / w;
+    bby[c] = (sF32)sy / h;
+    bbw[c] = (sF32)szx / w;
+    bbh[c] = (sF32)szy / h;
+  }
+  for (sInt i = 0; i < n; i++) {
+    const sInt c = compOf[dsu.find(i)];
+    Pixel &p = out.Data[i];
+    p.r = to16(bbx[c]);
+    p.g = to16(bby[c]);
+    p.b = to16(bbw[c]);
+    p.a = to16(bbh[c]);
+  }
+}
+
 void MMFillToUV(GenTexture &out, const GenTexture &fill, sInt mode,
                 sF32 seed) {
   if (!out.Data || !fill.Data)

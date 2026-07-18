@@ -204,6 +204,23 @@ void MMDilate(GenTexture &out, const GenTexture &mask,
 void MMNormalBlend(GenTexture &out, const GenTexture *fg,
                    const GenTexture *bg, const GenTexture *mask, sF32 amount);
 
+// Directional Warp (directional_warp.mmg): shifts the input along a
+// fixed direction; the angle is scaled per pixel by angleMap and the
+// distance by (strengthMap - 0.5) * strength. Missing maps default to
+// angle factor 1 and strength map 0 (a -0.5*strength shift), like MM.
+void MMDirectionalWarp(GenTexture &out, const GenTexture &in,
+                       const GenTexture *angleMap,
+                       const GenTexture *strengthMap, sF32 angleDeg,
+                       sF32 strength);
+
+// Warp dilate (warp_dilation/warp_dilation2 *_nobuf shaders): smears
+// the input's bright values by walking along the height map's slope
+// rotated by angleDeg (v1's Contour cw/ccw/Slope modes map to angles
+// 90/270/0), attenuating with distance. sizePx sets the step (1/s).
+void MMWarpDilate(GenTexture &out, const GenTexture &in,
+                  const GenTexture *hm, sF32 sizePx, sF32 dist, sF32 atten,
+                  sF32 angleDeg);
+
 // Auto Tones (auto_tones.mmg): stretches the image so its luminance
 // range covers [0, 1] exactly. MM computes the min/max with 13
 // iterate_buffer reduction passes; this is the converged result.

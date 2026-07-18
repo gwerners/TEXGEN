@@ -214,6 +214,14 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"add_tiler", {"In", "Mask"}},
       {"anisotropic_kuwahara", {"In"}},
       {"auto_tones", {"In"}},
+      {"directional_warp", {"In", "AngleMap", "StrengthMap"}},
+      {"mingle", {"In1", "In2", "Warp"}},
+      {"fill_from_colors", {"In"}},
+      {"gauss_blur_x", {"In", "Sigma"}},
+      {"gauss_blur_y", {"In", "Sigma"}},
+      {"bilateral_blur", {"In", "Sigma"}},
+      {"warp_dilation_nobuf", {"In", "Height"}},
+      {"warp_dilation2_nobuf", {"In", "Height"}},
       {"box", {}},
       {"wavelet_noise", {}},
       {"edge_detect_2", {"In"}},
@@ -260,6 +268,7 @@ const std::map<std::string, std::vector<std::string>> &portsOut() {
       {"height_to_offset", {"X", "Y"}},
       {"weave2", {"Out", "Horizontal", "Vertical"}},
       {"add_tiler", {"Out", "Color"}},
+      {"mingle", {"Out", "Out2"}},
   };
   return m;
 }
@@ -679,11 +688,12 @@ bool convertParams(const std::string &type, const json &p,
   if (type == "multi_warp") {
     // graph macro: param0=size, param1=intensity, param2=quality,
     // param3=mode (see multi_warp.mmg gen_parameters)
+    // the embedded old-version shader carries direct names instead
     typeName = "MultiWarp";
-    out = {{"size", numOr(p, "param0", 9.0f)},
-           {"intensity", numOr(p, "param1", 0.5f)},
-           {"quality", numOr(p, "param2", 50.0f)},
-           {"mode", intOr(p, "param3", 2)}};
+    out = {{"size", numOr(p, "param0", numOr(p, "size", 9.0f))},
+           {"intensity", numOr(p, "param1", numOr(p, "intensity", 0.5f))},
+           {"quality", numOr(p, "param2", numOr(p, "quality", 50.0f))},
+           {"mode", intOr(p, "param3", intOr(p, "mode", 2))}};
     return true;
   }
   if (type == "height_to_offset") {
@@ -914,6 +924,72 @@ bool convertParams(const std::string &type, const json &p,
   if (type == "auto_tones") {
     typeName = "AutoTones";
     out = json::object();
+    return true;
+  }
+  if (type == "fill_from_colors") {
+    typeName = "FillFromColors";
+    out = json::object();
+    return true;
+  }
+  if (type == "image") {
+    typeName = "Image";
+    out = {{"filename", strOr(p, "image", "")}};
+    return true;
+  }
+  if (type == "mingle") {
+    typeName = "Mingle";
+    out = {{"blendMode", intOr(p, "blend_type", 0)},
+           {"opacity", numOr(p, "m_opacity", 1.0f)},
+           {"step", numOr(p, "m_step", 0.5f)},
+           {"smooth", numOr(p, "m_smooth", 0.5f)},
+           {"warpX", numOr(p, "warp_x", 0.5f)},
+           {"warpY", numOr(p, "warp_y", 0.5f)},
+           {"strength", numOr(p, "warp_strength", 1.0f)}};
+    return true;
+  }
+  if (type == "gauss_blur_x" || type == "gauss_blur_y") {
+    // embedded "Gaussian blur X HQ"/"Y" shaders: sigma/10 is in UV
+    typeName = "Blur";
+    float s = numOr(p, "sigma", 0.5f) / 10.0f;
+    out = {{"sizex", type == "gauss_blur_x" ? s : 0.0f},
+           {"sizey", type == "gauss_blur_y" ? s : 0.0f},
+           {"order", 2},
+           {"mode", 3}};
+    return true;
+  }
+  if (type == "bilateral_blur") {
+    // embedded bilateral "Filter": approximated by a gaussian with
+    // sigma_space texels at the node's reference resolution
+    typeName = "Blur";
+    int szExp = intOr(p, "size", 9);
+    float s = numOr(p, "sigma_space", 0.5f) /
+              (float)(1 << (szExp < 4 ? 4 : (szExp > 12 ? 12 : szExp)));
+    out = {{"sizex", s}, {"sizey", s}, {"order", 2}, {"mode", 3}};
+    return true;
+  }
+  if (type == "directional_warp") {
+    typeName = "DirectionalWarp";
+    out = {{"angle", numOr(p, "angle", 0.0f)},
+           {"strength", numOr(p, "strength", 0.1f)}};
+    return true;
+  }
+  if (type == "warp_dilation_nobuf" || type == "warp_dilation2_nobuf") {
+    // v1 selects the walk direction with a mode enum; v2 has an angle
+    typeName = "WarpDilate";
+    float angle;
+    if (type == "warp_dilation_nobuf") {
+      static const float modeAngles[3] = {90.0f, 270.0f, 0.0f};
+      int m = intOr(p, "mode", 2);
+      angle = modeAngles[m < 0 ? 0 : (m > 2 ? 2 : m)];
+    } else {
+      angle = numOr(p, "angle", 0.0f);
+    }
+    int szExp = intOr(p, "s", 10);
+    out = {{"size",
+            (float)(1 << (szExp < 4 ? 4 : (szExp > 12 ? 12 : szExp)))},
+           {"dist", numOr(p, "d", 0.1f)},
+           {"atten", numOr(p, "a", 0.0f)},
+           {"angle", angle}};
     return true;
   }
   if (type == "anisotropic_kuwahara") {
@@ -1351,8 +1427,40 @@ const std::map<std::string, const char *> &graphMacroTemplates() {
        R"mmg({"connections":[{"from":"voronoi","from_port":0,"to":"math_2","to_port":0},{"from":"voronoi_2","from_port":0,"to":"math_3","to_port":0},{"from":"math","from_port":0,"to":"math_5","to_port":1},{"from":"math_4","from_port":0,"to":"math_5","to_port":0},{"from":"math_5","from_port":0,"to":"math_6","to_port":0},{"from":"math_4","from_port":0,"to":"math_6","to_port":1},{"from":"math_2","from_port":0,"to":"math","to_port":0},{"from":"math_2","from_port":0,"to":"math_4","to_port":0},{"from":"math_3","from_port":0,"to":"math_4","to_port":1},{"from":"math_3","from_port":0,"to":"math","to_port":1},{"from":"math_6","from_port":0,"to":"math_7","to_port":0},{"from":"math_7","from_port":0,"to":"gen_outputs","to_port":0}],"label":"Crystal","name":"crystal","nodes":[{"name":"math","node_position":{"x":-1260,"y":200},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":13},"seed_int":0,"type":"math"},{"name":"math_2","node_position":{"x":-1640,"y":200},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":19},"seed_int":0,"type":"math"},{"name":"voronoi","node_position":{"x":-2000,"y":200},"parameters":{"intensity":1,"randomness":1,"scale_x":16,"scale_y":16,"stretch_x":0.85,"stretch_y":0.85},"seed_int":0,"type":"voronoi"},{"name":"voronoi_2","node_position":{"x":-2000,"y":520},"parameters":{"intensity":1,"randomness":1,"scale_x":16,"scale_y":16,"stretch_x":0.85,"stretch_y":0.85},"seed_int":1998774700,"type":"voronoi"},{"name":"math_3","node_position":{"x":-1640,"y":520},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":19},"seed_int":0,"type":"math"},{"name":"math_4","node_position":{"x":-1260,"y":520},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":14},"seed_int":0,"type":"math"},{"name":"math_5","node_position":{"x":-920,"y":360},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":1},"seed_int":0,"type":"math"},{"name":"math_6","node_position":{"x":-660,"y":360},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":3},"seed_int":0,"type":"math"},{"name":"gen_inputs","node_position":{"x":-2200,"y":400},"parameters":{},"ports":[],"seed_int":0,"type":"ios"},{"name":"gen_outputs","node_position":{"x":-120,"y":360},"parameters":{},"ports":[{"group_size":0,"name":"out","shortdesc":"Output","type":"f"}],"seed_int":0,"type":"ios"},{"name":"gen_parameters","node_position":{"x":-1560,"y":-60},"parameters":{"param0":16,"param1":16},"seed_int":0,"type":"remote","widgets":[{"label":"Scale X","linked_widgets":[{"node":"voronoi","widget":"scale_x"},{"node":"voronoi_2","widget":"scale_x"}],"name":"param0","type":"linked_control"},{"label":"Scale Y","linked_widgets":[{"node":"voronoi","widget":"scale_y"},{"node":"voronoi_2","widget":"scale_y"}],"name":"param1","type":"linked_control"}]},{"name":"math_7","node_position":{"x":-400,"y":360},"parameters":{"clamp":false,"default_in1":0,"default_in2":1.45,"op":2},"seed_int":0,"type":"math"}],"parameters":{"param0":16,"param1":16},"type":"graph"})mmg"},
       {"dirt",
        R"mmg({"connections":[{"from":"tiler","from_port":0,"to":"math","to_port":0},{"from":"shape","from_port":0,"to":"math_2","to_port":0},{"from":"fbm2","from_port":0,"to":"colorize","to_port":0},{"from":"colorize","from_port":0,"to":"tiler","to_port":1},{"from":"shape_2","from_port":0,"to":"math_3","to_port":0},{"from":"math_2","from_port":0,"to":"tiler","to_port":0},{"from":"shape_2","from_port":0,"to":"tiler_2","to_port":0},{"from":"math_3","from_port":0,"to":"tiler_3","to_port":0},{"from":"tiler_2","from_port":0,"to":"math_6","to_port":0},{"from":"tiler_3","from_port":0,"to":"math_6","to_port":1},{"from":"math_6","from_port":0,"to":"math_7","to_port":0},{"from":"math","from_port":0,"to":"switch","to_port":0},{"from":"math_7","from_port":0,"to":"switch","to_port":1},{"from":"switch","from_port":0,"to":"buffer_2","to_port":0},{"from":"buffer_2","from_port":0,"to":"gen_outputs","to_port":0},{"from":"tiler_5","from_port":0,"to":"math_5","to_port":0},{"from":"shape_3","from_port":0,"to":"rotate","to_port":0},{"from":"rotate","from_port":0,"to":"tiler_5","to_port":0},{"from":"math_3","from_port":0,"to":"tiler_4","to_port":0},{"from":"shape_3","from_port":0,"to":"tiler_6","to_port":0},{"from":"tiler_4","from_port":0,"to":"math_4","to_port":0},{"from":"tiler_6","from_port":0,"to":"math_4","to_port":1},{"from":"math_4","from_port":0,"to":"math_12","to_port":0},{"from":"math_5","from_port":0,"to":"math_12","to_port":1},{"from":"math_12","from_port":0,"to":"math_9","to_port":0},{"from":"math_9","from_port":0,"to":"switch","to_port":2}],"label":"Dirt","name":"dirt","node_position":{"x":0,"y":0},"nodes":[{"name":"math_2","node_position":{"x":-1417.5,"y":-8.5},"parameters":{"clamp":false,"default_in1":0,"default_in2":"3.14 / 2.0","op":17},"seed_int":0,"type":"math"},{"name":"shape","node_position":{"x":-1629.5,"y":4.5},"parameters":{"edge":0.32,"radius":1,"shape":0,"sides":6},"seed_int":0,"type":"shape"},{"name":"fbm2","node_position":{"x":-1072.5,"y":-246.5},"parameters":{"folds":0,"iterations":2,"noise":1,"offset":0,"persistence":0.5,"scale_x":"2.0 * $d_scale","scale_y":"2.0 * $d_scale"},"seed_int":1301452400,"type":"fbm2"},{"name":"colorize","node_position":{"x":-732.5,"y":-222.5},"parameters":{"gradient":{"interpolation":1,"points":[{"a":1,"b":0.34375,"g":0.34375,"pos":0,"r":0.34375},{"a":1,"b":0.800781,"g":0.800781,"pos":1,"r":0.800781}],"type":"Gradient"}},"seed_int":0,"type":"colorize"},{"name":"tiler","node_position":{"x":-1069.5,"y":8.5},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":0,"scale":0.7,"scale_x":"0.004 / $d_scale","scale_y":"0.004 / $d_scale","select_inputs":0,"tx":"256.0 * $d_scale","ty":"256.0 * $d_scale","value":0.86,"variations":false},"seed_int":37842957,"type":"add_tiler"},{"name":"math","node_position":{"x":-747.5,"y":-2.5},"parameters":{"clamp":false,"default_in1":0,"default_in2":0.48,"op":2},"seed_int":0,"type":"math"},{"name":"gen_inputs","node_position":{"x":-1947.5,"y":-55.357143},"parameters":{},"ports":[],"seed_int":0,"type":"ios"},{"name":"gen_outputs","node_position":{"x":184.5,"y":516.642822},"parameters":{},"ports":[{"group_size":0,"name":"port0","type":"f"}],"seed_int":0,"type":"ios"},{"name":"gen_parameters","node_position":{"x":-1176.071411,"y":-484.5},"parameters":{"d_scale":1,"param0":0,"param1":11},"seed_int":0,"type":"remote","widgets":[{"configurations":{"Dirt 1":[{"node":"switch","value":0,"widget":"source"}],"Dirt 2":[{"node":"switch","value":1,"widget":"source"}],"Dirt 3":[{"node":"switch","value":2,"widget":"source"}]},"label":"Type","linked_widgets":[{"node":"switch","widget":"source"}],"name":"param0","type":"config_control"},{"default":1,"label":"Scale","max":8,"min":1,"name":"d_scale","step":1,"type":"named_parameter"},{"label":"","linked_widgets":[{"node":"buffer_2","widget":"size"}],"name":"param1","type":"linked_control"}]},{"name":"shape_2","node_position":{"x":-1505.75708,"y":610.095276},"parameters":{"edge":1,"radius":1,"shape":0,"sides":6},"seed_int":0,"type":"shape"},{"name":"math_3","node_position":{"x":-1565.75708,"y":1001.095215},"parameters":{"clamp":false,"default_in1":0,"default_in2":"3.14 / 2.0","op":17},"seed_int":0,"type":"math"},{"name":"tiler_2","node_position":{"x":-1148.00708,"y":570.928589},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":0,"scale":0.7,"scale_x":"0.008 / $d_scale","scale_y":"0.008 / $d_scale","select_inputs":0,"tx":"64.0 * $d_scale","ty":"64.0 * $d_scale","value":0.86,"variations":false},"seed_int":3027037116,"type":"add_tiler"},{"name":"tiler_3","node_position":{"x":-1168.25708,"y":978.428589},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":0,"scale":0.7,"scale_x":"0.004 / $d_scale","scale_y":"0.004 / $d_scale","select_inputs":0,"tx":"256.0 * $d_scale","ty":"256.0 * $d_scale","value":0.86,"variations":false},"seed_int":37842957,"type":"add_tiler"},{"name":"math_6","node_position":{"x":-839.75708,"y":757.428589},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":0},"seed_int":0,"type":"math"},{"name":"math_7","node_position":{"x":-822.75708,"y":976.428589},"parameters":{"clamp":false,"default_in1":0,"default_in2":0.41,"op":2},"seed_int":0,"type":"math"},{"name":"switch","node_position":{"x":-97.75708,"y":507.428589},"parameters":{"choices":3,"outputs":1,"source":0},"seed_int":0,"type":"switch"},{"name":"buffer_2","node_position":{"x":-99.24292,"y":682.355774},"parameters":{"size":11},"seed_int":0,"type":"buffer","version":1},{"name":"tiler_5","node_position":{"x":-1162.04834,"y":2428.061279},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":180,"scale":0.53,"scale_x":0.004,"scale_y":0.024,"select_inputs":0,"tx":128,"ty":128,"value":0.86,"variations":false},"seed_int":951468400,"type":"add_tiler"},{"name":"shape_3","node_position":{"x":-1698.54834,"y":2330.061279},"parameters":{"edge":1,"radius":0.6,"shape":1,"sides":4},"seed_int":0,"type":"shape"},{"name":"math_5","node_position":{"x":-873.54834,"y":2374.061279},"parameters":{"clamp":false,"default_in1":0,"default_in2":0.24,"op":2},"seed_int":0,"type":"math"},{"generic_size":1,"name":"rotate","node_position":{"x":-1442.54834,"y":2496.061279},"parameters":{"cx":0,"cy":0,"rotate":45},"seed_int":0,"type":"rotate"},{"name":"tiler_4","node_position":{"x":-1162.04834,"y":1532.061279},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":0,"scale":0.7,"scale_x":"0.008 / $d_scale","scale_y":"0.008 / $d_scale","select_inputs":0,"tx":"128.0 * $d_scale","ty":"128.0 * $d_scale","value":0.86,"variations":false},"seed_int":3027037116,"type":"add_tiler"},{"name":"tiler_6","node_position":{"x":-1151.04834,"y":1959.061279},"parameters":{"fixed_offset":0,"offset":1,"overlap":2,"rotate":180,"scale":0.7,"scale_x":"0.012 / $d_scale","scale_y":"0.012 / $d_scale","select_inputs":0,"tx":"128.0 * $d_scale","ty":"128.0 * $d_scale","value":0.86,"variations":false},"seed_int":37842957,"type":"add_tiler"},{"name":"math_4","node_position":{"x":-824.54834,"y":1597.061279},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":0},"seed_int":0,"type":"math"},{"name":"math_9","node_position":{"x":-583.54834,"y":1784.061279},"parameters":{"clamp":false,"default_in1":0,"default_in2":0.32,"op":2},"seed_int":0,"type":"math"},{"name":"math_12","node_position":{"x":-825.54834,"y":1802.061279},"parameters":{"clamp":false,"default_in1":0,"default_in2":0,"op":1},"seed_int":0,"type":"math"}],"parameters":{"d_scale":1,"param0":0,"param1":11},"seed_int":3201271054,"type":"graph"})mmg"},
+      {"warp_dilation",
+       R"mmg({"connections":[{"from":"warp_dilation","from_port":0,"to":"buffer_5","to_port":0},{"from":"buffer_5","from_port":0,"to":"gen_outputs","to_port":0},{"from":"gen_inputs","from_port":1,"to":"buffer_6","to_port":0},{"from":"buffer_6","from_port":0,"to":"warp_dilation","to_port":1},{"from":"gen_inputs","from_port":0,"to":"buffer_7","to_port":0},{"from":"buffer_7","from_port":0,"to":"warp_dilation","to_port":0}],"label":"Warp Dilation","name":"warp_dilation","node_position":{"x":0,"y":0},"nodes":[{"name":"buffer_5","node_position":{"x":-387.923584,"y":-38},"parameters":{"lod":0,"size":9},"seed":3065,"type":"buffer"},{"name":"buffer_6","node_position":{"x":-636.189514,"y":-90.757477},"parameters":{"lod":0,"size":9},"seed":20826,"type":"buffer"},{"name":"buffer_7","node_position":{"x":-635.189514,"y":-199.757477},"parameters":{"lod":0,"size":9},"seed":12578,"type":"buffer"},{"name":"warp_dilation","node_position":{"x":-404.125,"y":-172.25},"parameters":{"a":0,"d":0.5,"mode":0,"s":9},"seed":7232,"type":"warp_dilation_nobuf"},{"name":"gen_inputs","node_position":{"x":-1127.189453,"y":-144.691238},"parameters":{},"ports":[{"group_size":0,"name":"port1","type":"f"},{"group_size":0,"name":"port0","type":"f"}],"seed":503,"type":"ios"},{"name":"gen_outputs","node_position":{"x":-70.923584,"y":-122.691238},"parameters":{},"ports":[{"group_size":0,"name":"port0","type":"f"}],"seed":33280,"type":"ios"},{"name":"gen_parameters","node_position":{"x":-463.856934,"y":-398.757477},"parameters":{"a":0,"d":0.5,"mode":0,"s":9},"seed":18589,"type":"remote","widgets":[{"label":"Mode","linked_widgets":[{"node":"warp_dilation","widget":"mode"}],"name":"mode","type":"linked_control"},{"label":"Resolution","linked_widgets":[{"node":"warp_dilation","widget":"s"},{"node":"buffer_7","widget":"size"},{"node":"buffer_6","widget":"size"},{"node":"buffer_5","widget":"size"}],"name":"s","type":"linked_control"},{"label":"Distance","linked_widgets":[{"node":"warp_dilation","widget":"d"}],"name":"d","type":"linked_control"},{"label":"Attenuation","linked_widgets":[{"node":"warp_dilation","widget":"a"}],"name":"a","type":"linked_control"}]}],"parameters":{"a":0,"d":0.5,"mode":0,"s":9},"seed_int":0,"type":"graph"})mmg"},
+      {"warp_dilation2",
+       R"mmg({"connections":[{"from":"switch","from_port":0,"to":"buffer_7","to_port":0},{"from":"switch","from_port":1,"to":"buffer_6","to_port":0},{"from":"switch","from_port":2,"to":"warp_dilation","to_port":0},{"from":"switch","from_port":3,"to":"warp_dilation","to_port":1},{"from":"gen_inputs","from_port":0,"to":"switch","to_port":4},{"from":"gen_inputs","from_port":1,"to":"switch","to_port":5},{"from":"buffer_7","from_port":0,"to":"switch","to_port":6},{"from":"buffer_6","from_port":0,"to":"switch","to_port":7},{"from":"uniform_greyscale","from_port":0,"to":"switch","to_port":0},{"from":"uniform_greyscale","from_port":0,"to":"switch","to_port":1},{"from":"gen_inputs","from_port":0,"to":"switch","to_port":2},{"from":"gen_inputs","from_port":1,"to":"switch","to_port":3},{"from":"switch_2","from_port":0,"to":"buffer_5","to_port":0},{"from":"uniform_greyscale","from_port":0,"to":"switch_2","to_port":0},{"from":"warp_dilation","from_port":0,"to":"switch_2","to_port":1},{"from":"switch_2","from_port":1,"to":"gen_outputs","to_port":0},{"from":"warp_dilation","from_port":0,"to":"switch_2","to_port":2},{"from":"buffer_5","from_port":0,"to":"switch_2","to_port":3}],"label":"Warp Dilation","name":"warp_dilation2","node_position":{"x":0,"y":0},"nodes":[{"name":"buffer_5","node_position":{"x":-360.832672,"y":-27.909088},"parameters":{"lod":0,"size":10},"seed":3065,"type":"buffer"},{"name":"buffer_6","node_position":{"x":-678.916748,"y":101.060692},"parameters":{"lod":0,"size":10},"seed":20826,"type":"buffer"},{"name":"buffer_7","node_position":{"x":-679.734985,"y":13.878881},"parameters":{"lod":0,"size":10},"seed":12578,"type":"buffer"},{"name":"gen_inputs","node_position":{"x":-1127.189453,"y":-144.691238},"parameters":{},"ports":[{"group_size":0,"name":"port1","type":"f"},{"group_size":0,"name":"port0","type":"f"}],"seed":503,"type":"ios"},{"name":"gen_outputs","node_position":{"x":-70.923584,"y":-122.691238},"parameters":{},"ports":[{"group_size":0,"name":"port0","type":"f"}],"seed":33280,"type":"ios"},{"name":"gen_parameters","node_position":{"x":-383.67511,"y":-437.666565},"parameters":{"a":0,"angle":0,"d":0.5,"param0":1,"s":10},"seed":18589,"type":"remote","widgets":[{"label":"Angle","linked_widgets":[{"node":"warp_dilation","widget":"angle"}],"name":"angle","type":"linked_control"},{"label":"Resolution","linked_widgets":[{"node":"warp_dilation","widget":"s"},{"node":"buffer_7","widget":"size"},{"node":"buffer_6","widget":"size"},{"node":"buffer_5","widget":"size"}],"name":"s","type":"linked_control"},{"label":"Distance","linked_widgets":[{"node":"warp_dilation","widget":"d"}],"name":"d","type":"linked_control"},{"label":"Attenuation","linked_widgets":[{"node":"warp_dilation","widget":"a"}],"name":"a","type":"linked_control"},{"configurations":{"False":[{"node":"switch","value":0,"widget":"source"},{"node":"switch_2","value":0,"widget":"source"}],"True":[{"node":"switch","value":1,"widget":"source"},{"node":"switch_2","value":1,"widget":"source"}]},"label":"Buffer","linked_widgets":[{"node":"switch","widget":"source"},{"node":"switch_2","widget":"source"}],"name":"param0","type":"config_control"}]},{"name":"warp_dilation","node_position":{"x":-392.389465,"y":-173.200409},"parameters":{"a":0,"angle":0,"d":0.5,"s":10},"seed":7232,"type":"warp_dilation2_nobuf"},{"name":"switch","node_position":{"x":-653.180054,"y":-235.012421},"parameters":{"choices":2,"outputs":4,"source":1},"seed_int":0,"type":"switch"},{"name":"uniform_greyscale","node_position":{"x":-946.973328,"y":-248.096252},"parameters":{"color":0},"seed_int":0,"type":"uniform_greyscale"},{"name":"switch_2","node_position":{"x":-344.824677,"y":61.920258},"parameters":{"choices":2,"outputs":2,"source":1},"seed_int":0,"type":"switch"}],"parameters":{"a":0,"angle":0,"d":0.5,"param0":1,"s":10},"seed_int":0,"type":"graph"})mmg"},
   };
   return m;
+}
+
+// Community materials (MM 0.x era) embed old-version library nodes as
+// 'shader' nodes carrying their shader_model inline. Recognize the
+// known ones by the model name and retype them to a convertible type.
+void recognizeEmbeddedShaders(json &nodes) {
+  static const std::map<std::string, const char *> byName = {
+      {"Multi Warp", "multi_warp"},
+      {"Fast Blur", "fast_blur"},
+      {"Gaussian blur X HQ", "gauss_blur_x"},
+      {"Gaussian blur X", "gauss_blur_x"},
+      {"Gaussian blur Y HQ", "gauss_blur_y"},
+      {"Gaussian blur Y", "gauss_blur_y"},
+      {"Filter", "bilateral_blur"},
+      {"Mingle", "mingle"},
+      {"Mingle Extended", "mingle"},
+      {"Add Tiler", "add_tiler"},
+  };
+  for (auto &n : nodes) {
+    if (n.value("type", std::string()) != "shader")
+      continue;
+    const json sm = n.value("shader_model", json::object());
+    auto it = byName.find(sm.value("name", std::string()));
+    if (it == byName.end())
+      continue;
+    n["type"] = it->second;
+    n.erase("shader_model");
+  }
 }
 
 void expandGraphMacros(json &nodes) {
@@ -1605,6 +1713,7 @@ GraphResult convertGraph(json mmNodes, json mmConns,
                          const std::string &baseName,
                          std::vector<std::string> *skipped) {
   GraphResult res;
+  recognizeEmbeddedShaders(mmNodes);
   expandGraphMacros(mmNodes);
   unrollIterateBuffers(mmNodes, mmConns);
   collapsePassthroughs(mmNodes, mmConns);
@@ -1740,7 +1849,10 @@ GraphResult convertGraph(json mmNodes, json mmConns,
         "height_to_offset", "bevel", "dilate", "normal_blend",
         "directional_blur", "occlusion", "edge_detect_2",
         "fill_to_gradient", "fill_to_gradient2", "fill_to_size2",
-        "binary_smooth", "anisotropic_kuwahara", "auto_tones"};
+        "binary_smooth", "anisotropic_kuwahara", "auto_tones",
+        "directional_warp", "warp_dilation_nobuf", "warp_dilation2_nobuf",
+        "mingle", "gauss_blur_x", "gauss_blur_y", "bilateral_blur",
+        "fill_from_colors"};
     std::set<std::string> hadInput;
     for (auto &c : mmConns)
       hadInput.insert(c.value("to", std::string()));
@@ -1836,9 +1948,21 @@ json graphToSubgraph(const json &n, const std::string &baseName,
                      std::vector<std::string> *skipped,
                      std::vector<std::string> &inPortNames,
                      std::vector<std::string> &outPortNames) {
+  // Run the graph-level rewrites on the FULL node/conn set before the
+  // boundary is split off: a gen_inputs/gen_outputs edge that lands on
+  // a passthrough (buffer/switch) must be resolved through it, or the
+  // boundary would point at a node the inner conversion removed and
+  // the whole subgraph would come out portless.
+  json allNodes = n.value("nodes", json::array());
+  json allConns = n.value("connections", json::array());
+  recognizeEmbeddedShaders(allNodes);
+  expandGraphMacros(allNodes);
+  unrollIterateBuffers(allNodes, allConns);
+  collapsePassthroughs(allNodes, allConns);
+
   json innerNodes = json::array();
   json genIn, genOut;
-  for (auto &x : n.value("nodes", json::array())) {
+  for (auto &x : allNodes) {
     std::string nm = x.value("name", std::string());
     if (nm == "gen_inputs")
       genIn = x;
@@ -1856,7 +1980,7 @@ json graphToSubgraph(const json &n, const std::string &baseName,
 
   json innerConns = json::array();
   json boundary = json::array();
-  for (auto &c : n.value("connections", json::array())) {
+  for (auto &c : allConns) {
     std::string from = c.value("from", std::string());
     std::string to = c.value("to", std::string());
     if (from == "gen_inputs" || to == "gen_outputs")

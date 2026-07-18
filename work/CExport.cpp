@@ -1047,6 +1047,73 @@ static void emitNode(std::ostringstream& ss,
     }
   }
 
+  else if (type == "FillFromColors") {
+    std::string in = srcVar(conns, id, "In");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMFillFromColors(" << v << ", " << in << ");\n";
+    }
+  }
+
+  else if (type == "Mingle") {
+    std::string a = srcVar(conns, id, "In1");
+    std::string b = srcVar(conns, id, "In2");
+    std::string wp = srcVar(conns, id, "Warp");
+    std::string base = !a.empty() ? a : (!b.empty() ? b : wp);
+    auto ref = [](const std::string& s) {
+      return s.empty() ? std::string("(const GenTexture*)0") : "&" + s;
+    };
+    ss << "    GenTexture " << v << "_Out, " << v << "_Out2;\n";
+    ss << "    " << v << "_Out.Init("
+       << (base.empty() ? "256, 256" : base + ".XRes, " + base + ".YRes")
+       << "); " << v << "_Out2.Init("
+       << (base.empty() ? "256, 256" : base + ".XRes, " + base + ".YRes")
+       << ");\n";
+    ss << "    MMMingle(" << v << "_Out, &" << v << "_Out2, " << ref(a)
+       << ", " << ref(b) << ", " << ref(wp) << ", "
+       << p.value("blendMode", 0) << ", " << pf(p, "opacity", 1.0f) << ", "
+       << pf(p, "step", 0.5f) << ", " << pf(p, "smooth", 0.5f) << ", "
+       << pf(p, "warpX", 0.5f) << ", " << pf(p, "warpY", 0.5f) << ", "
+       << pf(p, "strength", 1.0f) << ");\n";
+  }
+
+  else if (type == "DirectionalWarp") {
+    std::string in = srcVar(conns, id, "In");
+    std::string am = srcVar(conns, id, "AngleMap");
+    std::string sm = srcVar(conns, id, "StrengthMap");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      auto ref = [](const std::string& s) {
+        return s.empty() ? std::string("(const GenTexture*)0") : "&" + s;
+      };
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMDirectionalWarp(" << v << ", " << in << ", " << ref(am)
+         << ", " << ref(sm) << ", " << pf(p, "angle", 0.0f) << ", "
+         << pf(p, "strength", 0.1f) << ");\n";
+    }
+  }
+
+  else if (type == "WarpDilate") {
+    std::string in = srcVar(conns, id, "In");
+    std::string hm = srcVar(conns, id, "Height");
+    ss << "    GenTexture " << v << ";\n";
+    if (in.empty()) {
+      ss << "    " << v << ".Init(256, 256);\n";
+    } else {
+      ss << "    " << v << ".Init(" << in << ".XRes, " << in << ".YRes);\n";
+      ss << "    MMWarpDilate(" << v << ", " << in << ", "
+         << (hm.empty() ? std::string("(const GenTexture*)0") : "&" + hm)
+         << ", " << pf(p, "size", 1024.0f) << ", " << pf(p, "dist", 0.1f)
+         << ", " << pf(p, "atten", 0.0f) << ", " << pf(p, "angle", 0.0f)
+         << ");\n";
+    }
+  }
+
   else if (type == "AutoTones") {
     std::string in = srcVar(conns, id, "In");
     ss << "    GenTexture " << v << ";\n";

@@ -1595,6 +1595,18 @@ void ImageCoreNode::execute(const std::vector<GenTexture*>& /*inputs*/,
     // stbi_load: force 4 channels (RGBA), handles TGA/PNG/JPG/BMP/PSD/GIF/HDR
     stbi_set_flip_vertically_on_load(0);
     unsigned char* pixels = stbi_load(m_filename, &imgW, &imgH, &channels, 4);
+    if (!pixels) {
+      // imported projects carry the author's absolute path; fall back
+      // to the basename in the working dir and the MaterialMaker folder
+      size_t slash = path.find_last_of("/\\");
+      if (slash != std::string::npos) {
+        std::string base = path.substr(slash + 1);
+        pixels = stbi_load(base.c_str(), &imgW, &imgH, &channels, 4);
+        if (!pixels)
+          pixels = stbi_load(("MaterialMaker/" + base).c_str(), &imgW, &imgH,
+                             &channels, 4);
+      }
+    }
     if (pixels) {
       // Resize to nearest power of 2 (GenTexture requirement)
       int pw = 1;

@@ -196,6 +196,27 @@ class BevelNode : public UiNode<BevelCoreNode> {
   void renderParams() override;
 };
 
+class MingleNode : public UiNode<MingleCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class DirectionalWarpNode : public UiNode<DirectionalWarpCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
+class WarpDilateNode : public UiNode<WarpDilateCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+  void renderParams() override;
+};
+
 class AutoTonesNode : public UiNode<AutoTonesCoreNode> {
  public:
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
@@ -371,6 +392,12 @@ class MatMapNode : public UiNode<MatMapCoreNode> {
 };
 
 class FillNode : public UiNode<FillCoreNode> {
+ public:
+  std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
+  std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;
+};
+
+class FillFromColorsNode : public UiNode<FillFromColorsCoreNode> {
  public:
   std::vector<ImNodes::Ez::SlotInfo> inputSlotInfos() const override;
   std::vector<ImNodes::Ez::SlotInfo> outputSlotInfos() const override;

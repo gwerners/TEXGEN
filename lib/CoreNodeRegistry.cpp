@@ -148,6 +148,14 @@ const NodeMeta *getNodeMeta(const std::string &typeName) {
       {"AnisotropicKuwahara",
        {"Filter", "Painterly filter with edge-following brush strokes"}},
       {"AutoTones", {"Filter", "Stretches contrast to the full range"}},
+      {"DirectionalWarp",
+       {"Filter", "Shifts the image along a direction, driven by maps"}},
+      {"Mingle",
+       {"Combine", "Blends two inputs warped apart by a warp map"}},
+      {"FillFromColors",
+       {"Filter", "Region bounding boxes for areas of equal color"}},
+      {"WarpDilate",
+       {"Filter", "Smears bright values along the height map's slope"}},
       {"Box", {"Generator", "Depth of a rotated 3D box seen from above"}},
       {"WaveletNoise",
        {"Generator", "Oriented sine wavelets accumulated over octaves"}},
@@ -281,6 +289,10 @@ CoreNodeRegistry &getCoreNodeRegistry() {
     registerType<AddTilerCoreNode>(r);
     registerType<AnisotropicKuwaharaCoreNode>(r);
     registerType<AutoTonesCoreNode>(r);
+    registerType<DirectionalWarpCoreNode>(r);
+    registerType<MingleCoreNode>(r);
+    registerType<FillFromColorsCoreNode>(r);
+    registerType<WarpDilateCoreNode>(r);
     registerType<BoxCoreNode>(r);
     registerType<WaveletNoiseCoreNode>(r);
     registerType<BinarySmoothCoreNode>(r);

@@ -65,6 +65,16 @@ void MMBlend(GenTexture &out, const GenTexture &a, const GenTexture &b,
 // Color Noise (color_noise.mmg): constant random RGB per grid cell.
 void MMColorNoise(GenTexture &out, sInt gridSize, sF32 seed);
 
+// Mingle (community "Mingle"/"Mingle Extended" embedded shader): the
+// two inputs are warped in opposite directions by the warp map's R/G
+// channels and blended (same modes as MMBlend) with an opacity driven
+// by a smoothstep of the warp's B channel. out2 (optional) samples
+// the warps swapped, as Mingle Extended's second output does.
+void MMMingle(GenTexture &out, GenTexture *out2, const GenTexture *in1,
+              const GenTexture *in2, const GenTexture *warp, sInt blendMode,
+              sF32 opacity, sF32 stepv, sF32 smoothv, sF32 warpX, sF32 warpY,
+              sF32 strength);
+
 // Warp: displaces the UVs of 'in' along the gradient (finite differences,
 // half-pixel epsilon scaled by 'epsilon') of the grayscale 'height' map.
 // strength (optional, grayscale) modulates the displacement per pixel.

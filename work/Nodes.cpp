@@ -88,6 +88,14 @@ void registerAllNodes(std::map<std::string, NodeFactory>& registry) {
   registry["ColorNoise"] = []() { return std::make_unique<ColorNoiseNode>(); };
   registry["AddTiler"] = []() { return std::make_unique<AddTilerNode>(); };
   registry["AutoTones"] = []() { return std::make_unique<AutoTonesNode>(); };
+  registry["Mingle"] = []() { return std::make_unique<MingleNode>(); };
+  registry["FillFromColors"] = []() {
+    return std::make_unique<FillFromColorsNode>();
+  };
+  registry["DirectionalWarp"] = []() {
+    return std::make_unique<DirectionalWarpNode>();
+  };
+  registry["WarpDilate"] = []() { return std::make_unique<WarpDilateNode>(); };
   registry["AnisotropicKuwahara"] = []() {
     return std::make_unique<AnisotropicKuwaharaNode>();
   };
