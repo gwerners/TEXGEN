@@ -1072,12 +1072,11 @@ static void emitNode(std::ostringstream& ss,
        << "); " << v << "_Out2.Init("
        << (base.empty() ? "256, 256" : base + ".XRes, " + base + ".YRes")
        << ");\n";
-    ss << "    MMMingle(" << v << "_Out, &" << v << "_Out2, " << ref(a)
-       << ", " << ref(b) << ", " << ref(wp) << ", "
-       << p.value("blendMode", 0) << ", " << pf(p, "opacity", 1.0f) << ", "
-       << pf(p, "step", 0.5f) << ", " << pf(p, "smooth", 0.5f) << ", "
-       << pf(p, "warpX", 0.5f) << ", " << pf(p, "warpY", 0.5f) << ", "
-       << pf(p, "strength", 1.0f) << ");\n";
+    ss << "    MMMingle(" << v << "_Out, &" << v << "_Out2, " << ref(a) << ", "
+       << ref(b) << ", " << ref(wp) << ", " << p.value("blendMode", 0) << ", "
+       << pf(p, "opacity", 1.0f) << ", " << pf(p, "step", 0.5f) << ", "
+       << pf(p, "smooth", 0.5f) << ", " << pf(p, "warpX", 0.5f) << ", "
+       << pf(p, "warpY", 0.5f) << ", " << pf(p, "strength", 1.0f) << ");\n";
   }
 
   else if (type == "DirectionalWarp") {

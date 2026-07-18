@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <fstream>
 #include <map>
 #include <set>
 
@@ -254,7 +255,7 @@ const std::map<std::string, std::vector<std::string>> &portsOut() {
   static const std::map<std::string, std::vector<std::string>> m = {
       // MM voronoi: 0=Nodes(F1), 1=Borders(Edge), 2=Random color, 3=Fill
       {"voronoi", {"F1", "Edge", "Color", "Fill"}},
-      {"voronoi2", {"F1", "Edge", ""}},
+      {"voronoi2", {"F1", "Edge", "Fill"}},
       {"decompose", {"R", "G", "B", "A"}},
       {"mwf_mix", {"H", "C", "ORM", "EM", "NM"}},
       {"mwf_mix_smooth", {"H", "C", "ORM", "EM", "NM"}},
@@ -933,7 +934,18 @@ bool convertParams(const std::string &type, const json &p,
   }
   if (type == "image") {
     typeName = "Image";
-    out = {{"filename", strOr(p, "image", "")}};
+    // authors keep absolute paths from their own machines; prefer a
+    // local copy (basename in the cwd or MaterialMaker/) if one exists
+    std::string fn = strOr(p, "image", "");
+    size_t slash = fn.find_last_of("/\\");
+    if (slash != std::string::npos) {
+      const std::string base = fn.substr(slash + 1);
+      if (std::ifstream(base).good())
+        fn = base;
+      else if (std::ifstream("MaterialMaker/" + base).good())
+        fn = "MaterialMaker/" + base;
+    }
+    out = {{"filename", fn}};
     return true;
   }
   if (type == "mingle") {
@@ -1711,7 +1723,8 @@ json graphToSubgraph(const json &n, const std::string &baseName,
 
 GraphResult convertGraph(json mmNodes, json mmConns,
                          const std::string &baseName,
-                         std::vector<std::string> *skipped) {
+                         std::vector<std::string> *skipped,
+                         const std::set<std::string> *boundaryFed = nullptr) {
   GraphResult res;
   recognizeEmbeddedShaders(mmNodes);
   expandGraphMacros(mmNodes);
@@ -1892,7 +1905,14 @@ GraphResult convertGraph(json mmNodes, json mmConns,
   // was unsupported/pruned) would composite against black and poison
   // everything downstream (e.g. an AO chain multiplying the preview
   // to zero). Degrade it to a wire: consumers reconnect to the input
-  // that survived. Iterate for chains of such blends.
+  // that survived. Iterate for chains of such blends. Nodes fed
+  // through a subgraph boundary are exempt — their inputs arrive
+  // dynamically even though no conn is visible here.
+  std::set<int> exemptIds;
+  if (boundaryFed)
+    for (auto &kv : res.byName)
+      if (boundaryFed->count(kv.first))
+        exemptIds.insert(kv.second.first);
   for (;;) {
     bool changed = false;
     std::map<int, json *> srcA, srcB;
@@ -1908,6 +1928,8 @@ GraphResult convertGraph(json mmNodes, json mmConns,
       if (n["typeName"] != "Blend")
         continue;
       const int id = n["id"].get<int>();
+      if (exemptIds.count(id))
+        continue;
       const bool hasA = srcA.count(id) > 0, hasB = srcB.count(id) > 0;
       if (hasA == hasB)
         continue; // both present (normal) or both missing (harmless)
@@ -1989,7 +2011,12 @@ json graphToSubgraph(const json &n, const std::string &baseName,
       innerConns.push_back(c);
   }
 
-  GraphResult inner = convertGraph(innerNodes, innerConns, baseName, skipped);
+  std::set<std::string> boundaryFed;
+  for (auto &c : boundary)
+    if (c.value("from", std::string()) == "gen_inputs")
+      boundaryFed.insert(c.value("to", std::string()));
+  GraphResult inner =
+      convertGraph(innerNodes, innerConns, baseName, skipped, &boundaryFed);
   std::map<std::string, int> nameToId;
   {
     // byName may still reference nodes pruned by convertGraph
@@ -2058,6 +2085,25 @@ json ptexToTexgen(const json &ptex, const std::string &baseName,
       convertGraph(ptex.value("nodes", json::array()),
                    ptex.value("connections", json::array()), baseName,
                    skippedTypes);
+
+  // Drop nodes left with no connections at all (their neighbours were
+  // unsupported): they only clutter the imported canvas. Comments and
+  // Output/Material nodes are kept.
+  {
+    std::set<int> used;
+    for (auto &c : res.conns) {
+      used.insert(c["fromId"].get<int>());
+      used.insert(c["toId"].get<int>());
+    }
+    json kept = json::array();
+    for (auto &n : res.nodes) {
+      const std::string t = n["typeName"].get<std::string>();
+      if (used.count(n["id"].get<int>()) || t == "Comment" ||
+          t == "Output" || t == "Material")
+        kept.push_back(n);
+    }
+    res.nodes = kept;
+  }
 
   // Prefer the Material node's lit preview over the raw albedo source
   for (auto &n : res.nodes) {

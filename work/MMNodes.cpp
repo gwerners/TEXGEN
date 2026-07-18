@@ -932,12 +932,10 @@ std::vector<ImNodes::Ez::SlotInfo> FillNode::outputSlotInfos() const {
   return {{"Out", 1}};
 }
 
-std::vector<ImNodes::Ez::SlotInfo> FillFromColorsNode::inputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> FillFromColorsNode::inputSlotInfos() const {
   return {{"In", 1}};
 }
-std::vector<ImNodes::Ez::SlotInfo> FillFromColorsNode::outputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> FillFromColorsNode::outputSlotInfos() const {
   return {{"Out", 1}};
 }
 
@@ -1288,8 +1286,7 @@ void MingleNode::renderParams() {
   ImGui::PopItemWidth();
 }
 
-std::vector<ImNodes::Ez::SlotInfo> DirectionalWarpNode::inputSlotInfos()
-    const {
+std::vector<ImNodes::Ez::SlotInfo> DirectionalWarpNode::inputSlotInfos() const {
   return {{"In", 1}, {"AngleMap", 1}, {"StrengthMap", 1}};
 }
 std::vector<ImNodes::Ez::SlotInfo> DirectionalWarpNode::outputSlotInfos()
