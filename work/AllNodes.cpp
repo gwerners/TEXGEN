@@ -1,13 +1,11 @@
 #include "AllNodes.h"
 #include <imgui.h>
-#include "UiWidgets.h"
 #include <cstring>
 #include "FileDialog.h"
+#include "UiWidgets.h"
 #include "Utils.h"
 
 static const char* s_sizesStr = "32\00064\000128\000256\000512\0001024\000";
-
-
 
 // ============================================================
 // ColorNode

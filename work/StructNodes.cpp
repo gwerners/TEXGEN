@@ -1,8 +1,7 @@
 #include "StructNodes.h"
 #include <imgui.h>
-#include "UiWidgets.h"
 #include <cstring>
-
+#include "UiWidgets.h"
 
 // ============================================================
 // SubgraphNode

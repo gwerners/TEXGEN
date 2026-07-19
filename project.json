@@ -1,0 +1,300 @@
+{
+  "connections": [
+    {
+      "fromId": 2,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Depth"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "AO"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 8,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 3,
+      "fromSlot": "Out",
+      "toId": 9,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 9,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Albedo"
+    },
+    {
+      "fromId": 8,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Roughness"
+    },
+    {
+      "fromId": 5,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 11,
+      "fromSlot": "Out",
+      "toId": 4,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 2,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 6,
+      "fromSlot": "Out",
+      "toId": 1,
+      "toSlot": "Height"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 6,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 7,
+      "fromSlot": "Out",
+      "toId": 3,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 4,
+      "fromSlot": "Out",
+      "toId": 7,
+      "toSlot": "In"
+    },
+    {
+      "fromId": 1,
+      "fromSlot": "Out",
+      "toId": 0,
+      "toSlot": "Normal"
+    },
+    {
+      "fromId": 0,
+      "fromSlot": "Preview",
+      "toId": 10,
+      "toSlot": "In"
+    }
+  ],
+  "nodes": [
+    {
+      "id": 2,
+      "params": {},
+      "paramsOpen": false,
+      "posX": 500.0,
+      "posY": 120.0,
+      "previewOpen": true,
+      "typeName": "Invert"
+    },
+    {
+      "id": 3,
+      "params": {
+        "mode": 3,
+        "order": 2,
+        "sizex": 0.02109375037252903,
+        "sizey": 0.02109375037252903
+      },
+      "paramsOpen": false,
+      "posX": 200.0,
+      "posY": -40.0,
+      "previewOpen": true,
+      "typeName": "Blur"
+    },
+    {
+      "id": 10,
+      "params": {
+        "filename": "alien_muscle_preview.png"
+      },
+      "paramsOpen": false,
+      "posX": 1200.0,
+      "posY": 0.0,
+      "previewOpen": true,
+      "typeName": "Output"
+    },
+    {
+      "id": 9,
+      "params": {
+        "stops": [
+          [
+            0.5909090042114258,
+            0.3515619933605194,
+            0.0590520016849041,
+            0.11389700323343277,
+            1.0
+          ],
+          [
+            1.0,
+            0.3499999940395355,
+            0.15184199810028076,
+            0.07349999994039536,
+            1.0
+          ]
+        ]
+      },
+      "paramsOpen": false,
+      "posX": 649.0,
+      "posY": -242.0,
+      "previewOpen": true,
+      "typeName": "Colorize"
+    },
+    {
+      "id": 8,
+      "params": {
+        "stops": [
+          [
+            0.0,
+            0.054687999188899994,
+            0.054687999188899994,
+            0.054687999188899994,
+            1.0
+          ],
+          [
+            1.0,
+            0.1289059966802597,
+            0.1289059966802597,
+            0.1289059966802597,
+            1.0
+          ]
+        ]
+      },
+      "paramsOpen": false,
+      "posX": 471.0,
+      "posY": -135.0,
+      "previewOpen": true,
+      "typeName": "Colorize"
+    },
+    {
+      "id": 5,
+      "params": {
+        "folds": 0,
+        "heightIdx": 3,
+        "mode": 1,
+        "octaves": 5,
+        "persistence": 0.6000000238418579,
+        "scaleX": 2,
+        "scaleY": 2,
+        "seed": 0.0,
+        "widthIdx": 3
+      },
+      "paramsOpen": false,
+      "posX": -779.0,
+      "posY": -76.0,
+      "previewOpen": true,
+      "typeName": "FBM"
+    },
+    {
+      "id": 11,
+      "params": {
+        "folds": 0,
+        "heightIdx": 3,
+        "mode": 1,
+        "octaves": 5,
+        "persistence": 0.6000000834465027,
+        "scaleX": 2,
+        "scaleY": 2,
+        "seed": 0.0,
+        "widthIdx": 3
+      },
+      "paramsOpen": false,
+      "posX": -749.0,
+      "posY": -214.0,
+      "previewOpen": false,
+      "typeName": "FBM"
+    },
+    {
+      "id": 6,
+      "params": {
+        "mode": 3,
+        "order": 2,
+        "sizex": 0.04726562649011612,
+        "sizey": 0.04726562649011612
+      },
+      "paramsOpen": false,
+      "posX": 184.0,
+      "posY": 189.0,
+      "previewOpen": true,
+      "typeName": "Blur"
+    },
+    {
+      "id": 7,
+      "params": {
+        "stops": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.6272730231285095,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        ]
+      },
+      "paramsOpen": false,
+      "posX": 45.0,
+      "posY": -253.0,
+      "previewOpen": true,
+      "typeName": "Colorize"
+    },
+    {
+      "id": 4,
+      "params": {
+        "amount": 0.20000000298023224,
+        "epsilon": 0.10000000149011612,
+        "mode": 0
+      },
+      "paramsOpen": false,
+      "posX": -367.0,
+      "posY": -20.0,
+      "previewOpen": true,
+      "typeName": "Warp"
+    },
+    {
+      "id": 1,
+      "params": {
+        "amount": 1.0,
+        "format": 1
+      },
+      "paramsOpen": false,
+      "posX": 714.0,
+      "posY": 246.0,
+      "previewOpen": true,
+      "typeName": "NormalMap"
+    },
+    {
+      "id": 0,
+      "params": {
+        "ambient": 0.25,
+        "baseName": "alien_muscle",
+        "lightAzimuth": 135.0,
+        "lightElevation": 45.0,
+        "lightIntensity": 1.0
+      },
+      "paramsOpen": false,
+      "posX": 746.0,
+      "posY": -22.0,
+      "previewOpen": true,
+      "typeName": "Material"
+    }
+  ]
+}

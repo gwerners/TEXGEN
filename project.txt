@@ -1,0 +1,14 @@
+title: TEXGEN
+tags: raylib, imgui, ImNodes, procedural, texture, node-graph, PBR, material-maker, tool
+---
+Gerador procedural de texturas baseado em grafos de nós com mais de 100 tipos, materiais PBR completos e preview 2D/3D em tempo real.
+
+Funcionalidades:
+- 100+ nós: geradores (Voronoi, FBM, Bricks, Weave, Crystal), filtros (Blur, Bevel, Dilate, Warp, Fill), AGG vetorial, SDF 2D e combinadores
+- Nó Material com export PBR multi-mapa (albedo, normal, roughness, metallic, depth, AO, emission) e preview iluminado
+- Preview 3D na GPU (esfera/cubo/plano com normal mapping, displacement e tiling)
+- Importa projetos do Material Maker (.ptex) com conversão automática do grafo
+- Biblioteca de materiais com thumbnails gerados em paralelo
+- Avaliação incremental em worker thread: editar um parâmetro re-roda só o cone afetado do grafo
+- Export para cabeçalho C determinístico (libtexgen, sem dependência de UI — pronto para runtime de jogos)
+- Subgrafos, undo/redo, copy/paste, precisão 16-bit RGBA

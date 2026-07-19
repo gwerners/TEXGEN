@@ -1,7 +1,7 @@
 #include "AggNodes.h"
 #include <imgui.h>
-#include "UiWidgets.h"
 #include <cstring>
+#include "UiWidgets.h"
 
 static const char* s_blendModes =
     "Over\0Add\0Sub\0Multiply\0Min\0Max\0Composite\0MulColor\0Screen\0"
@@ -12,8 +12,6 @@ static const char* s_sizesStr = "32\00064\000128\000256\000512\0001024\000";
 static void renderBlendCombo(const char* id, int* blendMode) {
   ImGui::Combo(id, blendMode, s_blendModes);
 }
-
-
 
 // ============================================================
 // AggLineNode
