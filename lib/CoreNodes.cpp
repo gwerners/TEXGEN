@@ -1597,13 +1597,13 @@ void ImageCoreNode::execute(const std::vector<GenTexture*>& /*inputs*/,
     unsigned char* pixels = stbi_load(m_filename, &imgW, &imgH, &channels, 4);
     if (!pixels) {
       // imported projects carry the author's absolute path; fall back
-      // to the basename in the working dir and the MaterialMaker folder
+      // to the basename in the working dir and the Material folder
       size_t slash = path.find_last_of("/\\");
       if (slash != std::string::npos) {
         std::string base = path.substr(slash + 1);
         pixels = stbi_load(base.c_str(), &imgW, &imgH, &channels, 4);
         if (!pixels)
-          pixels = stbi_load(("MaterialMaker/" + base).c_str(), &imgW, &imgH,
+          pixels = stbi_load(("Material/" + base).c_str(), &imgW, &imgH,
                              &channels, 4);
       }
     }

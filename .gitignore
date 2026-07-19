@@ -16,8 +16,12 @@ imgui-docking
 agg
 imgui
 my_texture.h
-# local Material Maker collections and generated material maps
-/MaterialMaker/
+# Material/ holds our .json materials (tracked) alongside imported
+# Material Maker .ptex originals and generated cache/thumbnails (not) —
+# only the .json is source of truth, the rest is regeneratable/foreign
+/Material/*.ptex
+/Material/*.cache/
+/Material/*.thumb.png
 /*_preview.png
 /*_albedo.png
 /*_normal.png

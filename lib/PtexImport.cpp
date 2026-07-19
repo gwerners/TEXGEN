@@ -940,15 +940,15 @@ bool convertParams(const std::string &type, const json &p,
   if (type == "image") {
     typeName = "Image";
     // authors keep absolute paths from their own machines; prefer a
-    // local copy (basename in the cwd or MaterialMaker/) if one exists
+    // local copy (basename in the cwd or Material/) if one exists
     std::string fn = strOr(p, "image", "");
     size_t slash = fn.find_last_of("/\\");
     if (slash != std::string::npos) {
       const std::string base = fn.substr(slash + 1);
       if (std::ifstream(base).good())
         fn = base;
-      else if (std::ifstream("MaterialMaker/" + base).good())
-        fn = "MaterialMaker/" + base;
+      else if (std::ifstream("Material/" + base).good())
+        fn = "Material/" + base;
     }
     out = {{"filename", fn}};
     return true;

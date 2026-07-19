@@ -61,8 +61,8 @@ void downsample(const GenTexture& src, GenTexture& dst, int side) {
 }  // namespace
 
 MaterialLibrary::MaterialLibrary() {
-  if (fs::is_directory("MaterialMaker"))
-    strncpy(m_dir, "MaterialMaker", sizeof(m_dir) - 1);
+  if (fs::is_directory("Material"))
+    strncpy(m_dir, "Material", sizeof(m_dir) - 1);
   else
     strncpy(m_dir, ".", sizeof(m_dir) - 1);
   m_dir[sizeof(m_dir) - 1] = '\0';
