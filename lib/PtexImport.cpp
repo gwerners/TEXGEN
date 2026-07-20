@@ -157,6 +157,12 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"material_tesselated",
        {"Albedo", "Metallic", "Roughness", "Emission", "Normal", "AO",
         "Depth"}},
+      {"material_dynamic",
+       {"Albedo", "Metallic", "Roughness", "Emission", "Normal", "AO",
+        "Depth"}},
+      {"material_export",
+       {"Albedo", "Metallic", "Roughness", "Emission", "Normal", "AO",
+        "Depth"}},
       {"material_unlit", {"Albedo"}},
       {"combine", {"R", "G", "B", "A"}},
       {"decompose", {"In"}},
@@ -205,6 +211,7 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"tile2x2", {"In1", "In2", "In3", "In4"}},
       {"normal_map_convert", {"In"}},
       {"custom_uv", {"In", "Map"}},
+      {"custom_uv2", {"In", "Map"}},
       {"smooth_curvature", {"Height"}},
       {"smooth_curvature2", {"Height"}},
       {"occlusion2", {"Height"}},
@@ -217,17 +224,23 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"circle_splatter", {"In", "Mask"}},
       {"bricks_uneven", {"", "", ""}}, // mortar/bevel/round maps N/A
       {"anisotropic_kuwahara", {"In"}},
+      {"classic_kuwahara", {"In"}},
+      {"generalized_kuwahara", {"In"}},
       {"auto_tones", {"In"}},
       {"directional_warp", {"In", "AngleMap", "StrengthMap"}},
       {"mingle", {"In1", "In2", "Warp"}},
       {"fill_from_colors", {"In"}},
       {"gauss_blur_x", {"In", "Sigma"}},
       {"gauss_blur_y", {"In", "Sigma"}},
+      {"gaussian_blur_x", {"In", "Sigma"}},
+      {"gaussian_blur_y", {"In", "Sigma"}},
       {"bilateral_blur", {"In", "Sigma"}},
       {"warp_dilation_nobuf", {"In", "Height"}},
       {"warp_dilation2_nobuf", {"In", "Height"}},
       {"box", {}},
       {"wavelet_noise", {}},
+      {"wavelet_noise2", {}},
+      {"edge_detect_1", {"In"}},
       {"edge_detect_2", {"In"}},
       {"smooth_minmax", {"A", "B"}},
       {"weave", {"WidthMap"}},
@@ -245,6 +258,7 @@ const std::map<std::string, std::vector<std::string>> &portsIn() {
       {"bevel", {"In"}},
       {"dilate", {"Mask", "Source"}},
       {"normal_blend", {"Foreground", "Background", "Mask"}},
+      {"normal_blend2", {"Foreground", "Background", "Mask"}},
       {"directional_blur", {"In", "Amount"}},
       {"tiler_advanced",
        {"In", "Mask", "Color1", "Color2", "TrX", "TrY", "Rot", "ScX",
@@ -608,6 +622,7 @@ bool convertParams(const std::string &type, const json &p,
     return true;
   }
   if (type == "material" || type == "material_tesselated" ||
+      type == "material_dynamic" || type == "material_export" ||
       type == "material_unlit") {
     typeName = "Material";
     out = {{"baseName", baseName}};
@@ -753,9 +768,10 @@ bool convertParams(const std::string &type, const json &p,
            {"metric", intOr(p, "param3", 0)}};
     return true;
   }
-  if (type == "normal_blend") {
+  if (type == "normal_blend" || type == "normal_blend2") {
+    // normal_blend2 uses the layered-blend "amount1" key for the same value
     typeName = "NormalBlend";
-    out = {{"amount", numOr(p, "amount", 0.5f)}};
+    out = {{"amount", numOr(p, "amount1", numOr(p, "amount", 0.5f))}};
     return true;
   }
   if (type == "color_noise") {
@@ -815,7 +831,7 @@ bool convertParams(const std::string &type, const json &p,
            {"flipSides", boolOr(p, "flip_sides", false)}};
     return true;
   }
-  if (type == "edge_detect") {
+  if (type == "edge_detect" || type == "edge_detect_1") {
     typeName = "EdgeDetect";
     int sizeExp = intOr(p, "size", 9);
     out = {{"size", (float)(1 << (sizeExp < 1 ? 1 : (sizeExp > 12 ? 12
@@ -891,7 +907,9 @@ bool convertParams(const std::string &type, const json &p,
     out = {{"op", intOr(p, "op", 1) == 0 ? 3 : 2}};
     return true;
   }
-  if (type == "custom_uv") {
+  if (type == "custom_uv" || type == "custom_uv2") {
+    // custom_uv2 adds a "mode"/"variations" pair we don't model; the
+    // shared sx/sy/rotate/scale/inputs core is otherwise identical
     typeName = "CustomUV";
     int tsIdx = intOr(p, "inputs", 0);
     out = {{"inputs", tsIdx == 2 ? 4 : (tsIdx == 1 ? 2 : 1)},
@@ -964,12 +982,14 @@ bool convertParams(const std::string &type, const json &p,
            {"strength", numOr(p, "warp_strength", 1.0f)}};
     return true;
   }
-  if (type == "gauss_blur_x" || type == "gauss_blur_y") {
+  if (type == "gauss_blur_x" || type == "gauss_blur_y" ||
+      type == "gaussian_blur_x" || type == "gaussian_blur_y") {
     // embedded "Gaussian blur X HQ"/"Y" shaders: sigma/10 is in UV
     typeName = "Blur";
     float s = numOr(p, "sigma", 0.5f) / 10.0f;
-    out = {{"sizex", type == "gauss_blur_x" ? s : 0.0f},
-           {"sizey", type == "gauss_blur_y" ? s : 0.0f},
+    bool isX = type == "gauss_blur_x" || type == "gaussian_blur_x";
+    out = {{"sizex", isX ? s : 0.0f},
+           {"sizey", isX ? 0.0f : s},
            {"order", 2},
            {"mode", 3}};
     return true;
@@ -1009,7 +1029,11 @@ bool convertParams(const std::string &type, const json &p,
            {"angle", angle}};
     return true;
   }
-  if (type == "anisotropic_kuwahara") {
+  if (type == "anisotropic_kuwahara" || type == "classic_kuwahara" ||
+      type == "generalized_kuwahara") {
+    // classic/generalized are isotropic variants (no sharpness/eccentricity/
+    // uniformity controls in MM); eccentricity=1 collapses the anisotropic
+    // filter back to a circular Kuwahara, which is the closest match we have
     typeName = "AnisotropicKuwahara";
     int resExp = intOr(p, "resolution", 9);
     out = {{"size",
@@ -1100,7 +1124,7 @@ bool convertParams(const std::string &type, const json &p,
     out["rz"] = numOr(p, "rz", 0.0f);
     return true;
   }
-  if (type == "wavelet_noise") {
+  if (type == "wavelet_noise" || type == "wavelet_noise2") {
     typeName = "WaveletNoise";
     out = size3();
     out["scaleX"] = numOr(p, "scale_x", 4.0f);
@@ -1289,8 +1313,8 @@ bool convertParams(const std::string &type, const json &p,
 
 // Types that never affect the output and are dropped silently.
 bool isIgnorable(const std::string &type) {
-  static const std::set<std::string> s = {"remote", "debug", "export",
-                                          "ios"};
+  static const std::set<std::string> s = {"remote", "debug", "export", "ios",
+                                          "comment_line"};
   return s.count(type) > 0;
 }
 
@@ -1303,7 +1327,8 @@ bool isPassthrough(const std::string &type) {
   static const std::set<std::string> s = {
       "buffer",     "reroute", "supersample",
       "tonality", "sharpen", "denoiser",
-      "variations_greyscale", "variations_color", "optional"};
+      "variations_greyscale", "variations_color", "layer_variations_color",
+      "optional", "randomize", "default_color"};
   return s.count(type) > 0;
 }
 
@@ -1327,6 +1352,11 @@ void collapsePassthroughs(json &nodes, json &conns) {
         json p = n.value("parameters", json::object());
         n["type"] = "uniform";
         n["parameters"] = {{"color", p.value("d", json::object())}};
+      } else if (t == "default_color" &&
+                 !fed.count(n.value("name", std::string()))) {
+        json p = n.value("parameters", json::object());
+        n["type"] = "uniform";
+        n["parameters"] = {{"color", p.value("default", json::object())}};
       } else if (t == "tile2x2_variations") {
         n["type"] = "tile2x2";
         const std::string nm = n.value("name", std::string());
@@ -1880,6 +1910,7 @@ GraphResult convertGraph(json mmNodes, json mmConns,
                          {"toId", toId},
                          {"toSlot", ins[tp]}});
     if (toType == "material" || toType == "material_tesselated" ||
+        toType == "material_dynamic" || toType == "material_export" ||
         toType == "material_unlit") {
       static const std::map<std::string, int> prio = {
           {"Albedo", 3}, {"Height", 2}, {"Normal", 1}};
