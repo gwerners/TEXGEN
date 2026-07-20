@@ -123,6 +123,80 @@ void main() {
 }
 )GLSL";
 
+// raylib's GenMeshCube() is a single quad per face (8 corner vertices) —
+// the vertex shader's height displacement has nothing to move in the
+// middle of a face, so the cube preview showed no bump at all. Build
+// each face as its own resxres grid instead, the same way GenMeshPlane
+// already does for the flat preview.
+Mesh GenMeshCubeSubdiv(float size, int segs) {
+  struct Face {
+    Vector3 u, v, n;  // u = fast/x-like axis, v = slow/z-like axis
+  };
+  static const Face faces[6] = {
+      {{1, 0, 0}, {0, 0, 1}, {0, 1, 0}},    // +Y top
+      {{1, 0, 0}, {0, 0, -1}, {0, -1, 0}},  // -Y bottom
+      {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}},    // +X right
+      {{0, 0, -1}, {0, 1, 0}, {-1, 0, 0}},  // -X left
+      {{-1, 0, 0}, {0, 1, 0}, {0, 0, 1}},   // +Z front
+      {{1, 0, 0}, {0, 1, 0}, {0, 0, -1}},   // -Z back
+  };
+
+  int res = segs + 1;
+  int vertsPerFace = res * res;
+  int quadsPerFace = segs * segs;
+  int vertexCount = vertsPerFace * 6;
+  int triangleCount = quadsPerFace * 2 * 6;
+
+  Mesh mesh = {0};
+  mesh.vertexCount = vertexCount;
+  mesh.triangleCount = triangleCount;
+  mesh.vertices = (float*)RL_MALLOC(vertexCount * 3 * sizeof(float));
+  mesh.texcoords = (float*)RL_MALLOC(vertexCount * 2 * sizeof(float));
+  mesh.normals = (float*)RL_MALLOC(vertexCount * 3 * sizeof(float));
+  mesh.indices =
+      (unsigned short*)RL_MALLOC(triangleCount * 3 * sizeof(unsigned short));
+
+  int vi = 0, ti = 0;
+  for (int f = 0; f < 6; f++) {
+    const Face& face = faces[f];
+    Vector3 center = {face.n.x * size * 0.5f, face.n.y * size * 0.5f,
+                      face.n.z * size * 0.5f};
+    int base = vi;
+    for (int y = 0; y < res; y++) {
+      float vCoord = (float)y / (res - 1) - 0.5f;
+      for (int x = 0; x < res; x++) {
+        float uCoord = (float)x / (res - 1) - 0.5f;
+        mesh.vertices[vi * 3 + 0] =
+            center.x + (face.u.x * uCoord + face.v.x * vCoord) * size;
+        mesh.vertices[vi * 3 + 1] =
+            center.y + (face.u.y * uCoord + face.v.y * vCoord) * size;
+        mesh.vertices[vi * 3 + 2] =
+            center.z + (face.u.z * uCoord + face.v.z * vCoord) * size;
+        mesh.normals[vi * 3 + 0] = face.n.x;
+        mesh.normals[vi * 3 + 1] = face.n.y;
+        mesh.normals[vi * 3 + 2] = face.n.z;
+        mesh.texcoords[vi * 2 + 0] = (float)x / (res - 1);
+        mesh.texcoords[vi * 2 + 1] = (float)y / (res - 1);
+        vi++;
+      }
+    }
+    for (int y = 0; y < segs; y++) {
+      for (int x = 0; x < segs; x++) {
+        int i = base + x + y * res;
+        mesh.indices[ti++] = (unsigned short)(i + res);
+        mesh.indices[ti++] = (unsigned short)(i + 1);
+        mesh.indices[ti++] = (unsigned short)i;
+        mesh.indices[ti++] = (unsigned short)(i + res);
+        mesh.indices[ti++] = (unsigned short)(i + res + 1);
+        mesh.indices[ti++] = (unsigned short)(i + 1);
+      }
+    }
+  }
+
+  UploadMesh(&mesh, false);
+  return mesh;
+}
+
 }  // namespace
 
 void Preview3D::ensureInit() {
@@ -133,7 +207,7 @@ void Preview3D::ensureInit() {
   m_rt = LoadRenderTexture(RT_SIZE, RT_SIZE);
 
   Mesh sphere = GenMeshSphere(1.0f, 64, 96);
-  Mesh cube = GenMeshCube(1.5f, 1.5f, 1.5f);
+  Mesh cube = GenMeshCubeSubdiv(1.5f, 32);
   Mesh plane = GenMeshPlane(2.2f, 2.2f, 64, 64);
   GenMeshTangents(&sphere);
   GenMeshTangents(&cube);
