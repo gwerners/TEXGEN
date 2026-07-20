@@ -302,7 +302,9 @@ bool MaterialLibrary::draw(std::string& outPath, bool& outIsPtex) {
     }
   }
 
-  // thumbnail grid
+  // thumbnail grid — its own scrolling region so a long material list
+  // doesn't push the outer window's toolbar out of view when scrolled
+  ImGui::BeginChild("##libgrid", ImVec2(0, 0), true);
   const float cell = 86.0f;
   int cols = (int)(ImGui::GetContentRegionAvail().x / (cell + 8.0f));
   if (cols < 1)
@@ -346,5 +348,6 @@ bool MaterialLibrary::draw(std::string& outPath, bool& outIsPtex) {
     }
     col = (col + 1) % cols;
   }
+  ImGui::EndChild();
   return activated;
 }
