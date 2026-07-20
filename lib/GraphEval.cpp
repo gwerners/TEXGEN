@@ -378,6 +378,16 @@ int dumpNodePreviews(const nlohmann::json &project, GraphEval &ev,
              type.c_str());
     SaveImage(const_cast<GenTexture &>((*outs)[0]), path);
     saved++;
+    // multi-output nodes (Subgraph, Voronoi, Decompose, ...) need every
+    // slot cached, not just the first — loadRenderCache() restores these
+    for (size_t slot = 1; slot < outs->size(); slot++) {
+      if (!(*outs)[slot].Data)
+        continue;
+      char slotPath[1024];
+      snprintf(slotPath, sizeof(slotPath), "%s/%03d_%s_s%zu.png",
+               outDir.c_str(), id, type.c_str(), slot);
+      SaveImage(const_cast<GenTexture &>((*outs)[slot]), slotPath);
+    }
   }
   return saved;
 }

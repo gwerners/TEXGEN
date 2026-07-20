@@ -1061,6 +1061,21 @@ void NodeGraph::loadRenderCache(const std::string& dir) {
     gn->cachedOutputs.assign(outNames.empty() ? 1 : outNames.size(),
                              GenTexture{});
     gn->cachedOutputs[0] = std::move(tex);
+    // multi-output nodes (Subgraph, Voronoi, Decompose, ...) cache every
+    // slot beyond the first as its own "..._sN.png" — restore those too,
+    // else e.g. a Subgraph's Normal/AO/Roughness outputs stay empty until
+    // the user forces a full re-generate
+    for (size_t slot = 1; slot < gn->cachedOutputs.size(); slot++) {
+      char slotFname[80];
+      snprintf(slotFname, sizeof(slotFname), "/%03d_%s_s%zu.png",
+               gn->texNode()->id, gn->texNode()->typeName().c_str(), slot);
+      std::string slotPath = dir + slotFname;
+      if (!fs::exists(slotPath))
+        continue;
+      GenTexture slotTex;
+      if (LoadGenTextureFromFile(slotPath, slotTex))
+        gn->cachedOutputs[slot] = std::move(slotTex);
+    }
     gn->executed = true;
     if (gn->hasPreview && gn->previewTex.id != 0)
       UnloadTexture(gn->previewTex);

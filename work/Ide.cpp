@@ -153,6 +153,16 @@ void Ide::writeCache(const std::string& path) {
     snprintf(fname, sizeof(fname), "/%03d_%s.png", gn->texNode()->id,
              gn->texNode()->typeName().c_str());
     SaveImage(gn->cachedOutputs[0], (dir + fname).c_str());
+    // multi-output nodes (Subgraph, Voronoi, Decompose, ...) need every
+    // slot cached, not just the first — loadRenderCache() restores these
+    for (size_t slot = 1; slot < gn->cachedOutputs.size(); slot++) {
+      if (!gn->cachedOutputs[slot].Data)
+        continue;
+      char slotName[64];
+      snprintf(slotName, sizeof(slotName), "/%03d_%s_s%zu.png",
+               gn->texNode()->id, gn->texNode()->typeName().c_str(), slot);
+      SaveImage(gn->cachedOutputs[slot], (dir + slotName).c_str());
+    }
   }
 }
 
