@@ -69,7 +69,11 @@ out vec4 finalColor;
 
 void main() {
     vec2 uv = fragUV * tiling;
-    vec3 albedo = hasAlbedo == 1 ? texture(albedoMap, uv).rgb : vec3(1.0);
+    // albedo/emission are generated colors, stored display-referred (like
+    // the flat 2D preview shows them raw); decode to linear so the gamma
+    // encode below doesn't re-brighten them a second time
+    vec3 albedo = hasAlbedo == 1 ? pow(texture(albedoMap, uv).rgb, vec3(2.2))
+                                 : vec3(1.0);
     float rough = hasRough == 1 ? texture(roughMap, uv).r : 1.0;
     float metal = hasMetal == 1 ? texture(metalMap, uv).r : 0.0;
     float ao    = hasAO == 1 ? texture(aoMap, uv).r : 1.0;
@@ -110,7 +114,7 @@ void main() {
     col += F * envRefl * (1.0 - rough) * (0.25 + 0.75 * metal) * ao;
     col += F0 * specPow * lightCol * ndl;
     if (hasEmission == 1)
-        col += texture(emissionMap, uv).rgb;
+        col += pow(texture(emissionMap, uv).rgb, vec3(2.2));
 
     // tonemap + gamma
     col = col / (col + vec3(1.0));
